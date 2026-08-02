@@ -1,1 +1,6 @@
 .env
+# Prisma v7 AI Skill Folders
+.claude/
+.agents/
+.windsurf/
+skills-lock.json
