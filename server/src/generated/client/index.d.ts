@@ -1746,6 +1746,7 @@ export namespace Prisma {
     id: string | null
     fullName: string | null
     phone: string | null
+    passwordHash: string | null
     role: $Enums.Role | null
     creditLimit: Decimal | null
     creditBalance: Decimal | null
@@ -1757,6 +1758,7 @@ export namespace Prisma {
     id: string | null
     fullName: string | null
     phone: string | null
+    passwordHash: string | null
     role: $Enums.Role | null
     creditLimit: Decimal | null
     creditBalance: Decimal | null
@@ -1768,6 +1770,7 @@ export namespace Prisma {
     id: number
     fullName: number
     phone: number
+    passwordHash: number
     role: number
     creditLimit: number
     creditBalance: number
@@ -1791,6 +1794,7 @@ export namespace Prisma {
     id?: true
     fullName?: true
     phone?: true
+    passwordHash?: true
     role?: true
     creditLimit?: true
     creditBalance?: true
@@ -1802,6 +1806,7 @@ export namespace Prisma {
     id?: true
     fullName?: true
     phone?: true
+    passwordHash?: true
     role?: true
     creditLimit?: true
     creditBalance?: true
@@ -1813,6 +1818,7 @@ export namespace Prisma {
     id?: true
     fullName?: true
     phone?: true
+    passwordHash?: true
     role?: true
     creditLimit?: true
     creditBalance?: true
@@ -1911,6 +1917,7 @@ export namespace Prisma {
     id: string
     fullName: string
     phone: string
+    passwordHash: string
     role: $Enums.Role
     creditLimit: Decimal
     creditBalance: Decimal
@@ -1941,6 +1948,7 @@ export namespace Prisma {
     id?: boolean
     fullName?: boolean
     phone?: boolean
+    passwordHash?: boolean
     role?: boolean
     creditLimit?: boolean
     creditBalance?: boolean
@@ -1955,6 +1963,7 @@ export namespace Prisma {
     id?: boolean
     fullName?: boolean
     phone?: boolean
+    passwordHash?: boolean
     role?: boolean
     creditLimit?: boolean
     creditBalance?: boolean
@@ -1966,6 +1975,7 @@ export namespace Prisma {
     id?: boolean
     fullName?: boolean
     phone?: boolean
+    passwordHash?: boolean
     role?: boolean
     creditLimit?: boolean
     creditBalance?: boolean
@@ -1977,6 +1987,7 @@ export namespace Prisma {
     id?: boolean
     fullName?: boolean
     phone?: boolean
+    passwordHash?: boolean
     role?: boolean
     creditLimit?: boolean
     creditBalance?: boolean
@@ -1984,7 +1995,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "fullName" | "phone" | "role" | "creditLimit" | "creditBalance" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "fullName" | "phone" | "passwordHash" | "role" | "creditLimit" | "creditBalance" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     stockIssusances?: boolean | User$stockIssusancesArgs<ExtArgs>
     paymentProofs?: boolean | User$paymentProofsArgs<ExtArgs>
@@ -2003,6 +2014,7 @@ export namespace Prisma {
       id: string
       fullName: string
       phone: string
+      passwordHash: string
       role: $Enums.Role
       creditLimit: Prisma.Decimal
       creditBalance: Prisma.Decimal
@@ -2436,6 +2448,7 @@ export namespace Prisma {
     readonly id: FieldRef<"User", 'String'>
     readonly fullName: FieldRef<"User", 'String'>
     readonly phone: FieldRef<"User", 'String'>
+    readonly passwordHash: FieldRef<"User", 'String'>
     readonly role: FieldRef<"User", 'Role'>
     readonly creditLimit: FieldRef<"User", 'Decimal'>
     readonly creditBalance: FieldRef<"User", 'Decimal'>
@@ -10898,6 +10911,7 @@ export namespace Prisma {
     id: 'id',
     fullName: 'fullName',
     phone: 'phone',
+    passwordHash: 'passwordHash',
     role: 'role',
     creditLimit: 'creditLimit',
     creditBalance: 'creditBalance',
@@ -11172,6 +11186,7 @@ export namespace Prisma {
     id?: StringFilter<"User"> | string
     fullName?: StringFilter<"User"> | string
     phone?: StringFilter<"User"> | string
+    passwordHash?: StringFilter<"User"> | string
     role?: EnumRoleFilter<"User"> | $Enums.Role
     creditLimit?: DecimalFilter<"User"> | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFilter<"User"> | Decimal | DecimalJsLike | number | string
@@ -11185,6 +11200,7 @@ export namespace Prisma {
     id?: SortOrder
     fullName?: SortOrder
     phone?: SortOrder
+    passwordHash?: SortOrder
     role?: SortOrder
     creditLimit?: SortOrder
     creditBalance?: SortOrder
@@ -11201,6 +11217,7 @@ export namespace Prisma {
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
     fullName?: StringFilter<"User"> | string
+    passwordHash?: StringFilter<"User"> | string
     role?: EnumRoleFilter<"User"> | $Enums.Role
     creditLimit?: DecimalFilter<"User"> | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFilter<"User"> | Decimal | DecimalJsLike | number | string
@@ -11214,6 +11231,7 @@ export namespace Prisma {
     id?: SortOrder
     fullName?: SortOrder
     phone?: SortOrder
+    passwordHash?: SortOrder
     role?: SortOrder
     creditLimit?: SortOrder
     creditBalance?: SortOrder
@@ -11233,6 +11251,7 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"User"> | string
     fullName?: StringWithAggregatesFilter<"User"> | string
     phone?: StringWithAggregatesFilter<"User"> | string
+    passwordHash?: StringWithAggregatesFilter<"User"> | string
     role?: EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
     creditLimit?: DecimalWithAggregatesFilter<"User"> | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalWithAggregatesFilter<"User"> | Decimal | DecimalJsLike | number | string
@@ -11756,6 +11775,7 @@ export namespace Prisma {
     id?: string
     fullName: string
     phone: string
+    passwordHash: string
     role?: $Enums.Role
     creditLimit?: Decimal | DecimalJsLike | number | string
     creditBalance?: Decimal | DecimalJsLike | number | string
@@ -11769,6 +11789,7 @@ export namespace Prisma {
     id?: string
     fullName: string
     phone: string
+    passwordHash: string
     role?: $Enums.Role
     creditLimit?: Decimal | DecimalJsLike | number | string
     creditBalance?: Decimal | DecimalJsLike | number | string
@@ -11782,6 +11803,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -11795,6 +11817,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -11808,6 +11831,7 @@ export namespace Prisma {
     id?: string
     fullName: string
     phone: string
+    passwordHash: string
     role?: $Enums.Role
     creditLimit?: Decimal | DecimalJsLike | number | string
     creditBalance?: Decimal | DecimalJsLike | number | string
@@ -11819,6 +11843,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -11830,6 +11855,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -12458,6 +12484,7 @@ export namespace Prisma {
     id?: SortOrder
     fullName?: SortOrder
     phone?: SortOrder
+    passwordHash?: SortOrder
     role?: SortOrder
     creditLimit?: SortOrder
     creditBalance?: SortOrder
@@ -12474,6 +12501,7 @@ export namespace Prisma {
     id?: SortOrder
     fullName?: SortOrder
     phone?: SortOrder
+    passwordHash?: SortOrder
     role?: SortOrder
     creditLimit?: SortOrder
     creditBalance?: SortOrder
@@ -12485,6 +12513,7 @@ export namespace Prisma {
     id?: SortOrder
     fullName?: SortOrder
     phone?: SortOrder
+    passwordHash?: SortOrder
     role?: SortOrder
     creditLimit?: SortOrder
     creditBalance?: SortOrder
@@ -13911,6 +13940,7 @@ export namespace Prisma {
     id?: string
     fullName: string
     phone: string
+    passwordHash: string
     role?: $Enums.Role
     creditLimit?: Decimal | DecimalJsLike | number | string
     creditBalance?: Decimal | DecimalJsLike | number | string
@@ -13923,6 +13953,7 @@ export namespace Prisma {
     id?: string
     fullName: string
     phone: string
+    passwordHash: string
     role?: $Enums.Role
     creditLimit?: Decimal | DecimalJsLike | number | string
     creditBalance?: Decimal | DecimalJsLike | number | string
@@ -13977,6 +14008,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -13989,6 +14021,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -14081,6 +14114,7 @@ export namespace Prisma {
     id?: string
     fullName: string
     phone: string
+    passwordHash: string
     role?: $Enums.Role
     creditLimit?: Decimal | DecimalJsLike | number | string
     creditBalance?: Decimal | DecimalJsLike | number | string
@@ -14093,6 +14127,7 @@ export namespace Prisma {
     id?: string
     fullName: string
     phone: string
+    passwordHash: string
     role?: $Enums.Role
     creditLimit?: Decimal | DecimalJsLike | number | string
     creditBalance?: Decimal | DecimalJsLike | number | string
@@ -14121,6 +14156,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -14133,6 +14169,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
     phone?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string

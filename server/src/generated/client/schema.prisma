@@ -36,10 +36,11 @@ enum IssuanceStatus {
 //CORE ENTITIES(USERS, SUPPLIERS, PRODUCTS)
 
 model User {
-  id       String @id @default(uuid())
-  fullName String
-  phone    String @unique
-  role     Role   @default(SALES_REP)
+  id           String @id @default(uuid())
+  fullName     String
+  phone        String @unique
+  passwordHash String
+  role         Role   @default(SALES_REP)
 
   //modelB wholesale credit guardrails
 
