@@ -4,6 +4,7 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 // DOMAIN ENUMS
@@ -11,6 +12,12 @@ generator client {
 enum Role {
   ADMIN
   SALES_REP
+}
+
+enum ProofStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum AuditEntity{
@@ -122,7 +129,7 @@ model PaymentProof{
   senderName       String?
   reasonRemark     String?
   receipeImageUrl  String?
-  status           proofStatus @default(PENDING)
+  status           ProofStatus @default(PENDING)
   adminRemark      String?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
