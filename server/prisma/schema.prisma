@@ -1,0 +1,152 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// DOMAIN ENUMS
+
+enum Role {
+  ADMIN
+  SALES_REP
+}
+
+enum AuditEntity{
+  ADMIN_STORE
+  SALES_REP
+  SUPPLIER
+  DIRECT_BUYER
+}
+
+enum IssuanceStatus {
+  ISSUED
+  RETURNED
+  PARTIAL_RETURNED
+}
+
+//CORE ENTITIES(USERS, SUPPLIERS, PRODUCTS)
+
+model User {
+  id                 String  @id @default(uuid()) 
+  fullName           String  
+  phone              String  @unique
+  role               Role    @default(SALES_REP)
+
+
+  //modelB wholesale credit guardrails
+
+  creditLimit        Decimal   @default("0.00") @db.Decimal(12, 2)
+  creditBalance      Decimal   @default("0.00") @db.Decimal(12, 2)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  stockIssusances       StockIssuance[]
+  paymentProofs         PaymentProof[]
+}
+
+model Supplier {
+  id                String  @id @default(uuid()) 
+  name               String  
+  phone              String  @unique
+  creditBalance      Decimal   @default("0.00") @db.Decimal(12, 2)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  batches            InventoryBatch[]
+}
+
+model Product {
+  id                String  @id @default(uuid()) 
+  name              String  
+  description       String?
+  price             Decimal   @db.Decimal(12, 2)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  batches           InventoryBatch[]
+}
+
+// FIFO INVENTORY BATCHES
+
+model InventoryBatch {
+  id                    String       @id @default(uuid())
+  batchCode             String       @unique
+  productId             String
+  product               Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  supplierId            String
+  supplier              Supplier    @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  quantityRecieved      Int
+  remainingQty          Int
+  unitCostPrice         Decimal      @db.Decimal(12, 2)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  // Composite index: instant lookup for olders sellable batches during FIFO checkout
+  @@index([productId, remainingQty, createdAt])
+}
+
+// STOCK ISSUANCE (MODEL B WHOLESALE CHECKOUT)
+model StockIssuance {
+  id                    String       @id @default(uuid())
+  userId                String
+  user                  User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status                IssuanceStatus @default(ISSUED)
+  totalWholesaleValue   Decimal      @db.Decimal(12, 2)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  items                 IssuanceItem[]
+}
+
+model IssuanceItem {
+  id             String        @id @default(uuid())
+  issuanceId     String
+  issuance       StockIssuance @relation(fields: [issuanceId], references: [id], onDelete: Cascade)
+  productId      String
+  wholesalePrice Decimal       @db.Decimal(12, 2)
+  qtyIssued      Int
+  cogsCalculated Decimal       @db.Decimal(12, 2) // Locked FIFO cost at moment of checkout
+}
+
+model PaymentProof{
+  id             String        @id @default(uuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  
+  //3-layer anti-duplicatoin security shield(DB-level unique constraint)
+  transactionRedId String      @unique
+  sha256Hash       String      @unique
+  amount           Decimal     @db.Decimal(12, 2)
+  senderName       String?
+  reasonRemark     String?
+  receipeImageUrl  String?
+  status           proofStatus @default(PENDING)
+  adminRemark      String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([status, createdAt])
+}
+
+// 6. IMMUTABLE FINANCIAL AUDIT LEDGER
+
+
+model LedgerEntry {
+  id               String       @id @default(uuid())
+  transactionDate  DateTime     @default(now())
+  fromEntity       AuditEntity
+  fromEntityId     String?
+  toEntity         AuditEntity
+  toEntityId       String?
+  amount           Decimal      @db.Decimal(12, 2)
+  transferMethod   String       // e.g., CBE_BANK, TELEBIRR, CASH, CREDIT_ADJUSTMENT
+  receiptUrl       String?
+  auditRemark      String?      // Mandatory in app logic if receiptUrl is null
+  transactionRefId String?      @unique
+  createdAt        DateTime     @default(now())
+
+  @@index([fromEntity, toEntity, transactionDate])
+}
