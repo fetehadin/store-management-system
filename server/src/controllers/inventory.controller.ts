@@ -9,11 +9,11 @@ import {
   NotFoundError,
 } from "../utils/errors.js";
 import { toDecimal, formatETB } from "../utils/decimal.js";
-import { Role, IssuanceStatus } from "../generated/client/index.js";
+import { Role, IssuanceStatus, AuditEntity } from "../generated/client/index.js";
 
 /**
  * @route   POST /api/v1/inventory/batches
- * @desc    Create a new warehouse inventory batch (Admin only)
+ * @desc    Legacy stub / wrapper for warehouse batch receiving (Admin only)
  * @access  Protected (ADMIN)
  */
 export const createStockBatch = async (
@@ -24,8 +24,6 @@ export const createStockBatch = async (
   try {
     const validated = createStockBatchSchema.parse(req.body);
 
-    // In a full multi-warehouse setup, we'd store the SKU in a dedicated Inventory table.
-    // Here we record the wholesale issuance batch readiness in our audit log / DB.
     res.status(201).json({
       status: "success",
       message: "Warehouse stock batch registered successfully",
@@ -45,7 +43,7 @@ export const createStockBatch = async (
 
 /**
  * @route   POST /api/v1/inventory/issue
- * @desc    Issue Model B wholesale stock to a Sales Rep & enforce ETB credit limits
+ * @desc    Issue Model B wholesale stock with FIFO stock deduction, COGS calculation & automatic ledger wiring
  * @access  Protected (ADMIN)
  */
 export const issueStock = async (
@@ -69,12 +67,31 @@ export const issueStock = async (
       throw new BadRequestError("Stock can only be issued to active SALES_REP accounts");
     }
 
-    // 2. Calculate total ETB value of this issuance
+    // 2. Query oldest sellable batches in FIFO order (createdAt: asc)
+    const availableBatches = await db.inventoryBatch.findMany({
+      where: {
+        productId: validated.productId,
+        remainingQty: { gt: 0 },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const totalAvailableStock = availableBatches.reduce(
+      (sum, batch) => sum + batch.remainingQty,
+      0
+    );
+
+    if (totalAvailableStock < validated.qtyIssued) {
+      throw new BadRequestError(
+        `Insufficient warehouse stock. Requested: ${validated.qtyIssued} units, Available: ${totalAvailableStock} units.`
+      );
+    }
+
+    // 3. Calculate total ETB value of this issuance & verify credit limit
     const totalIssuanceValue = toDecimal(validated.qtyIssued).mul(
       toDecimal(validated.wholesalePrice)
     );
 
-    // 3. Check ETB Credit Limit Guardrail
     const projectedBalance = toDecimal(salesRep.creditBalance).add(
       totalIssuanceValue
     );
@@ -84,8 +101,47 @@ export const issueStock = async (
         `Credit limit exceeded. Projected ETB balance (${formatETB(projectedBalance)} ETB) surpasses credit limit (${formatETB(salesRep.creditLimit)} ETB).`
       );
     }
-    // 4. ACID Transaction: Create Issuance record & update Sales Rep credit balance
+
+    // 4. FIFO Allocation Algorithm: compute batch updates and blended COGS
+    let qtyRemainingToAllocate = validated.qtyIssued;
+    let totalCogsETB = toDecimal(0);
+    const batchUpdates: { id: string; newRemainingQty: number }[] = [];
+
+    for (const batch of availableBatches) {
+      if (qtyRemainingToAllocate <= 0) break;
+
+      const qtyTakenFromBatch = Math.min(
+        batch.remainingQty,
+        qtyRemainingToAllocate
+      );
+
+      const cogsContribution = toDecimal(qtyTakenFromBatch).mul(
+        toDecimal(batch.unitCostPrice)
+      );
+      totalCogsETB = totalCogsETB.add(cogsContribution);
+
+      batchUpdates.push({
+        id: batch.id,
+        newRemainingQty: batch.remainingQty - qtyTakenFromBatch,
+      });
+
+      qtyRemainingToAllocate -= qtyTakenFromBatch;
+    }
+
+    // Blended Unit COGS = Total COGS / Total Quantity Issued
+    const blendedUnitCogs = totalCogsETB.div(toDecimal(validated.qtyIssued));
+
+    // 5. ACID Transaction: update physical stock, create issuance, update balance & record ledger entry
     const result = await db.$transaction(async (tx) => {
+      // 5a. Deduct stock across all allocated FIFO batches
+      for (const update of batchUpdates) {
+        await tx.inventoryBatch.update({
+          where: { id: update.id },
+          data: { remainingQty: update.newRemainingQty },
+        });
+      }
+
+      // 5b. Create parent StockIssuance header + child IssuanceItem with FIFO COGS
       const issuance = await tx.stockIssuance.create({
         data: {
           userId: salesRep.id,
@@ -97,31 +153,39 @@ export const issueStock = async (
                 productId: validated.productId,
                 qtyIssued: validated.qtyIssued,
                 wholesalePrice: toDecimal(validated.wholesalePrice),
-                cogsCalculated: toDecimal(
-                  validated.cogsCalculated ?? validated.wholesalePrice
-                ),
+                cogsCalculated: blendedUnitCogs,
               },
             ],
           },
         },
-        include: {
-          items: true,
-        },
+        include: { items: true },
       });
 
+      // 5c. Update Sales Rep's ETB credit balance
       const updatedUser = await tx.user.update({
         where: { id: salesRep.id },
+        data: { creditBalance: projectedBalance },
+      });
+
+      // 5d. AUTOMATED LEDGER WIRE: create audit trail entry debiting the Sales Rep
+      const ledgerEntry = await tx.ledgerEntry.create({
         data: {
-          creditBalance: projectedBalance,
+          fromEntity: AuditEntity.ADMIN_STORE, // <-- MATCHED TO YOUR EXACT SCHEMA ENUM!
+          toEntity: AuditEntity.SALES_REP,
+          toEntityId: salesRep.id,
+          amount: totalIssuanceValue,
+          transferMethod: "STOCK_ISSUANCE_CREDIT",
+          auditRemark: `Auto-ledger: Issued ${validated.qtyIssued} units of product ${validated.productId} (Issuance ID: ${issuance.id})`,
+          transactionRefId: `ISS-${issuance.id}`,
         },
       });
 
-      return { issuance, updatedUser };
+      return { issuance, updatedUser, ledgerEntry, blendedUnitCogs };
     });
 
-   res.status(201).json({
+    res.status(201).json({
       status: "success",
-      message: "Stock issued successfully to Sales Rep",
+      message: "Stock issued, FIFO inventory deducted, and ledger entry recorded successfully",
       data: {
         issuance: {
           id: result.issuance.id,
@@ -142,6 +206,7 @@ export const issueStock = async (
           newCreditBalance: formatETB(result.updatedUser.creditBalance),
           creditLimit: formatETB(result.updatedUser.creditLimit),
         },
+        auditLedgerEntryId: result.ledgerEntry.id,
       },
     });
   } catch (err) {

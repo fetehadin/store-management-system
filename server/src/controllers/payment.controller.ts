@@ -12,7 +12,7 @@ import {
   UnauthorizedError,
 } from "../utils/errors.js";
 import { toDecimal, formatETB } from "../utils/decimal.js";
-import { ProofStatus } from "../generated/client/index.js";
+import { ProofStatus, AuditEntity } from "../generated/client/index.js";
 
 /**
  * @route   POST /api/v1/payments
@@ -96,12 +96,11 @@ export const approvePayment = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const id  = String(req.params.id);
+    const id = String(req.params.id);
     const validated = reviewPaymentSchema.parse(req.body);
 
     const proof = await db.paymentProof.findUnique({
       where: { id },
-      include: { user: true },
     });
 
     if (!proof) {
@@ -114,7 +113,16 @@ export const approvePayment = async (
       );
     }
 
-    // ACID Transaction: 1. Approve status -> 2. Subtract ETB from user's creditBalance
+    // Explicitly fetch the associated Sales Rep
+    const salesRep = await db.user.findUnique({
+      where: { id: proof.userId },
+    });
+
+    if (!salesRep) {
+      throw new NotFoundError("Associated Sales Rep account not found");
+    }
+
+    // ACID Transaction: 1. Approve status -> 2. Subtract ETB -> 3. Write Ledger Entry
     const result = await db.$transaction(async (tx) => {
       const updatedProof = await tx.paymentProof.update({
         where: { id: proof.id },
@@ -124,7 +132,7 @@ export const approvePayment = async (
         },
       });
 
-      const newBalance = toDecimal(proof.user.creditBalance).sub(
+      const newBalance = toDecimal(salesRep.creditBalance).sub(
         toDecimal(proof.amount)
       );
 
@@ -135,12 +143,26 @@ export const approvePayment = async (
         },
       });
 
-      return { updatedProof, updatedUser };
+      // AUTOMATED LEDGER WIRE: record credit payment entry
+      const ledgerEntry = await tx.ledgerEntry.create({
+        data: {
+          fromEntity: AuditEntity.SALES_REP,
+          fromEntityId: salesRep.id,
+          toEntity: AuditEntity.ADMIN_STORE, // <-- MATCHED TO YOUR EXACT SCHEMA ENUM!
+          amount: proof.amount,
+          transferMethod: "BANK_PAYMENT_PROOF",
+          receiptUrl: proof.receipeImageUrl,
+          auditRemark: `Auto-ledger: Approved bank receipt (Ref: ${proof.transactionRedId})`,
+          transactionRefId: `PAY-${proof.id}`,
+        },
+      });
+
+      return { updatedProof, updatedUser, ledgerEntry };
     });
 
     res.status(200).json({
       status: "success",
-      message: "Payment approved and credit balance reduced successfully",
+      message: "Payment approved, credit balance reduced, and ledger entry recorded successfully",
       data: {
         paymentProof: {
           id: result.updatedProof.id,
@@ -155,6 +177,7 @@ export const approvePayment = async (
           newCreditBalance: formatETB(result.updatedUser.creditBalance),
           creditLimit: formatETB(result.updatedUser.creditLimit),
         },
+        auditLedgerEntryId: result.ledgerEntry.id,
       },
     });
   } catch (err) {
@@ -173,7 +196,7 @@ export const rejectPayment = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const id  = String(req.params.id);
+    const id = String(req.params.id);
     const validated = reviewPaymentSchema.parse(req.body);
 
     const proof = await db.paymentProof.findUnique({
