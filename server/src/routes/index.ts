@@ -5,6 +5,7 @@ import paymentRoutes from "./payment.routes.js";
 import ledgerRoutes from "./ledger.routes.js";
 import supplierRoutes from "./supplier.routes.js";
 import productRoutes from "./product.routes.js";
+import reportRoutes from "./report.routes.js";
 
 const router = Router();
 
@@ -15,5 +16,6 @@ router.use("/payments", paymentRoutes);
 router.use("/ledger", ledgerRoutes);
 router.use("/suppliers", supplierRoutes);
 router.use("/products", productRoutes);
+router.use("/reports", reportRoutes);
 
 export default router;

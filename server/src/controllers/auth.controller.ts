@@ -3,7 +3,7 @@ import { db } from "../config/db.js";
 import { hashPassword, comparePassword } from "../utils/password.js";
 import { signToken } from "../utils/jwt.js";
 import { ConflictError, UnauthorizedError } from "../utils/errors.js";
-import { registerSchema, loginSchema } from "../validations/auth.validations.js";
+import { registerSchema, loginSchema } from "../validations/auth.validation.js";
 import { formatETB, toDecimal } from "../utils/decimal.js";
 
 /**
