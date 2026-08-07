@@ -6,7 +6,7 @@ part 'issuance_models.freezed.dart';
 part 'issuance_models.g.dart';
 
 // --- prisma: model IssuanceItem ---
-@freezed
+@freezed  abstract
 class IssuanceItemModel with _$IssuanceItemModel {
   const factory IssuanceItemModel({
     required String id,
@@ -22,7 +22,7 @@ class IssuanceItemModel with _$IssuanceItemModel {
 }
 
 // --- prisma: model StockIssuance ---
-@freezed
+@freezed  abstract
 class StockIssuanceModel with _$StockIssuanceModel {
   const factory StockIssuanceModel({
     required String id,

@@ -4,7 +4,7 @@ import '../../../core/domain/enums.dart';
 part 'ledger_model.freezed.dart';
 part 'ledger_model.g.dart';
 
-@freezed
+@freezed  abstract
 class LedgerEntryModel with _$LedgerEntryModel {
   const factory LedgerEntryModel({
     required String id,

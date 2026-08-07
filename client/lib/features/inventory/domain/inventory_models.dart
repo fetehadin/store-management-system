@@ -4,7 +4,7 @@ part 'inventory_models.freezed.dart';
 part 'inventory_models.g.dart';
 
 // --- prisma: model Supplier ---
-@freezed
+@freezed  abstract
 class SupplierModel with _$SupplierModel {
   const factory SupplierModel({
     required String id,
@@ -20,7 +20,7 @@ class SupplierModel with _$SupplierModel {
 }
 
 // --- prisma: model Product ---
-@freezed
+@freezed  abstract
 class ProductModel with _$ProductModel {
   const factory ProductModel({
     required String id,
@@ -36,7 +36,7 @@ class ProductModel with _$ProductModel {
 }
 
 // --- prisma: model InventoryBatch ---
-@freezed
+@freezed  abstract
 class InventoryBatchModel with _$InventoryBatchModel {
   const factory InventoryBatchModel({
     required String id,
