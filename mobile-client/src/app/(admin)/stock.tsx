@@ -8,12 +8,17 @@ import {
   TouchableOpacity,
   Image,
   StatusBar,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../store/authStore';
 
-const CATEGORIES = ['All', 'chocolate', 'perfume', 'pijama'];
+const CATEGORIES = ['chocolate', 'perfume', 'pijama'];
 
 const INVENTORY = [
   { id: '1', name: 'Sunflower Cooking Oil (1L)', price: '370.00', stock: 450, status: 'healthy', icon: 'water-outline' },
@@ -24,25 +29,58 @@ const INVENTORY = [
 export default function StockScreen() {
   const router = useRouter();
   
-  // RBAC Security Check
   const role = useAuthStore((state) => state.role);
-  // TEMPORARY BYPASS: Set to true for testing UI. Change back to `role === 'ADMIN'` for production.
-  const isAdmin = true; 
+  const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  
+  const isAdmin = true; // TEMPORARY BYPASS
 
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeNav, setActiveNav] = useState('Stock');
-  
-  // FIXED: Pull dark mode state strictly from the global store, not local useState
-  const isDarkMode = useAuthStore((state) => state.isDarkMode);
+
+  // Modal & Form State
+  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [productName, setProductName] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [formCategory, setFormCategory] = useState<string>('');
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
   const theme = {
     bg: isDarkMode ? '#000000' : '#F8FAFC',
     text: isDarkMode ? '#E7E9EA' : '#0F172A',
     textMuted: isDarkMode ? '#71767B' : '#64748B',
-    border: isDarkMode ? '#2F3336' : 'transparent',
+    border: isDarkMode ? '#2F3336' : '#E2E8F0',
     invertedBg: isDarkMode ? '#E7E9EA' : '#1D61F2',
     invertedText: isDarkMode ? '#000000' : '#FFFFFF',
     cardBg: isDarkMode ? '#000000' : '#FFFFFF',
+    inputBg: isDarkMode ? '#0F1419' : '#F1F5F9',
+  };
+
+  const handlePickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setPhotoUri(result.assets[0].uri);
+    }
+  };
+
+  const handleSubmit = () => {
+    const finalCategory = isCreatingCategory ? newCategoryName : formCategory;
+    console.log({ productName, quantity, photoUri, finalCategory });
+    // Reset and close
+    setProductName('');
+    setQuantity('');
+    setPhotoUri(null);
+    setFormCategory('');
+    setNewCategoryName('');
+    setIsCreatingCategory(false);
+    setIsAddModalVisible(false);
   };
 
   return (
@@ -58,7 +96,10 @@ export default function StockScreen() {
         
         <View style={styles.headerRight}>
           {isAdmin && (
-            <TouchableOpacity style={[styles.addProductBtn, { backgroundColor: theme.invertedBg }]} onPress={() => console.log('Add Product')}>
+            <TouchableOpacity 
+              style={[styles.addProductBtn, { backgroundColor: theme.invertedBg }]} 
+              onPress={() => setIsAddModalVisible(true)}
+            >
               <Ionicons name="add" size={18} color={theme.invertedText} style={styles.btnIcon} />
               <Text style={[styles.addProductText, { color: theme.invertedText }]}>Add Product</Text>
             </TouchableOpacity>
@@ -72,10 +113,10 @@ export default function StockScreen() {
           <Text style={[styles.pageTitle, { color: theme.text }]}>Store Inventory</Text>
         </View>
 
-        {/* Horizontal Category Filters */}
+        {/* Existing Inventory Display Logic (Unchanged) */}
         <View style={styles.categoriesWrapper}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesScroll}>
-            {CATEGORIES.map((cat) => {
+            {['All', ...CATEGORIES].map((cat) => {
               const isActive = activeCategory === cat;
               return (
                 <TouchableOpacity 
@@ -88,26 +129,15 @@ export default function StockScreen() {
                   ]}
                   onPress={() => setActiveCategory(cat)}
                 >
-                  <Text style={[
-                    styles.categoryText, 
-                    { color: isActive ? (isDarkMode ? theme.invertedText : '#1D61F2') : theme.textMuted }
-                  ]}>
+                  <Text style={[styles.categoryText, { color: isActive ? (isDarkMode ? theme.invertedText : '#1D61F2') : theme.textMuted }]}>
                     {cat}
                   </Text>
                 </TouchableOpacity>
               );
             })}
-            
-            {isAdmin && (
-              <TouchableOpacity style={[styles.addCategoryPill, isDarkMode && { borderColor: theme.border, backgroundColor: 'transparent' }]} onPress={() => console.log('Add Category')}>
-                <Ionicons name="add" size={16} color={theme.textMuted} />
-                <Text style={[styles.addCategoryText, { color: theme.textMuted }]}>New</Text>
-              </TouchableOpacity>
-            )}
           </ScrollView>
         </View>
 
-        {/* Product Cards List */}
         <View style={styles.productList}>
           {INVENTORY.map((item, index) => (
             <View 
@@ -149,17 +179,13 @@ export default function StockScreen() {
                     </>
                   )}
                 </View>
-
                 <View style={[styles.metricColumn, { alignItems: 'flex-end' }]}>
                   {item.skeleton ? (
                     <View style={[styles.skeletonBarRight, isDarkMode && { backgroundColor: theme.border }]} />
                   ) : (
                     <>
                       <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Stock</Text>
-                      <Text style={[
-                        styles.metricValueBold, 
-                        item.status === 'healthy' ? { color: '#059669' } : { color: '#DC2626' }
-                      ]}>
+                      <Text style={[styles.metricValueBold, item.status === 'healthy' ? { color: '#059669' } : { color: '#DC2626' }]}>
                         {item.stock} Units
                       </Text>
                     </>
@@ -209,6 +235,115 @@ export default function StockScreen() {
           })}
         </View>
       </View>
+
+      {/* Add Product Bottom Sheet Modal */}
+      <Modal visible={isAddModalVisible} animationType="slide" transparent>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+          <View style={[styles.bottomSheet, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }]}>
+            
+            <View style={styles.sheetHeader}>
+              <Text style={[styles.sheetTitle, { color: theme.text }]}>New Product</Text>
+              <TouchableOpacity onPress={() => setIsAddModalVisible(false)} style={styles.closeBtn}>
+                <Ionicons name="close" size={24} color={theme.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetScroll}>
+              
+              {/* Photo Picker */}
+              <TouchableOpacity 
+                style={[styles.photoPicker, { backgroundColor: theme.inputBg, borderColor: theme.border }]} 
+                onPress={handlePickImage}
+              >
+                {photoUri ? (
+                  <Image source={{ uri: photoUri }} style={styles.previewImage} />
+                ) : (
+                  <>
+                    <Ionicons name="camera-outline" size={32} color={theme.textMuted} />
+                    <Text style={[styles.photoPickerText, { color: theme.textMuted }]}>Upload Photo</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              {/* Inputs */}
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Product Name</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
+                placeholder="e.g. Premium Arabica Coffee"
+                placeholderTextColor={theme.textMuted}
+                value={productName}
+                onChangeText={setProductName}
+              />
+
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Initial Quantity</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
+                placeholder="0"
+                placeholderTextColor={theme.textMuted}
+                keyboardType="numeric"
+                value={quantity}
+                onChangeText={setQuantity}
+              />
+
+              {/* Category Selector */}
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Category</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.formCategoryScroll}>
+                {CATEGORIES.map(cat => (
+                  <TouchableOpacity 
+                    key={cat}
+                    style={[
+                      styles.formCategoryPill, 
+                      { borderColor: theme.border },
+                      formCategory === cat && !isCreatingCategory ? { backgroundColor: theme.invertedBg, borderColor: theme.invertedBg } : { backgroundColor: theme.inputBg }
+                    ]}
+                    onPress={() => { setFormCategory(cat); setIsCreatingCategory(false); }}
+                  >
+                    <Text style={{ color: formCategory === cat && !isCreatingCategory ? theme.invertedText : theme.text, fontWeight: '600' }}>
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                
+                {/* Custom Category Pill */}
+                <TouchableOpacity 
+                  style={[
+                    styles.formCategoryPill, 
+                    { borderStyle: 'dashed', borderColor: theme.textMuted },
+                    isCreatingCategory ? { backgroundColor: theme.invertedBg, borderColor: theme.invertedBg } : { backgroundColor: 'transparent' }
+                  ]}
+                  onPress={() => { setIsCreatingCategory(true); setFormCategory(''); }}
+                >
+                  <Text style={{ color: isCreatingCategory ? theme.invertedText : theme.textMuted, fontWeight: '600' }}>
+                    + Custom
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+
+              {/* Hidden Input for Custom Category */}
+              {isCreatingCategory && (
+                <TextInput
+                  style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border, marginTop: 12 }]}
+                  placeholder="Enter new category name..."
+                  placeholderTextColor={theme.textMuted}
+                  value={newCategoryName}
+                  onChangeText={setNewCategoryName}
+                  autoFocus
+                />
+              )}
+
+              {/* Submit Button */}
+              <TouchableOpacity 
+                style={[styles.submitBtn, { backgroundColor: theme.invertedBg }]} 
+                onPress={handleSubmit}
+              >
+                <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>Save Product</Text>
+              </TouchableOpacity>
+
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -216,16 +351,13 @@ export default function StockScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
-  headerLeft: { flexDirection: 'row', alignItems: 'center' },
-  menuButton: { marginRight: 12 },
-  iconButton: { marginRight: 16 },
-  logoTextContainer: { flexDirection: 'column' },
-  logoText: { fontSize: 20, fontWeight: '900', lineHeight: 22, letterSpacing: -0.5 },
+  iconButton: { padding: 4 },
+  headerTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
+  avatar: { width: 32, height: 32, borderRadius: 16 },
   addProductBtn: { flexDirection: 'row', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 100, alignItems: 'center', marginRight: 12 },
   btnIcon: { marginRight: 4 },
   addProductText: { fontWeight: '700', fontSize: 13 },
-  avatar: { width: 36, height: 36, borderRadius: 18 },
   
   scrollContentDark: { paddingBottom: 24 },
   scrollContentLight: { paddingBottom: 130 },
@@ -237,15 +369,13 @@ const styles = StyleSheet.create({
   categoriesScroll: { paddingHorizontal: 20, alignItems: 'center' },
   categoryPill: { borderWidth: 1, paddingVertical: 8, paddingHorizontal: 20, borderRadius: 100, marginRight: 12 },
   categoryText: { fontSize: 14, fontWeight: '600' },
-  addCategoryPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0', borderStyle: 'dashed', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 100, marginRight: 20 },
-  addCategoryText: { fontSize: 14, fontWeight: '600', marginLeft: 4 },
   
   productList: { paddingHorizontal: 20 },
   productCard: { borderRadius: 24, padding: 20, marginBottom: 16 },
   lightShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3 },
   
   productTopRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24 },
-  productImagePlaceholder: { width: 64, height: 64, backgroundColor: '#F1F5F9', borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  productImagePlaceholder: { width: 64, height: 64, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
   productInfo: { flex: 1, paddingTop: 4 },
   productName: { fontSize: 20, fontWeight: '700', marginBottom: 8, lineHeight: 26 },
   statusIndicator: { width: 24, height: 16, borderRadius: 6, borderWidth: 1 },
@@ -256,16 +386,37 @@ const styles = StyleSheet.create({
   metricValue: { fontSize: 16, fontWeight: '700' },
   metricValueBold: { fontSize: 16, fontWeight: '800' },
   
-  skeletonBarLeft: { width: 120, height: 18, backgroundColor: '#F1F5F9', borderRadius: 4, marginTop: 8 },
-  skeletonBarRight: { width: 80, height: 18, backgroundColor: '#F1F5F9', borderRadius: 4, marginTop: 8 },
+  skeletonBarLeft: { width: 120, height: 18, borderRadius: 4, marginTop: 8 },
+  skeletonBarRight: { width: 80, height: 18, borderRadius: 4, marginTop: 8 },
 
   darkBottomNav: { borderTopWidth: StyleSheet.hairlineWidth, paddingBottom: 24, paddingTop: 12, flexDirection: 'row', alignItems: 'center' },
   darkNavItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
   darkNavText: { fontSize: 10, fontWeight: '500', marginTop: 4 },
   
   lightBottomNavContainer: { position: 'absolute', bottom: 24, left: 20, right: 20 },
-  lightBottomNav: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 100, paddingHorizontal: 8, paddingVertical: 8, justifyContent: 'space-between', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 15 },
+  lightBottomNav: { flexDirection: 'row', borderRadius: 100, paddingHorizontal: 8, paddingVertical: 8, justifyContent: 'space-between', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 15 },
   lightNavItem: { alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 8 },
-  lightNavItemActive: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#1D61F2', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 100 },
+  lightNavItemActive: { alignItems: 'center', justifyContent: 'center', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 100 },
   lightNavText: { fontSize: 10, fontWeight: '600', marginTop: 4 },
+
+  /* Modal Styles */
+  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+  bottomSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '90%' },
+  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  sheetTitle: { fontSize: 20, fontWeight: '800' },
+  closeBtn: { padding: 4 },
+  sheetScroll: { paddingBottom: 40 },
+  
+  photoPicker: { height: 120, borderRadius: 16, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 20, overflow: 'hidden' },
+  photoPickerText: { marginTop: 8, fontWeight: '600', fontSize: 14 },
+  previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  
+  inputLabel: { fontSize: 14, fontWeight: '700', marginBottom: 8, marginTop: 12 },
+  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, fontWeight: '500' },
+  
+  formCategoryScroll: { flexDirection: 'row', marginBottom: 8 },
+  formCategoryPill: { borderWidth: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, marginRight: 12 },
+  
+  submitBtn: { marginTop: 32, paddingVertical: 16, borderRadius: 100, alignItems: 'center', justifyContent: 'center' },
+  submitBtnText: { fontSize: 16, fontWeight: '700' },
 });
