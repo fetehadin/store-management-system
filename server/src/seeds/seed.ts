@@ -1,6 +1,6 @@
 import { db } from "../config/db.js";
 import bcrypt from "bcrypt";
-import { Role, AuditEntity, ProofStatus, IssuanceStatus } from "../generated/client/index.js";
+import { Role } from "../generated/client/index.js";
 import { toDecimal } from "../utils/decimal.js";
 
 async function main() {
@@ -24,7 +24,7 @@ async function main() {
   // 3. Create Users (Admin & Sales Reps)
   const adminUser = await db.user.create({
     data: {
-      fullName: "Abebe Kebede (Admin)",
+      fullName: "Mohammed Taju (Admin)",
       phone: "0911000000",
       passwordHash,
       role: Role.ADMIN,
