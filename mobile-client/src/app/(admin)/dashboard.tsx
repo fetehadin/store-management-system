@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -14,6 +15,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '../../store/authStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = 260;
@@ -48,8 +50,12 @@ export default function AdminDashboard() {
   const [activeCardIndex, setActiveCardIndex] = useState(0);
   const [activeFilter, setActiveFilter] = useState<keyof typeof FINANCE_DATA>('Total');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [activeNav, setActiveNav] = useState('Home');
+  const router = useRouter();
+  
+  // FIXED: Reading from and writing to the global store instead of local useState
+  const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  const toggleTheme = useAuthStore((state) => state.toggleTheme);
   
   const flatListRef = useRef<FlatList>(null);
   const currentCards = FINANCE_DATA[activeFilter];
@@ -84,7 +90,8 @@ export default function AdminDashboard() {
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: isDarkMode ? theme.text : '#1D61F2' }]}>ibnTaju DMS</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => setIsDarkMode(!isDarkMode)}>
+          {/* FIXED: Firing the global toggleTheme function */}
+          <TouchableOpacity style={styles.iconButton} onPress={toggleTheme}>
             <Ionicons name={isDarkMode ? "sunny-outline" : "moon-outline"} size={22} color={theme.text} />
           </TouchableOpacity>
         </View>
@@ -256,7 +263,10 @@ export default function AdminDashboard() {
               <TouchableOpacity 
                 key={tab.id}
                 style={isDarkMode ? styles.darkNavItem : (isActive ? styles.lightNavItemActive : styles.lightNavItem)}
-                onPress={() => setActiveNav(tab.id)}
+                onPress={() => {
+                  setActiveNav(tab.id);
+                  if (tab.id === 'Stock') router.replace('/(admin)/stock');
+                }}
               >
                 <Ionicons 
                   name={isActive ? tab.icon as any : `${tab.icon}-outline` as any} 
@@ -291,7 +301,7 @@ const styles = StyleSheet.create({
   avatar: { width: 32, height: 32, borderRadius: 16 },
   
   scrollContentDark: { paddingBottom: 24 },
-  scrollContentLight: { paddingBottom: 120 }, // Extra padding for floating nav
+  scrollContentLight: { paddingBottom: 120 },
   
   greetingHeaderRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
