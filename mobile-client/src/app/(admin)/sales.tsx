@@ -91,13 +91,9 @@ export default function SalesRepsScreen() {
       {/* Header */}
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity style={styles.menuButton}>
-            <Ionicons name="menu" size={28} color={theme.text} />
-          </TouchableOpacity>
-          <View style={styles.logoTextContainer}>
-            <Text style={[styles.logoText, { color: isDarkMode ? theme.text : '#1D61F2' }]}>ibnTaju</Text>
-            <Text style={[styles.logoText, { color: isDarkMode ? theme.text : '#1D61F2' }]}>DMS</Text>
-          </View>
+          <View style={styles.pageTitleContainer}>
+          <Text style={[styles.pageTitle, { color: theme.text }]}>Active Sales</Text>
+        </View>
         </View>
         
         <View style={styles.headerRight}>
@@ -106,18 +102,11 @@ export default function SalesRepsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
-        
-        <View style={styles.pageTitleContainer}>
-          <Text style={[styles.pageTitle, { color: theme.text }]}>Sales Reps (12)</Text>
-        </View>
-
-        
-
         {/* Summary Cards */}
         <View style={styles.summaryContainer}>
           <View style={[styles.summaryCard, { backgroundColor: theme.cardBg }, isDarkMode ? { borderWidth: 1, borderColor: theme.border } : styles.lightShadow]}>
             <View>
-              <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>TOTAL REPS ACTIVE</Text>
+              <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>TOTAL ACTIVE SALES</Text>
               <View style={styles.summaryValueRow}>
                 <Text style={[styles.summaryValue, { color: theme.text }]}>12</Text>
                 <Text style={styles.summarySubValueGreen}> Active</Text>
@@ -131,15 +120,21 @@ export default function SalesRepsScreen() {
           <View style={[styles.summaryCard, { backgroundColor: theme.cardBg }, isDarkMode ? { borderWidth: 1, borderColor: theme.border } : styles.lightShadow]}>
             <View>
               <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>TOTAL OUTSTANDING</Text>
-              <Text style={[styles.summaryValueSmall, { color: theme.text }]}>ETB</Text>
-              <Text style={[styles.summaryValue, { color: theme.text }]}>240,500</Text>
-            </View>
-            <View style={[styles.summaryIconWrapper, { backgroundColor: isDarkMode ? '#3F1D1D' : '#FEF2F2' }]}>
-              <Ionicons name="wallet" size={24} color={isDarkMode ? '#F87171' : '#DC2626'} />
+              <View style={styles.summaryValueRow}>
+                  <Text style={[styles.summaryValue, { color: theme.text }]}>240,500</Text>
+                  <Text style={[styles.summaryValueSmall, { color: theme.text }]}>ETB</Text>  
+              </View>
+              
             </View>
           </View>
         </View>
-
+        {/* Primary Action Button */}
+                <View style={styles.actionContainer}>
+                  <TouchableOpacity style={[styles.mainActionBtn, { backgroundColor: theme.invertedBg }]} onPress={() => console.log('Add Supplier')}>
+                    <Ionicons name="add" size={20} color={theme.invertedText} style={styles.btnIcon} />
+                    <Text style={[styles.mainActionText, { color: theme.invertedText }]}>Add Sales</Text>
+                  </TouchableOpacity>
+                </View>
         {/* Sales Rep List */}
         <View style={styles.listContainer}>
           {SALES_REPS.map((rep) => {
@@ -209,12 +204,12 @@ export default function SalesRepsScreen() {
           })}
         </View>
         {/* Primary Action Button */}
-        <View style={styles.actionContainer}>
+        {/* <View style={styles.actionContainer}>
           <TouchableOpacity style={[styles.mainActionBtn, { backgroundColor: theme.invertedBg }]} onPress={() => console.log('Add Sales Rep')}>
             <Ionicons name="add" size={20} color={theme.invertedText} style={styles.btnIcon} />
             <Text style={[styles.mainActionText, { color: theme.invertedText }]}>Add New Sales Rep</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
       </ScrollView>
 

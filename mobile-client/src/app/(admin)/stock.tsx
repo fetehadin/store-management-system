@@ -23,7 +23,7 @@ const CATEGORIES = ['chocolate', 'perfume', 'pijama'];
 const INVENTORY = [
   { id: '1', name: 'Sunflower Cooking Oil (1L)', price: '370.00', stock: 450, status: 'healthy', icon: 'water-outline' },
   { id: '2', name: 'Wheat Flour (5kg)', price: '850.00', stock: 12, status: 'low', icon: 'bag-outline' },
-  { id: '3', name: 'Premium Dark Chocolate', skeleton: true, icon: 'grid-outline' },
+  // { id: '3', name: 'Premium Dark Chocolate', skeleton: true, icon: 'grid-outline' },
 ];
 
 export default function StockScreen() {
@@ -89,30 +89,16 @@ export default function StockScreen() {
 
       {/* Header */}
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
-        <TouchableOpacity style={styles.iconButton}>
+        {/* <TouchableOpacity style={styles.iconButton}>
           <Image source={{ uri: 'https://ui-avatars.com/api/?name=Admin&background=0F1419&color=fff' }} style={styles.avatar} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: isDarkMode ? theme.text : '#1D61F2' }]}>ibnTaju DMS</Text>
-        
-        <View style={styles.headerRight}>
-          {isAdmin && (
-            <TouchableOpacity 
-              style={[styles.addProductBtn, { backgroundColor: theme.invertedBg }]} 
-              onPress={() => setIsAddModalVisible(true)}
-            >
-              <Ionicons name="add" size={18} color={theme.invertedText} style={styles.btnIcon} />
-              <Text style={[styles.addProductText, { color: theme.invertedText }]}>Add Product</Text>
-            </TouchableOpacity>
-          )}
+        </TouchableOpacity> */}
+        {/* <Text style={[styles.headerTitle, { color: isDarkMode ? theme.text : '#1D61F2' }]}>ibnTaju DMS</Text> */}
+         <View style={styles.pageTitleContainer}>
+          <Text style={[styles.pageTitle, { color: theme.text }]}>Store Inventory</Text>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
-        
-        <View style={styles.pageTitleContainer}>
-          <Text style={[styles.pageTitle, { color: theme.text }]}>Store Inventory</Text>
-        </View>
-
         {/* Existing Inventory Display Logic (Unchanged) */}
         <View style={styles.categoriesWrapper}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesScroll}>
@@ -137,7 +123,6 @@ export default function StockScreen() {
             })}
           </ScrollView>
         </View>
-
         <View style={styles.productList}>
           {INVENTORY.map((item, index) => (
             <View 
@@ -155,14 +140,14 @@ export default function StockScreen() {
                 
                 <View style={styles.productInfo}>
                   <Text style={[styles.productName, { color: theme.text }]}>{item.name}</Text>
-                  {!item.skeleton && (
+                  {/* {!item.skeleton && (
                     <View style={[
                       styles.statusIndicator, 
                       item.status === 'healthy' 
                         ? { backgroundColor: isDarkMode ? '#064E3B' : '#ECFDF5', borderColor: isDarkMode ? '#059669' : '#A7F3D0' } 
                         : { backgroundColor: isDarkMode ? '#7F1D1D' : '#FEF2F2', borderColor: isDarkMode ? '#DC2626' : '#FECACA' }
                     ]} />
-                  )}
+                  )} */}
                 </View>
               </View>
 
@@ -194,8 +179,19 @@ export default function StockScreen() {
               </View>
             </View>
           ))}
+          <View style={styles.headerRight}>
+          {isAdmin && (
+            <TouchableOpacity 
+              style={[styles.addProductBtn, { backgroundColor: theme.invertedBg }]} 
+              onPress={() => setIsAddModalVisible(true)}
+            >
+              <Ionicons name="add" size={18} color={theme.invertedText} style={styles.btnIcon} />
+              <Text style={[styles.addProductText, { color: theme.invertedText }]}>Add Product</Text>
+            </TouchableOpacity>
+          )}
         </View>
-
+        </View>
+        
       </ScrollView>
 
       {/* Adaptive Bottom Navigation */}

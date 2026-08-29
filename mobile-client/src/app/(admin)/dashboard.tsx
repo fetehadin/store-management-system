@@ -13,12 +13,13 @@ import {
   Dimensions,
   Modal,
   TouchableWithoutFeedback,
+  ViewToken,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = 260;
+const CARD_WIDTH = SCREEN_WIDTH - 40; // Full width minus padding
 const CARD_SPACING = 16;
 
 const TIME_FILTERS = ['Today', 'Yesterday', 'This Week', 'Total'];
@@ -53,7 +54,6 @@ export default function AdminDashboard() {
   const [activeNav, setActiveNav] = useState('Home');
   const router = useRouter();
   
-  // FIXED: Reading from and writing to the global store instead of local useState
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
   
@@ -67,16 +67,24 @@ export default function AdminDashboard() {
     border: isDarkMode ? '#2F3336' : 'transparent',
     invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5',
     invertedText: isDarkMode ? '#000000' : '#FFFFFF',
+    dotActive: isDarkMode ? '#FFFFFF' : '#1D61F2',
+    dotInactive: isDarkMode ? '#2F3336' : '#CBD5E1',
   };
 
-  const handleCardPress = (index: number) => {
-    setActiveCardIndex(index);
-    flatListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
-  };
+  // Automatically switch active card based on scroll focus
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    if (viewableItems.length > 0 && viewableItems[0].index !== null) {
+      setActiveCardIndex(viewableItems[0].index);
+    }
+  }).current;
+
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
   const handleFilterSelect = (filter: string) => {
     setActiveFilter(filter as keyof typeof FINANCE_DATA);
     setIsDropdownOpen(false);
+    setActiveCardIndex(0);
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
   };
 
   return (
@@ -88,9 +96,8 @@ export default function AdminDashboard() {
         <TouchableOpacity style={styles.iconButton}>
           <Image source={{ uri: 'https://ui-avatars.com/api/?name=Admin&background=0F1419&color=fff' }} style={styles.avatar} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: isDarkMode ? theme.text : '#1D61F2' }]}>ibnTaju DMS</Text>
+        <Text style={[styles.headerTitle, { color: isDarkMode ? theme.text : '#1D61F2' }]}>ibnTaju's Store</Text>
         <View style={styles.headerRight}>
-          {/* FIXED: Firing the global toggleTheme function */}
           <TouchableOpacity style={styles.iconButton} onPress={toggleTheme}>
             <Ionicons name={isDarkMode ? "sunny-outline" : "moon-outline"} size={22} color={theme.text} />
           </TouchableOpacity>
@@ -102,8 +109,8 @@ export default function AdminDashboard() {
         {/* Greeting & Dropdown Filter */}
         <View style={styles.greetingHeaderRow}>
           <View>
-            <Text style={[styles.greetingTitle, { color: theme.text }]}>Hello, Admin</Text>
-            <Text style={[styles.greetingSubtitle, { color: theme.textMuted }]}>Here's what's happening today.</Text>
+            <Text style={[styles.greetingTitle, { color: theme.text }]}>Hello, Mohammed</Text>
+            <Text style={[styles.greetingSubtitle, { color: theme.textMuted }]}>Here's what's happening.</Text>
           </View>
           
           <TouchableOpacity 
@@ -137,7 +144,7 @@ export default function AdminDashboard() {
           </TouchableWithoutFeedback>
         </Modal>
 
-        {/* Dynamic Snap-Centered Cards */}
+        {/* Full-Width Sliding Carousel */}
         <View style={styles.cardsWrapper}>
           <FlatList
             ref={flatListRef}
@@ -148,14 +155,15 @@ export default function AdminDashboard() {
             contentContainerStyle={styles.flatListContent}
             snapToInterval={CARD_WIDTH + CARD_SPACING}
             decelerationRate="fast"
+            snapToAlignment="start"
+            onViewableItemsChanged={onViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig}
             getItemLayout={(_, index) => ({ length: CARD_WIDTH + CARD_SPACING, offset: (CARD_WIDTH + CARD_SPACING) * index, index })}
             renderItem={({ item, index }) => {
               const isActive = activeCardIndex === index;
               
               return (
-                <TouchableOpacity 
-                  activeOpacity={0.9}
-                  onPress={() => handleCardPress(index)}
+                <View 
                   style={[
                     styles.financeCard,
                     { backgroundColor: isActive ? theme.invertedBg : (isDarkMode ? theme.bg : '#FFFFFF') },
@@ -167,19 +175,15 @@ export default function AdminDashboard() {
                   <View style={styles.cardHeader}>
                     <View style={[
                       !isDarkMode && isActive && styles.lightCardIconWrapperPrimary,
-                      !isDarkMode && !isActive && styles.lightCardIconWrapperSecondary
+                      !isDarkMode && !isActive && styles.lightCardIconWrapperSecondary,
+                      isDarkMode && { padding: 8, borderRadius: 10, backgroundColor: isActive ? 'rgba(0,0,0,0.1)' : '#1E293B' }
                     ]}>
                       <Ionicons 
                         name={item.icon} 
-                        size={24} 
+                        size={28} 
                         color={isActive ? theme.invertedText : (isDarkMode ? theme.text : '#64748B')} 
                       />
                     </View>
-                    {!isDarkMode && isActive && (
-                      <View style={styles.lightActivePill}>
-                        <Text style={styles.lightActivePillText}>Active</Text>
-                      </View>
-                    )}
                   </View>
                   <View style={styles.cardBody}>
                     <Text style={[styles.cardLabel, { color: isActive ? theme.invertedText : theme.textMuted }]}>
@@ -189,10 +193,24 @@ export default function AdminDashboard() {
                       {item.amount}
                     </Text>
                   </View>
-                </TouchableOpacity>
+                </View>
               );
             }}
           />
+          
+          {/* Pagination Dots */}
+          <View style={styles.paginationContainer}>
+            {currentCards.map((_, index) => (
+              <View 
+                key={index} 
+                style={[
+                  styles.dot, 
+                  { backgroundColor: activeCardIndex === index ? theme.dotActive : theme.dotInactive },
+                  activeCardIndex === index && styles.dotActiveWide
+                ]} 
+              />
+            ))}
+          </View>
         </View>
 
         {/* Management List */}
@@ -265,8 +283,11 @@ export default function AdminDashboard() {
                 style={isDarkMode ? styles.darkNavItem : (isActive ? styles.lightNavItemActive : styles.lightNavItem)}
                 onPress={() => {
                   setActiveNav(tab.id);
-                  if (tab.id === 'Stock') router.replace('/(admin)/stock');
+                  if (tab.id === 'Home') router.replace('/(admin)/dashboard');
                   if (tab.id === 'Sales') router.replace('/(admin)/sales');
+                  if (tab.id === 'Stock') router.replace('/(admin)/stock');
+                  if (tab.id === 'Suppliers') router.replace('/(admin)/suppliers');
+                  if (tab.id === 'Approvals') router.replace('/(admin)/approvals');
                 }}
               >
                 <Ionicons 
@@ -305,10 +326,10 @@ const styles = StyleSheet.create({
   scrollContentLight: { paddingBottom: 120 },
   
   greetingHeaderRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, marginTop: 12, marginBottom: 4,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
+    paddingHorizontal: 20, marginTop: 12, marginBottom: 8,
   },
-  greetingTitle: { fontSize: 24, fontWeight: '700' },
+  greetingTitle: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
   greetingSubtitle: { fontSize: 15, marginTop: 4 },
   
   dropdownTrigger: {
@@ -316,7 +337,7 @@ const styles = StyleSheet.create({
   },
   dropdownTriggerDark: { borderWidth: 1, borderColor: '#2F3336' },
   dropdownTriggerLight: { backgroundColor: '#FFFFFF', shadowColor: '#64748B', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
-  dropdownTriggerText: { fontSize: 13, fontWeight: '600' },
+  dropdownTriggerText: { fontSize: 13, fontWeight: '700' },
   
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.1)' },
   dropdownMenu: {
@@ -325,28 +346,29 @@ const styles = StyleSheet.create({
   },
   dropdownItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, borderRadius: 8 },
   
-  cardsWrapper: { paddingVertical: 24 },
+  cardsWrapper: { paddingVertical: 16 },
   flatListContent: { paddingHorizontal: 20 },
   financeCard: {
-    width: CARD_WIDTH, borderRadius: 20, padding: 20, marginRight: CARD_SPACING,
-    height: 150, justifyContent: 'space-between',
+    width: CARD_WIDTH, borderRadius: 24, padding: 24, marginRight: CARD_SPACING,
+    height: 180, justifyContent: 'space-between',
   },
-  lightModePrimaryShadow: { shadowColor: '#177CA5', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 8 },
+  lightModePrimaryShadow: { shadowColor: '#177CA5', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 10 },
   lightModeSecondaryShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
   
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  lightCardIconWrapperPrimary: { width: 40, height: 40, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
-  lightCardIconWrapperSecondary: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
-  lightActivePill: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  lightActivePillText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  lightCardIconWrapperPrimary: { width: 48, height: 48, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  lightCardIconWrapperSecondary: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
   
   cardBody: { marginTop: 'auto' },
-  cardLabel: { fontSize: 13, fontWeight: '600', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
-  cardAmount: { fontSize: 28, fontWeight: '800', letterSpacing: -1 },
+  cardLabel: { fontSize: 13, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 },
+  cardAmount: { fontSize: 36, fontWeight: '900', letterSpacing: -1.5 },
   
+  paginationContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 16 },
+  dot: { width: 6, height: 6, borderRadius: 3, marginHorizontal: 4 },
+  dotActiveWide: { width: 18 },
+
   sectionContainer: { paddingHorizontal: 20, marginBottom: 32 },
   sectionTitle: { fontSize: 20, fontWeight: '800', marginBottom: 16, letterSpacing: -0.5 },
-  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   
   listItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16 },
   lightListItem: { backgroundColor: '#FFFFFF', padding: 16, borderRadius: 16, marginBottom: 12, shadowColor: '#64748B', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
