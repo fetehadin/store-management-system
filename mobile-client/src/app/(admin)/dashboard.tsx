@@ -7,7 +7,6 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Image,
   StatusBar,
   FlatList,
   Dimensions,
@@ -19,26 +18,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH - 40; // Full width minus padding
+const CARD_WIDTH = SCREEN_WIDTH - 40;
 const CARD_SPACING = 16;
 
 const TIME_FILTERS = ['Today', 'Yesterday', 'This Week', 'Total'];
 
+// Demo Data (To be replaced with API hooks)
 const FINANCE_DATA = {
   'Today': [
     { id: '0', title: 'Total Net Balance', amount: 'ETB 12,400', icon: 'pie-chart-outline' as const },
     { id: '1', title: 'Total Revenue (Sales)', amount: 'ETB 18,500', icon: 'wallet-outline' as const },
     { id: '2', title: 'Total Debt (Suppliers)', amount: 'ETB 6,100', icon: 'receipt-outline' as const },
-  ],
-  'Yesterday': [
-    { id: '0', title: 'Total Net Balance', amount: 'ETB 9,200', icon: 'pie-chart-outline' as const },
-    { id: '1', title: 'Total Revenue (Sales)', amount: 'ETB 15,000', icon: 'wallet-outline' as const },
-    { id: '2', title: 'Total Debt (Suppliers)', amount: 'ETB 5,800', icon: 'receipt-outline' as const },
-  ],
-  'This Week': [
-    { id: '0', title: 'Total Net Balance', amount: 'ETB 45,800', icon: 'pie-chart-outline' as const },
-    { id: '1', title: 'Total Revenue (Sales)', amount: 'ETB 82,300', icon: 'wallet-outline' as const },
-    { id: '2', title: 'Total Debt (Suppliers)', amount: 'ETB 36,500', icon: 'receipt-outline' as const },
   ],
   'Total': [
     { id: '0', title: 'Total Net Balance', amount: 'ETB 125,300', icon: 'pie-chart-outline' as const },
@@ -46,6 +36,12 @@ const FINANCE_DATA = {
     { id: '2', title: 'Total Debt (Suppliers)', amount: 'ETB 115,200', icon: 'receipt-outline' as const },
   ]
 };
+
+const CORE_MODULES = [
+  { id: 'Stock', title: 'Inventory & Stock', sub: 'Monitor warehouse capacities', icon: 'cube-outline', lightBg: '#EBF2FF', lightColor: '#1D61F2', route: '/(admin)/stock' },
+  { id: 'Sales', title: 'Sales Ledger', sub: 'Audit field transactions', icon: 'bar-chart-outline', lightBg: '#E6F9F2', lightColor: '#059669', route: '/(admin)/sales' },
+  { id: 'Suppliers', title: 'Supplier Directory', sub: 'Manage vendors and credit', icon: 'people-outline', lightBg: '#ECFDF5', lightColor: '#10B981', route: '/(admin)/suppliers' },
+];
 
 export default function AdminDashboard() {
   const [activeCardIndex, setActiveCardIndex] = useState(0);
@@ -56,9 +52,10 @@ export default function AdminDashboard() {
   
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
+  const userName = useAuthStore((state) => (state as any).userName || 'Admin');
   
   const flatListRef = useRef<FlatList>(null);
-  const currentCards = FINANCE_DATA[activeFilter];
+  const currentCards = FINANCE_DATA[activeFilter] || FINANCE_DATA['Total'];
 
   const theme = {
     bg: isDarkMode ? '#000000' : '#F8FAFC',
@@ -71,7 +68,6 @@ export default function AdminDashboard() {
     dotInactive: isDarkMode ? '#2F3336' : '#CBD5E1',
   };
 
-  // Automatically switch active card based on scroll focus
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems.length > 0 && viewableItems[0].index !== null) {
       setActiveCardIndex(viewableItems[0].index);
@@ -94,11 +90,16 @@ export default function AdminDashboard() {
       {/* Header */}
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
         <TouchableOpacity style={styles.iconButton}>
-          <Image source={{ uri: 'https://ui-avatars.com/api/?name=Admin&background=0F1419&color=fff' }} style={styles.avatar} />
+          <Ionicons name="person-circle" size={32} color={theme.textMuted} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: isDarkMode ? theme.text : '#1D61F2' }]}>ibnTaju's Store</Text>
+        
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconButton} onPress={toggleTheme}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => console.log('Open Notifications')}>
+            <Ionicons name="notifications-outline" size={22} color={theme.text} />
+            <View style={styles.notificationBadge} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.iconButton, { marginLeft: 8 }]} onPress={toggleTheme}>
             <Ionicons name={isDarkMode ? "sunny-outline" : "moon-outline"} size={22} color={theme.text} />
           </TouchableOpacity>
         </View>
@@ -106,11 +107,11 @@ export default function AdminDashboard() {
 
       <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
         
-        {/* Greeting & Dropdown Filter */}
+        {/* Greeting & Dropdown Filter (Aligned) */}
         <View style={styles.greetingHeaderRow}>
-          <View>
-            <Text style={[styles.greetingTitle, { color: theme.text }]}>Hello, Mohammed</Text>
-            <Text style={[styles.greetingSubtitle, { color: theme.textMuted }]}>Here's what's happening.</Text>
+          <View style={styles.greetingTextContainer}>
+            <Text style={[styles.greetingTitle, { color: theme.text }]}>Hello, {userName}</Text>
+            <Text style={[styles.greetingSubtitle, { color: theme.textMuted }]}>Your operational summary.</Text>
           </View>
           
           <TouchableOpacity 
@@ -178,27 +179,18 @@ export default function AdminDashboard() {
                       !isDarkMode && !isActive && styles.lightCardIconWrapperSecondary,
                       isDarkMode && { padding: 8, borderRadius: 10, backgroundColor: isActive ? 'rgba(0,0,0,0.1)' : '#1E293B' }
                     ]}>
-                      <Ionicons 
-                        name={item.icon} 
-                        size={28} 
-                        color={isActive ? theme.invertedText : (isDarkMode ? theme.text : '#64748B')} 
-                      />
+                      <Ionicons name={item.icon} size={28} color={isActive ? theme.invertedText : (isDarkMode ? theme.text : '#64748B')} />
                     </View>
                   </View>
                   <View style={styles.cardBody}>
-                    <Text style={[styles.cardLabel, { color: isActive ? theme.invertedText : theme.textMuted }]}>
-                      {item.title}
-                    </Text>
-                    <Text style={[styles.cardAmount, { color: isActive ? theme.invertedText : theme.text }]}>
-                      {item.amount}
-                    </Text>
+                    <Text style={[styles.cardLabel, { color: isActive ? theme.invertedText : theme.textMuted }]}>{item.title}</Text>
+                    <Text style={[styles.cardAmount, { color: isActive ? theme.invertedText : theme.text }]}>{item.amount}</Text>
                   </View>
                 </View>
               );
             }}
           />
           
-          {/* Pagination Dots */}
           <View style={styles.paginationContainer}>
             {currentCards.map((_, index) => (
               <View 
@@ -213,16 +205,19 @@ export default function AdminDashboard() {
           </View>
         </View>
 
-        {/* Management List */}
+        {/* Management Directory (Now Clickable) */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Management</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Core Modules</Text>
           
-          {[
-            { title: 'Inventory & Stock', sub: 'Manage warehouse levels', icon: 'cube-outline', lightBg: '#EBF2FF', lightColor: '#1D61F2' },
-            { title: 'Sales Ledger', sub: 'Audit daily transactions', icon: 'bar-chart-outline', lightBg: '#E6F9F2', lightColor: '#059669' },
-            { title: 'Supplier Directory', sub: 'Vendor credit and orders', icon: 'people-outline', lightBg: '#ECFDF5', lightColor: '#10B981' },
-          ].map((item, idx) => (
-            <TouchableOpacity key={idx} style={[styles.listItem, isDarkMode ? { borderBottomWidth: 1, borderBottomColor: theme.border } : styles.lightListItem]}>
+          {CORE_MODULES.map((item) => (
+            <TouchableOpacity 
+              key={item.id} 
+              style={[styles.listItem, isDarkMode ? { borderBottomWidth: 1, borderBottomColor: theme.border } : styles.lightListItem]}
+              onPress={() => {
+                setActiveNav(item.id);
+                router.replace(item.route as any);
+              }}
+            >
               <View style={[styles.listIconWrapper, !isDarkMode && { backgroundColor: item.lightBg }]}>
                 <Ionicons name={item.icon as any} size={22} color={isDarkMode ? theme.text : item.lightColor} />
               </View>
@@ -235,9 +230,9 @@ export default function AdminDashboard() {
           ))}
         </View>
 
-        {/* Pending Actions */}
+        {/* Action Items */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Pending Actions</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Action Items</Text>
 
           <View style={[styles.receiptCard, isDarkMode ? { borderWidth: 1, borderColor: theme.border } : styles.lightReceiptCard]}>
             <View style={styles.receiptHeader}>
@@ -317,18 +312,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 12,
   },
-  iconButton: { padding: 4 },
+  iconButton: { padding: 4, position: 'relative' },
+  notificationBadge: { position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: '#DC2626', borderWidth: 1, borderColor: '#FFFFFF' },
   headerTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
-  avatar: { width: 32, height: 32, borderRadius: 16 },
   
   scrollContentDark: { paddingBottom: 24 },
   scrollContentLight: { paddingBottom: 120 },
   
   greetingHeaderRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
-    paddingHorizontal: 20, marginTop: 12, marginBottom: 8,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', // Fixed Alignment
+    paddingHorizontal: 20, marginTop: 16, marginBottom: 12,
   },
+  greetingTextContainer: { flex: 1, paddingRight: 12 },
   greetingTitle: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
   greetingSubtitle: { fontSize: 15, marginTop: 4 },
   
