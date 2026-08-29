@@ -8,12 +8,17 @@ import {
   TouchableOpacity,
   Image,
   StatusBar,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
 
-const SALES_REPS = [
+const SALES_REPS_DATA = [
   { 
     id: '1', 
     name: 'Abebe Kebede', 
@@ -21,7 +26,13 @@ const SALES_REPS = [
     creditUsed: 45000, 
     creditLimit: 100000, 
     avatar: 'https://ui-avatars.com/api/?name=Abebe+Kebede&background=F1F5F9&color=0F172A',
-    isWarning: false 
+    isWarning: false,
+    isExpanded: false,
+    transactions: [
+      { id: 't1', day: 'Today', amount: '15,000', type: 'Credit' },
+      { id: 't2', day: 'Monday', amount: '20,000', type: 'Paid' },
+      { id: 't3', day: 'Last Week', amount: '30,000', type: 'Credit' },
+    ]
   },
   { 
     id: '2', 
@@ -30,7 +41,12 @@ const SALES_REPS = [
     creditUsed: 95000, 
     creditLimit: 100000, 
     avatar: 'https://ui-avatars.com/api/?name=Dawit+Tadesse&background=F1F5F9&color=0F172A',
-    isWarning: true 
+    isWarning: true,
+    isExpanded: false,
+    transactions: [
+      { id: 't4', day: 'Yesterday', amount: '45,000', type: 'Credit' },
+      { id: 't5', day: 'Monday', amount: '50,000', type: 'Credit' },
+    ]
   },
   { 
     id: '3', 
@@ -39,21 +55,23 @@ const SALES_REPS = [
     creditUsed: 12000, 
     creditLimit: 100000, 
     avatar: null,
-    isWarning: false 
+    isWarning: false,
+    isExpanded: false,
+    transactions: [
+      { id: 't6', day: 'Tuesday', amount: '12,000', type: 'Credit' },
+      { id: 't7', day: 'Last Month', amount: '12,000', type: 'Paid' },
+    ]
   },
 ];
 
 export default function SalesRepsScreen() {
   const router = useRouter();
   
-  // Strict Admin Gate with failsafe fallback for development/testing
   const role = useAuthStore((state) => state.role);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   
-  // Checks if role is 'ADMIN' (or forces true if testing while role is temporarily null)
   const isAdmin = role === 'ADMIN' || role === null;
 
-  // If a non-admin sneaks in, boot them back immediately
   if (!isAdmin) {
     return (
       <SafeAreaView style={styles.unauthorizedContainer}>
@@ -61,10 +79,7 @@ export default function SalesRepsScreen() {
         <Ionicons name="lock-closed-outline" size={64} color="#DC2626" />
         <Text style={styles.unauthorizedTitle}>Access Restricted</Text>
         <Text style={styles.unauthorizedSubtitle}>This portal is exclusively for system administrators.</Text>
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => router.replace('/(rep)/pos')}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/(rep)/pos')}>
           <Text style={styles.backButtonText}>Return to POS</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -72,16 +87,57 @@ export default function SalesRepsScreen() {
   }
 
   const [activeNav, setActiveNav] = useState('Sales');
+  const [reps, setReps] = useState(SALES_REPS_DATA);
+
+  // Enrollment Modal States
+  const [isEnrollModalVisible, setIsEnrollModalVisible] = useState(false);
+  const [newAgentName, setNewAgentName] = useState('');
+  const [newAgentLimit, setNewAgentLimit] = useState('');
+  const [newAgentCode, setNewAgentCode] = useState('');
+
+  const toggleExpand = (id: string) => {
+    setReps(prev => prev.map(rep => rep.id === id ? { ...rep, isExpanded: !rep.isExpanded } : rep));
+  };
+
+  const handleRemoveAgent = (id: string, name: string) => {
+    Alert.alert(
+      "Remove Agent",
+      `Are you absolutely sure you want to remove ${name} from the network? This action cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Remove", 
+          style: "destructive", 
+          onPress: () => setReps(prev => prev.filter(r => r.id !== id)) 
+        }
+      ]
+    );
+  };
+
+  const handleEnrollSubmit = () => {
+    console.log({ newAgentName, newAgentLimit, newAgentCode });
+    setNewAgentName('');
+    setNewAgentLimit('');
+    setNewAgentCode('');
+    setIsEnrollModalVisible(false);
+  };
+
+  const generateCode = () => {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setNewAgentCode(code);
+  };
 
   const theme = {
     bg: isDarkMode ? '#000000' : '#F8FAFC',
     text: isDarkMode ? '#E7E9EA' : '#0F172A',
     textMuted: isDarkMode ? '#71767B' : '#64748B',
-    border: isDarkMode ? '#2F3336' : 'transparent',
+    border: isDarkMode ? '#2F3336' : '#E2E8F0',
     invertedBg: isDarkMode ? '#E7E9EA' : '#1D61F2',
     invertedText: isDarkMode ? '#000000' : '#FFFFFF',
     cardBg: isDarkMode ? '#000000' : '#FFFFFF',
-    progressBarBg: isDarkMode ? '#1E293B' : '#E2E8F0',
+    subCardBg: isDarkMode ? '#1E293B' : '#F8FAFC',
+    divider: isDarkMode ? '#2F3336' : '#E2E8F0',
+    inputBg: isDarkMode ? '#0F1419' : '#F1F5F9',
   };
 
   return (
@@ -91,129 +147,150 @@ export default function SalesRepsScreen() {
       {/* Header */}
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
         <View style={styles.headerLeft}>
-          <View style={styles.pageTitleContainer}>
-          <Text style={[styles.pageTitle, { color: theme.text }]}>Active Sales</Text>
+          <TouchableOpacity 
+            style={styles.menuButton} 
+            onPress={() => router.replace('/(admin)/dashboard')}
+          >
+            <Ionicons name="arrow-back-outline" size={26} color={theme.text} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>Agent Network</Text>
         </View>
-        </View>
-        
         <View style={styles.headerRight}>
           <Image source={{ uri: 'https://ui-avatars.com/api/?name=Admin&background=1D61F2&color=fff' }} style={styles.avatar} />
         </View>
       </View>
 
       <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
-        {/* Summary Cards */}
+        
+        {/* Unified Summary Card */}
         <View style={styles.summaryContainer}>
-          <View style={[styles.summaryCard, { backgroundColor: theme.cardBg }, isDarkMode ? { borderWidth: 1, borderColor: theme.border } : styles.lightShadow]}>
-            <View>
-              <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>TOTAL ACTIVE SALES</Text>
-              <View style={styles.summaryValueRow}>
-                <Text style={[styles.summaryValue, { color: theme.text }]}>12</Text>
-                <Text style={styles.summarySubValueGreen}> Active</Text>
+          <View style={[
+            styles.unifiedSummaryCard, 
+            { backgroundColor: theme.cardBg }, 
+            isDarkMode ? { borderWidth: 1, borderColor: theme.border } : styles.lightShadow
+          ]}>
+            <View style={styles.summaryHalf}>
+              <View style={styles.summaryIconRow}>
+                <Ionicons name="people" size={16} color="#059669" />
+                <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>ACTIVE</Text>
               </View>
+              <Text style={[styles.summaryValue, { color: theme.text }]}>{reps.length} <Text style={styles.summaryValueSmall}>Reps</Text></Text>
             </View>
-            <View style={[styles.summaryIconWrapper, { backgroundColor: isDarkMode ? '#1E293B' : '#EEF2FF' }]}>
-              <Ionicons name="people" size={24} color={isDarkMode ? theme.text : '#1D61F2'} />
-            </View>
-          </View>
-
-          <View style={[styles.summaryCard, { backgroundColor: theme.cardBg }, isDarkMode ? { borderWidth: 1, borderColor: theme.border } : styles.lightShadow]}>
-            <View>
-              <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>TOTAL OUTSTANDING</Text>
-              <View style={styles.summaryValueRow}>
-                  <Text style={[styles.summaryValue, { color: theme.text }]}>240,500</Text>
-                  <Text style={[styles.summaryValueSmall, { color: theme.text }]}>ETB</Text>  
+            
+            <View style={[styles.summaryDivider, { backgroundColor: theme.divider }]} />
+            
+            <View style={styles.summaryHalf}>
+              <View style={styles.summaryIconRow}>
+                <Ionicons name="wallet" size={16} color="#DC2626" />
+                <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>OUTSTANDING</Text>
               </View>
-              
+              <Text style={[styles.summaryValue, { color: theme.text }]}><Text style={styles.summaryValueSmall}>ETB </Text>240.5k</Text>
             </View>
           </View>
         </View>
+
         {/* Primary Action Button */}
-                <View style={styles.actionContainer}>
-                  <TouchableOpacity style={[styles.mainActionBtn, { backgroundColor: theme.invertedBg }]} onPress={() => console.log('Add Supplier')}>
-                    <Ionicons name="add" size={20} color={theme.invertedText} style={styles.btnIcon} />
-                    <Text style={[styles.mainActionText, { color: theme.invertedText }]}>Add Sales</Text>
-                  </TouchableOpacity>
-                </View>
-        {/* Sales Rep List */}
+        <View style={styles.actionContainer}>
+          <TouchableOpacity 
+            style={[styles.mainActionBtn, { backgroundColor: theme.invertedBg }]} 
+            onPress={() => setIsEnrollModalVisible(true)}
+          >
+            <Ionicons name="add" size={20} color={theme.invertedText} style={styles.btnIcon} />
+            <Text style={[styles.mainActionText, { color: theme.invertedText }]}>Enroll Agent</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Sales Rep Accordion List */}
         <View style={styles.listContainer}>
-          {SALES_REPS.map((rep) => {
-            const percentage = (rep.creditUsed / rep.creditLimit) * 100;
-            
-            return (
+          {reps.map((rep) => (
+            <View 
+              key={rep.id} 
+              style={[
+                styles.repCard, 
+                { backgroundColor: theme.cardBg },
+                isDarkMode ? { borderWidth: 1, borderColor: theme.border } : styles.lightShadow,
+                rep.isWarning && !isDarkMode && { borderLeftWidth: 4, borderLeftColor: '#DC2626' },
+                rep.isWarning && isDarkMode && { borderColor: '#DC2626' }
+              ]}
+            >
               <TouchableOpacity 
-                key={rep.id} 
-                style={[
-                  styles.repCard, 
-                  { backgroundColor: theme.cardBg },
-                  isDarkMode ? { borderWidth: 1, borderColor: theme.border } : styles.lightShadow,
-                  rep.isWarning && !isDarkMode && { borderLeftWidth: 4, borderLeftColor: '#DC2626' },
-                  rep.isWarning && isDarkMode && { borderColor: '#DC2626' }
-                ]}
+                style={styles.repTopRow} 
+                onPress={() => toggleExpand(rep.id)}
                 activeOpacity={0.7}
               >
-                <View style={styles.repTopRow}>
-                  <View style={[styles.repAvatarPlaceholder, isDarkMode && { backgroundColor: '#1E293B' }]}>
-                    {rep.avatar ? (
-                      <Image source={{ uri: rep.avatar }} style={styles.repAvatar} />
-                    ) : (
-                      <Ionicons name="person-outline" size={24} color={theme.textMuted} />
-                    )}
-                  </View>
-                  <View style={styles.repInfo}>
-                    <Text style={[styles.repName, { color: theme.text }]}>{rep.name}</Text>
-                    <View style={styles.statusRow}>
-                      {!rep.isWarning ? (
-                        <>
-                          <View style={styles.statusDotGreen} />
-                          <Text style={[styles.statusText, { color: theme.textMuted }]}>{rep.status}</Text>
-                        </>
-                      ) : (
-                        <View style={[styles.warningPill, isDarkMode && { backgroundColor: '#7F1D1D' }]}>
-                          <Text style={[styles.warningPillText, isDarkMode && { color: '#FECACA' }]}>{rep.status}</Text>
-                        </View>
-                      )}
-                    </View>
+                <View style={[styles.repAvatarPlaceholder, isDarkMode && { backgroundColor: '#1E293B' }]}>
+                  {rep.avatar ? (
+                    <Image source={{ uri: rep.avatar }} style={styles.repAvatar} />
+                  ) : (
+                    <Ionicons name="person-outline" size={24} color={theme.textMuted} />
+                  )}
+                  {rep.isWarning && (
+                    <View style={styles.warningIndicatorAvatar} />
+                  )}
+                </View>
+                
+                <View style={styles.repInfo}>
+                  <Text style={[styles.repName, { color: theme.text }]}>{rep.name}</Text>
+                  <View style={styles.statusRow}>
+                    <Text style={[styles.debtLabel, { color: theme.textMuted }]}>Debt: </Text>
+                    <Text style={[styles.debtAmount, rep.isWarning ? { color: '#DC2626' } : { color: theme.text }]}>
+                      ETB {rep.creditUsed.toLocaleString()}
+                    </Text>
                   </View>
                 </View>
-
-                <View style={styles.creditContainer}>
-                  <View style={styles.creditHeader}>
-                    <Text style={[styles.creditLabel, { color: theme.text }]}>Credit Used</Text>
-                    <Text style={[styles.creditPercentage, { color: theme.text }]}>{Math.round(percentage)}%</Text>
-                  </View>
-                  
-                  <View style={[styles.progressBarBg, { backgroundColor: theme.progressBarBg }]}>
-                    <View style={[
-                      styles.progressBarFill, 
-                      { width: `${percentage}%` },
-                      rep.isWarning ? { backgroundColor: '#DC2626' } : { backgroundColor: '#1D61F2' }
-                    ]} />
-                  </View>
-                  
-                  <Text style={[styles.creditLimits, { color: theme.textMuted }]}>
-                    ETB {rep.creditUsed.toLocaleString()} / {rep.creditLimit.toLocaleString()} Limit
-                  </Text>
-                </View>
-
-                <View style={styles.chevronWrapper}>
-                  <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
-                </View>
+                
+                <Ionicons 
+                  name={rep.isExpanded ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color={theme.textMuted} 
+                />
               </TouchableOpacity>
-            );
-          })}
+
+              {/* Expanded Ledger Section */}
+              {rep.isExpanded && (
+                <View style={[styles.ledgerContainer, { borderTopColor: theme.border }]}>
+                  <View style={styles.ledgerHeaderRow}>
+                    <Text style={[styles.ledgerTitle, { color: theme.textMuted }]}>RECENT LEDGER</Text>
+                    <Text style={[styles.limitText, { color: theme.textMuted }]}>Limit: ETB {rep.creditLimit.toLocaleString()}</Text>
+                  </View>
+                  
+                  {rep.transactions.map((tx) => (
+                    <View key={tx.id} style={[styles.txItem, { backgroundColor: theme.subCardBg, borderColor: theme.border }]}>
+                      <View style={styles.txLeft}>
+                        <Ionicons 
+                          name={tx.type === 'Paid' ? "checkmark-circle" : "arrow-down-circle"} 
+                          size={18} 
+                          color={tx.type === 'Paid' ? '#059669' : '#DC2626'} 
+                          style={{ marginRight: 8 }}
+                        />
+                        <Text style={[styles.txDay, { color: theme.text }]}>{tx.day}</Text>
+                      </View>
+                      <View style={styles.txRight}>
+                        <Text style={[
+                          styles.txAmount, 
+                          tx.type === 'Paid' ? { color: '#059669' } : { color: theme.text }
+                        ]}>
+                          {tx.type === 'Paid' ? '-' : '+'} ETB {tx.amount}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+
+                  {/* Remove Agent Button */}
+                  <TouchableOpacity 
+                    style={[styles.removeAgentBtn, { backgroundColor: isDarkMode ? '#3F1D1D' : '#FEF2F2' }]} 
+                    onPress={() => handleRemoveAgent(rep.id, rep.name)}
+                  >
+                    <Ionicons name="trash-outline" size={16} color={isDarkMode ? '#F87171' : '#DC2626'} />
+                    <Text style={[styles.removeAgentText, { color: isDarkMode ? '#F87171' : '#DC2626' }]}>Remove Agent</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          ))}
         </View>
-        {/* Primary Action Button */}
-        {/* <View style={styles.actionContainer}>
-          <TouchableOpacity style={[styles.mainActionBtn, { backgroundColor: theme.invertedBg }]} onPress={() => console.log('Add Sales Rep')}>
-            <Ionicons name="add" size={20} color={theme.invertedText} style={styles.btnIcon} />
-            <Text style={[styles.mainActionText, { color: theme.invertedText }]}>Add New Sales Rep</Text>
-          </TouchableOpacity>
-        </View> */}
 
       </ScrollView>
-
-      
 
       {/* Adaptive Bottom Navigation */}
       <View style={isDarkMode ? [styles.darkBottomNav, { backgroundColor: theme.bg, borderTopColor: theme.border }] : styles.lightBottomNavContainer}>
@@ -233,7 +310,10 @@ export default function SalesRepsScreen() {
                 onPress={() => {
                   setActiveNav(tab.id);
                   if (tab.id === 'Home') router.replace('/(admin)/dashboard');
+                  if (tab.id === 'Sales') router.replace('/(admin)/sales');
                   if (tab.id === 'Stock') router.replace('/(admin)/stock');
+                  if (tab.id === 'Suppliers') router.replace('/(admin)/suppliers');
+                  if (tab.id === 'Approvals') router.replace('/(admin)/approvals');
                 }}
               >
                 <Ionicons 
@@ -253,6 +333,72 @@ export default function SalesRepsScreen() {
           })}
         </View>
       </View>
+
+      {/* Enroll Agent Bottom Sheet Modal */}
+      <Modal visible={isEnrollModalVisible} animationType="slide" transparent>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+          <View style={[styles.bottomSheet, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }]}>
+            
+            <View style={styles.sheetHeader}>
+              <Text style={[styles.sheetTitle, { color: theme.text }]}>Enroll New Agent</Text>
+              <TouchableOpacity onPress={() => setIsEnrollModalVisible(false)} style={styles.closeBtn}>
+                <Ionicons name="close" size={24} color={theme.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetScroll}>
+              
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Agent Full Name</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
+                placeholder="e.g. Abebe Kebede"
+                placeholderTextColor={theme.textMuted}
+                value={newAgentName}
+                onChangeText={setNewAgentName}
+              />
+
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Approved Credit Limit (ETB)</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
+                placeholder="e.g. 100000"
+                placeholderTextColor={theme.textMuted}
+                keyboardType="numeric"
+                value={newAgentLimit}
+                onChangeText={setNewAgentLimit}
+              />
+
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Agent Entry Code</Text>
+              <View style={[styles.codeInputRow, { backgroundColor: theme.inputBg, borderColor: theme.border }]}>
+                <TextInput
+                  style={[styles.codeInput, { color: theme.text }]}
+                  placeholder="6-digit PIN"
+                  placeholderTextColor={theme.textMuted}
+                  keyboardType="numeric"
+                  maxLength={6}
+                  value={newAgentCode}
+                  onChangeText={setNewAgentCode}
+                />
+                <TouchableOpacity style={styles.generateBtn} onPress={generateCode}>
+                  <Text style={[styles.generateBtnText, { color: theme.invertedBg }]}>Generate</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={[styles.helperText, { color: theme.textMuted }]}>
+                Share this entry code with the agent. They will use it to create their account and fill in their contact details.
+              </Text>
+
+              <TouchableOpacity 
+                style={[styles.submitBtn, { backgroundColor: theme.invertedBg }]} 
+                onPress={handleEnrollSubmit}
+              >
+                <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>Send Enrollment Invite</Text>
+              </TouchableOpacity>
+
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -262,56 +408,56 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
   menuButton: { marginRight: 12 },
-  logoTextContainer: { flexDirection: 'column' },
-  logoText: { fontSize: 20, fontWeight: '900', lineHeight: 22, letterSpacing: -0.5 },
+  headerTitle: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 36, height: 36, borderRadius: 18 },
   
-  scrollContentDark: { paddingBottom: 24 },
-  scrollContentLight: { paddingBottom: 130 },
+  scrollContentDark: { paddingBottom: 24, paddingTop: 16 },
+  scrollContentLight: { paddingBottom: 130, paddingTop: 16 },
+
+  summaryContainer: { paddingHorizontal: 20, marginBottom: 24 },
+  unifiedSummaryCard: { flexDirection: 'row', borderRadius: 20, padding: 20, alignItems: 'center' },
+  lightShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3 },
   
-  pageTitleContainer: { paddingHorizontal: 20, marginTop: 16, marginBottom: 20 },
-  pageTitle: { fontSize: 32, fontWeight: '900', letterSpacing: -1 },
+  summaryHalf: { flex: 1, justifyContent: 'center' },
+  summaryDivider: { width: 1, height: '80%', marginHorizontal: 16 },
+  summaryIconRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  summaryLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5, marginLeft: 6 },
+  summaryValue: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
+  summaryValueSmall: { fontSize: 14, fontWeight: '600' },
 
   actionContainer: { paddingHorizontal: 20, marginBottom: 24 },
   mainActionBtn: { flexDirection: 'row', paddingVertical: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   btnIcon: { marginRight: 8 },
   mainActionText: { fontWeight: '700', fontSize: 15 },
 
-  summaryContainer: { paddingHorizontal: 20, marginBottom: 24 },
-  summaryCard: { borderRadius: 16, padding: 20, marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  summaryLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 8 },
-  summaryValueRow: { flexDirection: 'row', alignItems: 'baseline' },
-  summaryValueSmall: { fontSize: 16, fontWeight: '700', marginBottom: 2 },
-  summaryValue: { fontSize: 28, fontWeight: '800', letterSpacing: -1 },
-  summarySubValueGreen: { fontSize: 14, fontWeight: '600', color: '#059669', marginLeft: 4 },
-  summaryIconWrapper: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-
   listContainer: { paddingHorizontal: 20 },
-  repCard: { borderRadius: 20, padding: 20, marginBottom: 16 },
-  lightShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3 },
+  repCard: { borderRadius: 20, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, marginBottom: 16, overflow: 'hidden' },
   
-  repTopRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  repAvatarPlaceholder: { width: 56, height: 56, backgroundColor: '#F1F5F9', borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 16, overflow: 'hidden' },
+  repTopRow: { flexDirection: 'row', alignItems: 'center' },
+  repAvatarPlaceholder: { width: 50, height: 50, backgroundColor: '#F1F5F9', borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 16, overflow: 'hidden', position: 'relative' },
   repAvatar: { width: '100%', height: '100%', resizeMode: 'cover' },
-  repInfo: { flex: 1, justifyContent: 'center' },
-  repName: { fontSize: 18, fontWeight: '700', marginBottom: 4 },
-  statusRow: { flexDirection: 'row', alignItems: 'center' },
-  statusDotGreen: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#059669', marginRight: 6 },
-  statusText: { fontSize: 14, fontWeight: '500' },
+  warningIndicatorAvatar: { position: 'absolute', top: 0, right: 0, width: 12, height: 12, backgroundColor: '#DC2626', borderRadius: 6, borderWidth: 2, borderColor: '#FFFFFF' },
   
-  warningPill: { backgroundColor: '#FEE2E2', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
-  warningPillText: { fontSize: 11, fontWeight: '800', color: '#DC2626', letterSpacing: 0.5 },
+  repInfo: { flex: 1, justifyContent: 'center' },
+  repName: { fontSize: 17, fontWeight: '700', marginBottom: 2 },
+  statusRow: { flexDirection: 'row', alignItems: 'center' },
+  debtLabel: { fontSize: 13, fontWeight: '500' },
+  debtAmount: { fontSize: 13, fontWeight: '700' },
 
-  creditContainer: { marginBottom: 16 },
-  creditHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  creditLabel: { fontSize: 13, fontWeight: '700' },
-  creditPercentage: { fontSize: 13, fontWeight: '700' },
-  progressBarBg: { height: 8, borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
-  progressBarFill: { height: '100%', borderRadius: 4 },
-  creditLimits: { fontSize: 12, textAlign: 'right' },
+  ledgerContainer: { marginTop: 16, paddingTop: 16, borderTopWidth: 1 },
+  ledgerHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  ledgerTitle: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
+  limitText: { fontSize: 11, fontWeight: '600' },
+  
+  txItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 8 },
+  txLeft: { flexDirection: 'row', alignItems: 'center' },
+  txDay: { fontSize: 14, fontWeight: '600' },
+  txRight: { alignItems: 'flex-end' },
+  txAmount: { fontSize: 14, fontWeight: '700' },
 
-  chevronWrapper: { alignItems: 'center', marginTop: 4 },
+  removeAgentBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 12, marginTop: 12 },
+  removeAgentText: { fontSize: 14, fontWeight: '700', marginLeft: 6 },
 
   unauthorizedContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, backgroundColor: '#F8FAFC' },
   unauthorizedTitle: { fontSize: 24, fontWeight: '800', color: '#0F172A', marginTop: 16, marginBottom: 8 },
@@ -328,4 +474,23 @@ const styles = StyleSheet.create({
   lightNavItem: { alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 8 },
   lightNavItemActive: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#1D61F2', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 100 },
   lightNavText: { fontSize: 10, fontWeight: '600', marginTop: 4 },
+
+  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+  bottomSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '90%' },
+  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  sheetTitle: { fontSize: 20, fontWeight: '800' },
+  closeBtn: { padding: 4 },
+  sheetScroll: { paddingBottom: 40 },
+  
+  inputLabel: { fontSize: 14, fontWeight: '700', marginBottom: 8, marginTop: 12 },
+  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, fontWeight: '500' },
+  
+  codeInputRow: { flexDirection: 'row', borderWidth: 1, borderRadius: 12, overflow: 'hidden', alignItems: 'center' },
+  codeInput: { flex: 1, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, fontWeight: '700', letterSpacing: 2 },
+  generateBtn: { paddingHorizontal: 16, paddingVertical: 14, borderLeftWidth: 1, borderColor: 'rgba(0,0,0,0.1)' },
+  generateBtnText: { fontWeight: '700', fontSize: 14 },
+  
+  helperText: { fontSize: 13, marginTop: 12, lineHeight: 18 },
+  submitBtn: { marginTop: 32, paddingVertical: 16, borderRadius: 100, alignItems: 'center', justifyContent: 'center' },
+  submitBtnText: { fontSize: 16, fontWeight: '700' },
 });
