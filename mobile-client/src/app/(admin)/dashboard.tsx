@@ -266,6 +266,7 @@ export default function AdminDashboard() {
                 onPress={() => {
                   setActiveNav(tab.id);
                   if (tab.id === 'Stock') router.replace('/(admin)/stock');
+                  if (tab.id === 'Sales') router.replace('/(admin)/sales');
                 }}
               >
                 <Ionicons 
