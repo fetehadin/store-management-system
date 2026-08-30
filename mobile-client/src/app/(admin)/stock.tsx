@@ -6,7 +6,6 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Image,
   StatusBar,
   Modal,
   TextInput,
@@ -15,12 +14,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../store/authStore';
 
 const CATEGORIES = ['Cooking Oil', 'Flour & Baking', 'Confectionery', 'Beverages'];
 
-const DEMO_INVENTORY = [
+const INITIAL_INVENTORY = [
   { 
     id: '1', 
     name: 'Sunflower Cooking Oil (1L)', 
@@ -73,44 +71,34 @@ export default function StockScreen() {
   }
 
   const [activeCategory, setActiveCategory] = useState('All');
+  const [inventory, setInventory] = useState(INITIAL_INVENTORY);
 
-  // Form States
-  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
-  const [productName, setProductName] = useState('');
-  const [costPrice, setCostPrice] = useState('');
-  const [sellingPrice, setSellingPrice] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [formCategory, setFormCategory] = useState<string>('');
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  // Edit Price Modal States
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [activeItem, setActiveItem] = useState<{ id: string, name: string, price: string } | null>(null);
+  const [newPriceInput, setNewPriceInput] = useState('');
 
   const filteredInventory = activeCategory === 'All' 
-    ? DEMO_INVENTORY 
-    : DEMO_INVENTORY.filter(item => item.category === activeCategory);
+    ? inventory 
+    : inventory.filter(item => item.category === activeCategory);
 
-  const handlePickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    if (!result.canceled) setPhotoUri(result.assets[0].uri);
+  const openEditModal = (id: string, name: string, currentPrice: number) => {
+    setActiveItem({ id, name, price: currentPrice.toString() });
+    setNewPriceInput(currentPrice.toString());
+    setIsEditModalVisible(true);
   };
 
-  const handleSubmit = () => {
-    const finalCategory = isCreatingCategory ? newCategoryName : formCategory;
-    console.log({ productName, costPrice, sellingPrice, quantity, photoUri, finalCategory });
-    setProductName('');
-    setCostPrice('');
-    setSellingPrice('');
-    setQuantity('');
-    setPhotoUri(null);
-    setFormCategory('');
-    setNewCategoryName('');
-    setIsCreatingCategory(false);
-    setIsAddModalVisible(false);
+  const handleUpdatePrice = () => {
+    if (!activeItem || !newPriceInput) return;
+    
+    const updatedPrice = parseFloat(newPriceInput);
+    setInventory(prev => prev.map(item => 
+      item.id === activeItem.id ? { ...item, sellingPrice: updatedPrice } : item
+    ));
+    
+    setIsEditModalVisible(false);
+    setActiveItem(null);
+    setNewPriceInput('');
   };
 
   const theme = {
@@ -128,7 +116,7 @@ export default function StockScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
 
-      {/* Header */}
+      {/* Header (Read-Only Catalog Mode) */}
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity 
@@ -139,13 +127,6 @@ export default function StockScreen() {
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.text }]}>Store Inventory</Text>
         </View>
-        <TouchableOpacity 
-          style={[styles.headerAddBtn, { backgroundColor: theme.invertedBg }]} 
-          onPress={() => setIsAddModalVisible(true)}
-        >
-          <Ionicons name="add" size={18} color={theme.invertedText} />
-          <Text style={[styles.headerAddText, { color: theme.invertedText }]}>New Item</Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
@@ -174,7 +155,7 @@ export default function StockScreen() {
           </ScrollView>
         </View>
 
-        {/* Product Cards */}
+        {/* Product Catalog Feed */}
         <View style={styles.productList}>
           {filteredInventory.map((item) => {
             const isLowStock = item.stock < 20;
@@ -204,17 +185,24 @@ export default function StockScreen() {
 
                 <View style={styles.productBottomRow}>
                   <View style={styles.metricColumn}>
-                    <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Cost</Text>
+                    <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Batch Cost</Text>
                     <Text style={[styles.metricValue, { color: theme.textMuted }]}>ETB {item.costPrice.toFixed(2)}</Text>
                   </View>
                   
-                  <View style={styles.metricColumn}>
-                    <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Selling</Text>
-                    <Text style={[styles.metricValue, { color: theme.text }]}>ETB <Text style={styles.metricValueBold}>{item.sellingPrice.toFixed(2)}</Text></Text>
-                  </View>
+                  {/* Editable Selling Price Column */}
+                  <TouchableOpacity 
+                    style={styles.editableColumn}
+                    onPress={() => openEditModal(item.id, item.name, item.sellingPrice)}
+                  >
+                    <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Selling Price</Text>
+                    <View style={styles.editPriceRow}>
+                      <Text style={[styles.metricValue, { color: theme.text }]}>ETB <Text style={styles.metricValueBold}>{item.sellingPrice.toFixed(2)}</Text></Text>
+                      <Ionicons name="pencil" size={14} color={theme.invertedBg} style={{ marginLeft: 6 }} />
+                    </View>
+                  </TouchableOpacity>
 
                   <View style={[styles.metricColumn, { alignItems: 'flex-end' }]}>
-                    <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Stock</Text>
+                    <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Available</Text>
                     <Text style={[styles.metricValueBold, { color: isLowStock ? '#DC2626' : '#059669' }]}>
                       {item.stock} Units
                     </Text>
@@ -226,120 +214,37 @@ export default function StockScreen() {
         </View>
       </ScrollView>
 
-      {/* Add Product Modal */}
-      <Modal visible={isAddModalVisible} animationType="slide" transparent>
+      {/* Edit Selling Price Modal */}
+      <Modal visible={isEditModalVisible} animationType="fade" transparent>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={[styles.bottomSheet, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }]}>
             
             <View style={styles.sheetHeader}>
-              <Text style={[styles.sheetTitle, { color: theme.text }]}>Add to Inventory</Text>
-              <TouchableOpacity onPress={() => setIsAddModalVisible(false)} style={styles.closeBtn}>
+              <Text style={[styles.sheetTitle, { color: theme.text }]}>Update Pricing</Text>
+              <TouchableOpacity onPress={() => setIsEditModalVisible(false)} style={styles.closeBtn}>
                 <Ionicons name="close" size={24} color={theme.textMuted} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetScroll}>
-              
-              <TouchableOpacity style={[styles.photoPicker, { backgroundColor: theme.inputBg, borderColor: theme.border }]} onPress={handlePickImage}>
-                {photoUri ? (
-                  <Image source={{ uri: photoUri }} style={styles.previewImage} />
-                ) : (
-                  <>
-                    <Ionicons name="image-outline" size={32} color={theme.textMuted} />
-                    <Text style={[styles.photoPickerText, { color: theme.textMuted }]}>Upload Product Image</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+            <Text style={[styles.helperText, { color: theme.textMuted, marginBottom: 20 }]}>
+              Adjusting the selling price for <Text style={{ fontWeight: '700', color: theme.text }}>{activeItem?.name}</Text>. This change will instantly sync to all active sales reps.
+            </Text>
 
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Product Name</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
-                placeholder="e.g. Premium Arabica Coffee"
-                placeholderTextColor={theme.textMuted}
-                value={productName}
-                onChangeText={setProductName}
-              />
+            <Text style={[styles.inputLabel, { color: theme.text }]}>New Selling Price (ETB)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border, fontSize: 24, fontWeight: '800' }]}
+              placeholder="0.00"
+              placeholderTextColor={theme.textMuted}
+              keyboardType="numeric"
+              value={newPriceInput}
+              onChangeText={setNewPriceInput}
+              autoFocus
+            />
 
-              <View style={styles.rowInputs}>
-                <View style={styles.halfInput}>
-                  <Text style={[styles.inputLabel, { color: theme.text }]}>Cost Price (ETB)</Text>
-                  <TextInput
-                    style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
-                    placeholder="0.00"
-                    placeholderTextColor={theme.textMuted}
-                    keyboardType="numeric"
-                    value={costPrice}
-                    onChangeText={setCostPrice}
-                  />
-                </View>
-                <View style={styles.halfInput}>
-                  <Text style={[styles.inputLabel, { color: theme.text }]}>Selling Price (ETB)</Text>
-                  <TextInput
-                    style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
-                    placeholder="0.00"
-                    placeholderTextColor={theme.textMuted}
-                    keyboardType="numeric"
-                    value={sellingPrice}
-                    onChangeText={setSellingPrice}
-                  />
-                </View>
-              </View>
+            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.invertedBg }]} onPress={handleUpdatePrice}>
+              <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>Confirm New Price</Text>
+            </TouchableOpacity>
 
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Initial Stock Units</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
-                placeholder="e.g. 50"
-                placeholderTextColor={theme.textMuted}
-                keyboardType="numeric"
-                value={quantity}
-                onChangeText={setQuantity}
-              />
-
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Category Tag</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.formCategoryScroll}>
-                {CATEGORIES.map(cat => (
-                  <TouchableOpacity 
-                    key={cat}
-                    style={[
-                      styles.formCategoryPill, 
-                      { borderColor: theme.border },
-                      formCategory === cat && !isCreatingCategory ? { backgroundColor: theme.invertedBg, borderColor: theme.invertedBg } : { backgroundColor: theme.inputBg }
-                    ]}
-                    onPress={() => { setFormCategory(cat); setIsCreatingCategory(false); }}
-                  >
-                    <Text style={{ color: formCategory === cat && !isCreatingCategory ? theme.invertedText : theme.text, fontWeight: '600', fontSize: 13 }}>
-                      {cat}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-                <TouchableOpacity 
-                  style={[
-                    styles.formCategoryPill, 
-                    { borderStyle: 'dashed', borderColor: theme.textMuted },
-                    isCreatingCategory ? { backgroundColor: theme.invertedBg, borderColor: theme.invertedBg } : { backgroundColor: 'transparent' }
-                  ]}
-                  onPress={() => { setIsCreatingCategory(true); setFormCategory(''); }}
-                >
-                  <Text style={{ color: isCreatingCategory ? theme.invertedText : theme.textMuted, fontWeight: '600', fontSize: 13 }}>+ Custom</Text>
-                </TouchableOpacity>
-              </ScrollView>
-
-              {isCreatingCategory && (
-                <TextInput
-                  style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border, marginTop: 12 }]}
-                  placeholder="Enter new category..."
-                  placeholderTextColor={theme.textMuted}
-                  value={newCategoryName}
-                  onChangeText={setNewCategoryName}
-                  autoFocus
-                />
-              )}
-
-              <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.invertedBg }]} onPress={handleSubmit}>
-                <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>Save to Inventory</Text>
-              </TouchableOpacity>
-
-            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -354,9 +259,6 @@ const styles = StyleSheet.create({
   headerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   menuButton: { marginRight: 12 },
   headerTitle: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
-  
-  headerAddBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100 },
-  headerAddText: { fontWeight: '700', fontSize: 13, marginLeft: 4 },
   
   scrollContentDark: { paddingBottom: 100, paddingTop: 12 },
   scrollContentLight: { paddingBottom: 100, paddingTop: 12 },
@@ -380,6 +282,8 @@ const styles = StyleSheet.create({
   
   productBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#E2E8F0', paddingTop: 16 },
   metricColumn: { justifyContent: 'center' },
+  editableColumn: { justifyContent: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(29, 97, 242, 0.05)' },
+  editPriceRow: { flexDirection: 'row', alignItems: 'center' },
   metricLabel: { fontSize: 11, marginBottom: 4, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   metricValue: { fontSize: 15, fontWeight: '600' },
   metricValueBold: { fontSize: 16, fontWeight: '800' },
@@ -391,25 +295,15 @@ const styles = StyleSheet.create({
   backButtonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
 
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
-  bottomSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '90%' },
-  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  bottomSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 },
+  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   sheetTitle: { fontSize: 20, fontWeight: '800' },
   closeBtn: { padding: 4 },
-  sheetScroll: { paddingBottom: 40 },
   
-  photoPicker: { height: 100, borderRadius: 16, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 20, overflow: 'hidden' },
-  photoPickerText: { marginTop: 8, fontWeight: '600', fontSize: 13 },
-  previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  helperText: { fontSize: 13, lineHeight: 20 },
+  inputLabel: { fontSize: 13, fontWeight: '700', marginBottom: 8, letterSpacing: 0.5 },
+  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, textAlign: 'center' },
   
-  rowInputs: { flexDirection: 'row', gap: 12 },
-  halfInput: { flex: 1 },
-
-  inputLabel: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 16, letterSpacing: 0.5 },
-  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontWeight: '600' },
-  
-  formCategoryScroll: { flexDirection: 'row', marginBottom: 4 },
-  formCategoryPill: { borderWidth: 1, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, marginRight: 10 },
-  
-  submitBtn: { marginTop: 32, paddingVertical: 16, borderRadius: 100, alignItems: 'center', justifyContent: 'center' },
+  submitBtn: { marginTop: 24, paddingVertical: 16, borderRadius: 100, alignItems: 'center', justifyContent: 'center' },
   submitBtnText: { fontSize: 16, fontWeight: '700' },
 });
