@@ -13,6 +13,7 @@ import {
   Modal,
   TouchableWithoutFeedback,
   ViewToken,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
@@ -23,7 +24,7 @@ const CARD_SPACING = 16;
 
 const TIME_FILTERS = ['Today', 'Yesterday', 'This Week', 'Total'];
 
-// Demo Data (To be replaced with API hooks)
+// Demo Data
 const FINANCE_DATA = {
   'Today': [
     { id: '0', title: 'Total Net Balance', amount: 'ETB 12,400', icon: 'pie-chart-outline' as const },
@@ -47,9 +48,11 @@ export default function AdminDashboard() {
   const [activeCardIndex, setActiveCardIndex] = useState(0);
   const [activeFilter, setActiveFilter] = useState<keyof typeof FINANCE_DATA>('Total');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [activeNav, setActiveNav] = useState('Home');
-  const router = useRouter();
   
+  // Profile Drawer State
+  const [isProfileMenuVisible, setIsProfileMenuVisible] = useState(false);
+  
+  const router = useRouter();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
   const userName = useAuthStore((state) => (state as any).userName || 'Admin');
@@ -66,6 +69,7 @@ export default function AdminDashboard() {
     invertedText: isDarkMode ? '#000000' : '#FFFFFF',
     dotActive: isDarkMode ? '#FFFFFF' : '#177CA5',
     dotInactive: isDarkMode ? '#2F3336' : '#CBD5E1',
+    menuBg: isDarkMode ? '#1E293B' : '#FFFFFF',
   };
 
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -83,19 +87,23 @@ export default function AdminDashboard() {
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
   };
 
+  const navigateFromProfile = (route: string) => {
+    setIsProfileMenuVisible(false);
+    router.push(route as any); 
+  };
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
 
       {/* Header */}
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => setIsProfileMenuVisible(true)}>
           <Ionicons name="person-circle" size={32} color={theme.textMuted} />
         </TouchableOpacity>
-        {/* <Text style={[styles.headerTitle, { color: isDarkMode ? theme.text : '#1D61F2' }]}>ibnTaju's Store</Text> */}
         
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => console.log('Open Notifications')}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => navigateFromProfile('/(admin)/messages')}>
             <Ionicons name="notifications-outline" size={22} color={theme.text} />
             <View style={styles.notificationBadge} />
           </TouchableOpacity>
@@ -107,7 +115,7 @@ export default function AdminDashboard() {
 
       <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
         
-        {/* Greeting & Dropdown Filter (Aligned) */}
+        {/* Greeting & Dropdown Filter */}
         <View style={styles.greetingHeaderRow}>
           <View style={styles.greetingTextContainer}>
             <Text style={[styles.greetingTitle, { color: theme.text }]}>Hello, {userName}</Text>
@@ -214,7 +222,6 @@ export default function AdminDashboard() {
               key={item.id} 
               style={[styles.listItem, isDarkMode ? { borderBottomWidth: 1, borderBottomColor: theme.border } : styles.lightListItem]}
               onPress={() => {
-                setActiveNav(item.id);
                 router.replace(item.route as any);
               }}
             >
@@ -229,37 +236,68 @@ export default function AdminDashboard() {
             </TouchableOpacity>
           ))}
         </View>
-
-        {/* Action Items
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Action Items</Text>
-
-          <View style={[styles.receiptCard, isDarkMode ? { borderWidth: 1, borderColor: theme.border } : styles.lightReceiptCard]}>
-            <View style={styles.receiptHeader}>
-              <View style={[styles.listIconWrapper, !isDarkMode && { backgroundColor: '#F8FAFC' }]}>
-                <Ionicons name="document-text-outline" size={22} color={theme.textMuted} />
-              </View>
-              <View style={styles.receiptInfo}>
-                <Text style={[styles.receiptTitle, { color: theme.text }]}>TX-8832 • Rep Abebe</Text>
-                <Text style={[styles.receiptSubtitle, { color: theme.textMuted }]}>Submitted 10m ago</Text>
-              </View>
-              <Text style={[styles.receiptAmount, { color: theme.text }]}>ETB 15,000</Text>
-            </View>
-            
-            <View style={styles.receiptActions}>
-              <TouchableOpacity style={[styles.actionBtn, isDarkMode ? { borderWidth: 1, borderColor: theme.border } : { backgroundColor: '#FEE2E2' }]}>
-                <Ionicons name="close" size={16} color={isDarkMode ? '#F4212E' : '#DC2626'} style={{ marginRight: 4 }}/>
-                <Text style={[styles.rejectBtnText, isDarkMode ? { color: '#F4212E' } : { color: '#DC2626' }]}>Reject</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: isDarkMode ? theme.invertedBg : '#059669' }]}>
-                <Ionicons name="checkmark" size={16} color={isDarkMode ? theme.invertedText : '#FFFFFF'} style={{ marginRight: 4 }}/>
-                <Text style={[styles.approveBtnText, { color: isDarkMode ? theme.invertedText : '#FFFFFF' }]}>Approve</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View> */}
       </ScrollView>
+
+      {/* Left Side Drawer (X App Style) */}
+      <Modal visible={isProfileMenuVisible} animationType="fade" transparent>
+        <View style={styles.drawerOverlay}>
+          <TouchableOpacity 
+            style={StyleSheet.absoluteFill} 
+            activeOpacity={1} 
+            onPress={() => setIsProfileMenuVisible(false)}
+          />
+          <View style={[styles.sideDrawer, { backgroundColor: theme.menuBg, borderColor: theme.border, borderRightWidth: isDarkMode ? 1 : 0 }]}>
+            <SafeAreaView style={styles.drawerSafeArea}>
+              <View style={styles.drawerContent}>
+                
+                {/* User Header */}
+                <View style={styles.drawerHeader}>
+                  <View style={[styles.largeAvatarPlaceholder, isDarkMode && { backgroundColor: '#0F1419' }]}>
+                    <Ionicons name="person" size={32} color={theme.textMuted} />
+                  </View>
+                  <View style={styles.drawerUserInfo}>
+                    <Text style={[styles.drawerName, { color: theme.text }]} numberOfLines={1}>{userName}</Text>
+                    <Text style={[styles.drawerRole, { color: theme.textMuted }]}>System Administrator</Text>
+                  </View>
+                </View>
+
+                <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+                {/* Menu Items */}
+                <View style={styles.drawerMenuList}>
+                  <TouchableOpacity style={styles.drawerMenuItem} onPress={() => navigateFromProfile('/(admin)/profile')}>
+                    <Ionicons name="person-outline" size={26} color={theme.text} style={styles.drawerMenuIcon} />
+                    <Text style={[styles.drawerMenuText, { color: theme.text }]}>Profile</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={styles.drawerMenuItem} onPress={() => navigateFromProfile('/(admin)/notes')}>
+                    <Ionicons name="journal-outline" size={26} color={theme.text} style={styles.drawerMenuIcon} />
+                    <Text style={[styles.drawerMenuText, { color: theme.text }]}>Notes</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={styles.drawerMenuItem} onPress={() => navigateFromProfile('/(admin)/messages')}>
+                    <Ionicons name="mail-outline" size={26} color={theme.text} style={styles.drawerMenuIcon} />
+                    <Text style={[styles.drawerMenuText, { color: theme.text }]}>Messages</Text>
+                    <View style={styles.menuBadge}><Text style={styles.menuBadgeText}>2</Text></View>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Spacer pushes logout to the bottom */}
+                <View style={{ flex: 1 }} />
+
+                <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+                <TouchableOpacity style={styles.logoutBtn} onPress={() => console.log('Logout')}>
+                  <Ionicons name="log-out-outline" size={26} color="#DC2626" style={styles.drawerMenuIcon} />
+                  <Text style={[styles.drawerMenuText, { color: '#DC2626' }]}>Sign Out</Text>
+                </TouchableOpacity>
+
+              </View>
+            </SafeAreaView>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -272,40 +310,31 @@ const styles = StyleSheet.create({
   },
   iconButton: { padding: 4, position: 'relative' },
   notificationBadge: { position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: '#DC2626', borderWidth: 1, borderColor: '#FFFFFF' },
-  headerTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
   
-  scrollContentDark: { paddingBottom: 24 },
-  scrollContentLight: { paddingBottom: 120 },
+  scrollContentDark: { paddingBottom: 100 },
+  scrollContentLight: { paddingBottom: 100 },
   
   greetingHeaderRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', // Fixed Alignment
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 20, marginTop: 16, marginBottom: 12,
   },
   greetingTextContainer: { flex: 1, paddingRight: 12 },
   greetingTitle: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
   greetingSubtitle: { fontSize: 15, marginTop: 4 },
   
-  dropdownTrigger: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12,
-  },
+  dropdownTrigger: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
   dropdownTriggerDark: { borderWidth: 1, borderColor: '#2F3336' },
   dropdownTriggerLight: { backgroundColor: '#FFFFFF', shadowColor: '#64748B', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
   dropdownTriggerText: { fontSize: 13, fontWeight: '700' },
   
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.1)' },
-  dropdownMenu: {
-    position: 'absolute', top: 140, right: 20, width: 140, borderRadius: 12, padding: 8,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8,
-  },
+  dropdownMenu: { position: 'absolute', top: 140, right: 20, width: 140, borderRadius: 12, padding: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 },
   dropdownItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, borderRadius: 8 },
   
   cardsWrapper: { paddingVertical: 16 },
   flatListContent: { paddingHorizontal: 20 },
-  financeCard: {
-    width: CARD_WIDTH, borderRadius: 24, padding: 24, marginRight: CARD_SPACING,
-    height: 180, justifyContent: 'space-between',
-  },
+  financeCard: { width: CARD_WIDTH, borderRadius: 24, padding: 24, marginRight: CARD_SPACING, height: 180, justifyContent: 'space-between' },
   lightModePrimaryShadow: { shadowColor: '#177CA5', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 10 },
   lightModeSecondaryShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
   
@@ -330,5 +359,27 @@ const styles = StyleSheet.create({
   listTextContainer: { flex: 1 },
   listTitle: { fontSize: 16, fontWeight: '700', marginBottom: 2 },
   listSubtitle: { fontSize: 14 },
+
+  // Left Drawer Styles (X App Equivalent)
+  drawerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', flexDirection: 'row' },
+  sideDrawer: { width: SCREEN_WIDTH * 0.75, height: '100%', borderTopRightRadius: 24, borderBottomRightRadius: 24, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 2, height: 0 }, shadowOpacity: 0.15, shadowRadius: 10, elevation: 5 },
+  drawerSafeArea: { flex: 1 },
+  drawerContent: { flex: 1, padding: 24, paddingTop: Platform.OS === 'android' ? 24 : 12 },
   
+  drawerHeader: { flexDirection: 'column', alignItems: 'flex-start', marginBottom: 16 },
+  largeAvatarPlaceholder: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  drawerUserInfo: { justifyContent: 'center' },
+  drawerName: { fontSize: 20, fontWeight: '800', marginBottom: 2 },
+  drawerRole: { fontSize: 14, fontWeight: '500' },
+
+  drawerMenuList: { marginTop: 12 },
+  drawerMenuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16 },
+  drawerMenuIcon: { marginRight: 20 },
+  drawerMenuText: { fontSize: 18, fontWeight: '700', flex: 1 },
+  
+  menuBadge: { backgroundColor: '#1D61F2', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
+  menuBadgeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
+
+  divider: { height: 1, marginVertical: 8 },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingBottom: Platform.OS === 'ios' ? 0 : 16 },
 });
