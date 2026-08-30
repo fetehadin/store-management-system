@@ -132,7 +132,7 @@ export default function SalesRepsScreen() {
     text: isDarkMode ? '#E7E9EA' : '#0F172A',
     textMuted: isDarkMode ? '#71767B' : '#64748B',
     border: isDarkMode ? '#2F3336' : '#E2E8F0',
-    invertedBg: isDarkMode ? '#E7E9EA' : '#1D61F2',
+    invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5',
     invertedText: isDarkMode ? '#000000' : '#FFFFFF',
     cardBg: isDarkMode ? '#000000' : '#FFFFFF',
     subCardBg: isDarkMode ? '#1E293B' : '#F8FAFC',
@@ -291,48 +291,6 @@ export default function SalesRepsScreen() {
         </View>
 
       </ScrollView>
-
-      {/* Adaptive Bottom Navigation */}
-      <View style={isDarkMode ? [styles.darkBottomNav, { backgroundColor: theme.bg, borderTopColor: theme.border }] : styles.lightBottomNavContainer}>
-        <View style={isDarkMode ? { flexDirection: 'row', width: '100%', justifyContent: 'space-around' } : styles.lightBottomNav}>
-          {[
-            { id: 'Home', icon: 'grid' },
-            { id: 'Sales', icon: 'bar-chart' },
-            { id: 'Stock', icon: 'cube' },
-            { id: 'Suppliers', icon: 'people' },
-            { id: 'Approvals', icon: 'checkmark-circle' },
-          ].map((tab) => {
-            const isActive = activeNav === tab.id;
-            return (
-              <TouchableOpacity 
-                key={tab.id}
-                style={isDarkMode ? styles.darkNavItem : (isActive ? styles.lightNavItemActive : styles.lightNavItem)}
-                onPress={() => {
-                  setActiveNav(tab.id);
-                  if (tab.id === 'Home') router.replace('/(admin)/dashboard');
-                  if (tab.id === 'Sales') router.replace('/(admin)/sales');
-                  if (tab.id === 'Stock') router.replace('/(admin)/stock');
-                  if (tab.id === 'Suppliers') router.replace('/(admin)/suppliers');
-                  if (tab.id === 'Approvals') router.replace('/(admin)/approvals');
-                }}
-              >
-                <Ionicons 
-                  name={isActive ? tab.icon as any : `${tab.icon}-outline` as any} 
-                  size={24} 
-                  color={isDarkMode ? (isActive ? theme.text : theme.textMuted) : (isActive ? '#FFFFFF' : '#64748B')} 
-                />
-                <Text style={[
-                  isDarkMode ? styles.darkNavText : styles.lightNavText, 
-                  { color: isDarkMode ? (isActive ? theme.text : theme.textMuted) : (isActive ? '#FFFFFF' : '#64748B') },
-                  isActive && { fontWeight: '700' }
-                ]}>
-                  {tab.id}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
 
       {/* Enroll Agent Bottom Sheet Modal */}
       <Modal visible={isEnrollModalVisible} animationType="slide" transparent>

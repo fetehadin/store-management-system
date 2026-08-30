@@ -64,7 +64,7 @@ export default function AdminDashboard() {
     border: isDarkMode ? '#2F3336' : 'transparent',
     invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5',
     invertedText: isDarkMode ? '#000000' : '#FFFFFF',
-    dotActive: isDarkMode ? '#FFFFFF' : '#1D61F2',
+    dotActive: isDarkMode ? '#FFFFFF' : '#177CA5',
     dotInactive: isDarkMode ? '#2F3336' : '#CBD5E1',
   };
 
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
         <TouchableOpacity style={styles.iconButton}>
           <Ionicons name="person-circle" size={32} color={theme.textMuted} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: isDarkMode ? theme.text : '#1D61F2' }]}>ibnTaju's Store</Text>
+        {/* <Text style={[styles.headerTitle, { color: isDarkMode ? theme.text : '#1D61F2' }]}>ibnTaju's Store</Text> */}
         
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.iconButton} onPress={() => console.log('Open Notifications')}>
@@ -205,7 +205,7 @@ export default function AdminDashboard() {
           </View>
         </View>
 
-        {/* Management Directory (Now Clickable) */}
+        {/* Management Directory */}
         <View style={styles.sectionContainer}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Core Modules</Text>
           
@@ -230,7 +230,7 @@ export default function AdminDashboard() {
           ))}
         </View>
 
-        {/* Action Items */}
+        {/* Action Items
         <View style={styles.sectionContainer}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Action Items</Text>
 
@@ -258,50 +258,8 @@ export default function AdminDashboard() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </View> */}
       </ScrollView>
-
-      {/* Adaptive Bottom Navigation */}
-      <View style={isDarkMode ? [styles.darkBottomNav, { backgroundColor: theme.bg, borderTopColor: theme.border }] : styles.lightBottomNavContainer}>
-        <View style={isDarkMode ? { flexDirection: 'row', width: '100%', justifyContent: 'space-around' } : styles.lightBottomNav}>
-          {[
-            { id: 'Home', icon: 'home' },
-            { id: 'Sales', icon: 'cash' },
-            { id: 'Stock', icon: 'cube' },
-            { id: 'Suppliers', icon: 'people' },
-            { id: 'Approvals', icon: 'checkmark-circle' },
-          ].map((tab) => {
-            const isActive = activeNav === tab.id;
-            return (
-              <TouchableOpacity 
-                key={tab.id}
-                style={isDarkMode ? styles.darkNavItem : (isActive ? styles.lightNavItemActive : styles.lightNavItem)}
-                onPress={() => {
-                  setActiveNav(tab.id);
-                  if (tab.id === 'Home') router.replace('/(admin)/dashboard');
-                  if (tab.id === 'Sales') router.replace('/(admin)/sales');
-                  if (tab.id === 'Stock') router.replace('/(admin)/stock');
-                  if (tab.id === 'Suppliers') router.replace('/(admin)/suppliers');
-                  if (tab.id === 'Approvals') router.replace('/(admin)/approvals');
-                }}
-              >
-                <Ionicons 
-                  name={isActive ? tab.icon as any : `${tab.icon}-outline` as any} 
-                  size={24} 
-                  color={isDarkMode ? (isActive ? theme.text : theme.textMuted) : (isActive ? '#FFFFFF' : '#64748B')} 
-                />
-                <Text style={[
-                  isDarkMode ? styles.darkNavText : styles.lightNavText, 
-                  { color: isDarkMode ? (isActive ? theme.text : theme.textMuted) : (isActive ? '#FFFFFF' : '#64748B') },
-                  isActive && { fontWeight: '700' }
-                ]}>
-                  {tab.id}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
     </SafeAreaView>
   );
 }
@@ -373,26 +331,4 @@ const styles = StyleSheet.create({
   listTitle: { fontSize: 16, fontWeight: '700', marginBottom: 2 },
   listSubtitle: { fontSize: 14 },
   
-  receiptCard: { borderRadius: 16, padding: 16 },
-  lightReceiptCard: { backgroundColor: '#FFFFFF', shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3 },
-  receiptHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  receiptInfo: { flex: 1 },
-  receiptTitle: { fontSize: 16, fontWeight: '700', marginBottom: 2 },
-  receiptSubtitle: { fontSize: 13 },
-  receiptAmount: { fontSize: 16, fontWeight: '800' },
-  
-  receiptActions: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
-  actionBtn: { flex: 1, flexDirection: 'row', paddingVertical: 12, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
-  rejectBtnText: { fontWeight: '700', fontSize: 15 },
-  approveBtnText: { fontWeight: '700', fontSize: 15 },
-  
-  darkBottomNav: { borderTopWidth: StyleSheet.hairlineWidth, paddingBottom: 24, paddingTop: 12, flexDirection: 'row', alignItems: 'center' },
-  darkNavItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
-  darkNavText: { fontSize: 10, fontWeight: '500', marginTop: 4 },
-  
-  lightBottomNavContainer: { position: 'absolute', bottom: 24, left: 20, right: 20 },
-  lightBottomNav: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 100, paddingHorizontal: 8, paddingVertical: 8, justifyContent: 'space-between', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 15 },
-  lightNavItem: { alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 8 },
-  lightNavItemActive: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#1D61F2', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 100 },
-  lightNavText: { fontSize: 10, fontWeight: '600', marginTop: 4 },
 });

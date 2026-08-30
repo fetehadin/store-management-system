@@ -141,9 +141,8 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.biometricTitle}>Instant Biometric Unlock</Text>
               <Text style={styles.biometricSubtitle}>
-                Tap scanner or glance to sign in{'\n'}with TouchID / FaceID
+                Tap scanner to sign in{'\n'}with TouchID / FaceID
               </Text>
             </View>
           ) : (
@@ -228,12 +227,12 @@ const styles = StyleSheet.create({
   logoSquircle: {
     width: 68,
     height: 68,
-    backgroundColor: '#1D61F2',
+    backgroundColor: '#177CA5',
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-    shadowColor: '#1D61F2',
+    shadowColor: '#177CA5',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
@@ -276,8 +275,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   segmentTabActive: {
-    backgroundColor: '#1D61F2',
-    shadowColor: '#1D61F2',
+    backgroundColor: '#177CA5',
+    shadowColor: '#177CA5',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -354,12 +353,12 @@ const styles = StyleSheet.create({
   },
   signInButton: {
     width: '100%',
-    backgroundColor: '#1D61F2',
+    backgroundColor: '#177CA5',
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#1D61F2',
+    shadowColor: '#177CA5',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -380,7 +379,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   outlineToggleText: {
-    color: '#1D61F2',
+    color: '#177CA5',
     fontSize: 15,
     fontWeight: '700',
     marginLeft: 10,

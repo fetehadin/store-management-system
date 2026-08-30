@@ -73,7 +73,6 @@ export default function StockScreen() {
   }
 
   const [activeCategory, setActiveCategory] = useState('All');
-  const [activeNav, setActiveNav] = useState('Stock');
 
   // Form States
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
@@ -119,7 +118,7 @@ export default function StockScreen() {
     text: isDarkMode ? '#E7E9EA' : '#0F172A',
     textMuted: isDarkMode ? '#71767B' : '#64748B',
     border: isDarkMode ? '#2F3336' : '#E2E8F0',
-    invertedBg: isDarkMode ? '#E7E9EA' : '#1D61F2',
+    invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5',
     invertedText: isDarkMode ? '#000000' : '#FFFFFF',
     cardBg: isDarkMode ? '#000000' : '#FFFFFF',
     inputBg: isDarkMode ? '#0F1419' : '#F1F5F9',
@@ -226,48 +225,6 @@ export default function StockScreen() {
           })}
         </View>
       </ScrollView>
-
-      {/* Adaptive Bottom Navigation */}
-      <View style={isDarkMode ? [styles.darkBottomNav, { backgroundColor: theme.bg, borderTopColor: theme.border }] : styles.lightBottomNavContainer}>
-        <View style={isDarkMode ? { flexDirection: 'row', width: '100%', justifyContent: 'space-around' } : styles.lightBottomNav}>
-          {[
-            { id: 'Home', icon: 'grid' },
-            { id: 'Sales', icon: 'bar-chart' },
-            { id: 'Stock', icon: 'cube' },
-            { id: 'Suppliers', icon: 'people' },
-            { id: 'Approvals', icon: 'checkmark-circle' },
-          ].map((tab) => {
-            const isActive = activeNav === tab.id;
-            return (
-              <TouchableOpacity 
-                key={tab.id}
-                style={isDarkMode ? styles.darkNavItem : (isActive ? styles.lightNavItemActive : styles.lightNavItem)}
-                onPress={() => {
-                  setActiveNav(tab.id);
-                  if (tab.id === 'Home') router.replace('/(admin)/dashboard');
-                  if (tab.id === 'Sales') router.replace('/(admin)/sales');
-                  if (tab.id === 'Stock') router.replace('/(admin)/stock');
-                  if (tab.id === 'Suppliers') router.replace('/(admin)/suppliers');
-                  if (tab.id === 'Approvals') router.replace('/(admin)/approvals');
-                }}
-              >
-                <Ionicons 
-                  name={isActive ? tab.icon as any : `${tab.icon}-outline` as any} 
-                  size={24} 
-                  color={isDarkMode ? (isActive ? theme.text : theme.textMuted) : (isActive ? '#FFFFFF' : '#64748B')} 
-                />
-                <Text style={[
-                  isDarkMode ? styles.darkNavText : styles.lightNavText, 
-                  { color: isDarkMode ? (isActive ? theme.text : theme.textMuted) : (isActive ? '#FFFFFF' : '#64748B') },
-                  isActive && { fontWeight: '700' }
-                ]}>
-                  {tab.id}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
 
       {/* Add Product Modal */}
       <Modal visible={isAddModalVisible} animationType="slide" transparent>
@@ -401,8 +358,8 @@ const styles = StyleSheet.create({
   headerAddBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100 },
   headerAddText: { fontWeight: '700', fontSize: 13, marginLeft: 4 },
   
-  scrollContentDark: { paddingBottom: 24, paddingTop: 12 },
-  scrollContentLight: { paddingBottom: 130, paddingTop: 12 },
+  scrollContentDark: { paddingBottom: 100, paddingTop: 12 },
+  scrollContentLight: { paddingBottom: 100, paddingTop: 12 },
   
   categoriesWrapper: { marginBottom: 20 },
   categoriesScroll: { paddingHorizontal: 20, alignItems: 'center' },
@@ -432,16 +389,6 @@ const styles = StyleSheet.create({
   unauthorizedSubtitle: { fontSize: 15, color: '#64748B', textAlign: 'center', marginBottom: 24 },
   backButton: { backgroundColor: '#1D61F2', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 100 },
   backButtonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-
-  darkBottomNav: { borderTopWidth: StyleSheet.hairlineWidth, paddingBottom: 24, paddingTop: 12, flexDirection: 'row', alignItems: 'center' },
-  darkNavItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
-  darkNavText: { fontSize: 10, fontWeight: '500', marginTop: 4 },
-  
-  lightBottomNavContainer: { position: 'absolute', bottom: 24, left: 20, right: 20 },
-  lightBottomNav: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 100, paddingHorizontal: 8, paddingVertical: 8, justifyContent: 'space-between', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 15 },
-  lightNavItem: { alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 8 },
-  lightNavItemActive: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#1D61F2', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 100 },
-  lightNavText: { fontSize: 10, fontWeight: '600', marginTop: 4 },
 
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
   bottomSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '90%' },
