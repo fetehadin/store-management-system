@@ -15,46 +15,20 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
+import { useInventoryStore } from '../../store/inventoryStore';
 
-const CATEGORIES = ['Cooking Oil', 'Flour & Baking', 'Confectionery', 'Beverages'];
-
-const INITIAL_INVENTORY = [
-  { 
-    id: '1', 
-    name: 'Sunflower Cooking Oil (1L)', 
-    category: 'Cooking Oil',
-    costPrice: 320.00,
-    sellingPrice: 370.00, 
-    stock: 450, 
-    icon: 'water-outline' 
-  },
-  { 
-    id: '2', 
-    name: 'Wheat Flour (5kg)', 
-    category: 'Flour & Baking',
-    costPrice: 700.00,
-    sellingPrice: 850.00, 
-    stock: 12, 
-    icon: 'bag-outline' 
-  },
-  { 
-    id: '3', 
-    name: 'Premium Dark Chocolate', 
-    category: 'Confectionery',
-    costPrice: 150.00,
-    sellingPrice: 200.00, 
-    stock: 85, 
-    icon: 'grid-outline' 
-  },
-];
+const CATEGORIES = ['Cooking Oil', 'Flour & Baking', 'Confectionery', 'Beverages', 'Refined Sugar', 'Cooking Oil & Fats'];
 
 export default function StockScreen() {
   const router = useRouter();
   
   const role = useAuthStore((state) => state.role);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  
   const isAdmin = role === 'ADMIN' || role === null;
+
+  // Zustand Store Hooks
+  const stock = useInventoryStore((state) => state.stock);
+  const updateSellingPrice = useInventoryStore((state) => state.updateSellingPrice);
 
   if (!isAdmin) {
     return (
@@ -62,7 +36,7 @@ export default function StockScreen() {
         <StatusBar barStyle="dark-content" />
         <Ionicons name="lock-closed-outline" size={64} color="#DC2626" />
         <Text style={styles.unauthorizedTitle}>Access Restricted</Text>
-        <Text style={styles.unauthorizedSubtitle}>This portal is exclusively for system administrators. Sales reps must use the POS interface.</Text>
+        <Text style={styles.unauthorizedSubtitle}>This portal is exclusively for system administrators.</Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/(rep)/pos')}>
           <Text style={styles.backButtonText}>Return to POS</Text>
         </TouchableOpacity>
@@ -71,7 +45,6 @@ export default function StockScreen() {
   }
 
   const [activeCategory, setActiveCategory] = useState('All');
-  const [inventory, setInventory] = useState(INITIAL_INVENTORY);
 
   // Edit Price Modal States
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
@@ -79,8 +52,8 @@ export default function StockScreen() {
   const [newPriceInput, setNewPriceInput] = useState('');
 
   const filteredInventory = activeCategory === 'All' 
-    ? inventory 
-    : inventory.filter(item => item.category === activeCategory);
+    ? stock 
+    : stock.filter(item => item.category.toLowerCase().includes(activeCategory.toLowerCase()));
 
   const openEditModal = (id: string, name: string, currentPrice: number) => {
     setActiveItem({ id, name, price: currentPrice.toString() });
@@ -90,11 +63,8 @@ export default function StockScreen() {
 
   const handleUpdatePrice = () => {
     if (!activeItem || !newPriceInput) return;
-    
     const updatedPrice = parseFloat(newPriceInput);
-    setInventory(prev => prev.map(item => 
-      item.id === activeItem.id ? { ...item, sellingPrice: updatedPrice } : item
-    ));
+    updateSellingPrice(activeItem.id, updatedPrice);
     
     setIsEditModalVisible(false);
     setActiveItem(null);
@@ -116,13 +86,9 @@ export default function StockScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
 
-      {/* Header (Read-Only Catalog Mode) */}
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity 
-            style={styles.menuButton} 
-            onPress={() => router.replace('/(admin)/dashboard')}
-          >
+          <TouchableOpacity style={styles.menuButton} onPress={() => router.replace('/(admin)/dashboard')}>
             <Ionicons name="arrow-back-outline" size={26} color={theme.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.text }]}>Store Inventory</Text>
@@ -131,7 +97,6 @@ export default function StockScreen() {
 
       <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
         
-        {/* Category Filters */}
         <View style={styles.categoriesWrapper}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesScroll}>
             {['All', ...CATEGORIES].map((cat) => {
@@ -155,7 +120,6 @@ export default function StockScreen() {
           </ScrollView>
         </View>
 
-        {/* Product Catalog Feed */}
         <View style={styles.productList}>
           {filteredInventory.map((item) => {
             const isLowStock = item.stock < 20;
@@ -189,7 +153,6 @@ export default function StockScreen() {
                     <Text style={[styles.metricValue, { color: theme.textMuted }]}>ETB {item.costPrice.toFixed(2)}</Text>
                   </View>
                   
-                  {/* Editable Selling Price Column */}
                   <TouchableOpacity 
                     style={styles.editableColumn}
                     onPress={() => openEditModal(item.id, item.name, item.sellingPrice)}
@@ -214,7 +177,6 @@ export default function StockScreen() {
         </View>
       </ScrollView>
 
-      {/* Edit Selling Price Modal */}
       <Modal visible={isEditModalVisible} animationType="fade" transparent>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={[styles.bottomSheet, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }]}>

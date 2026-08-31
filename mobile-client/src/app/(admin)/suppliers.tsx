@@ -17,8 +17,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../store/authStore';
+import { useInventoryStore } from '../../store/inventoryStore';
 
-// Global Catalog for Autocomplete
 const EXISTING_CATALOG = [
   { name: 'Sunflower Cooking Oil (1L)', category: 'Cooking Oil & Fats' },
   { name: 'Palm Oil (5L)', category: 'Cooking Oil & Fats' },
@@ -27,33 +27,19 @@ const EXISTING_CATALOG = [
   { name: 'Premium Dark Chocolate', category: 'Confectionery' },
 ];
 
-const SUPPLIERS_DATA = [
-  {
-    id: '1',
-    name: 'Oromia Oil Mills',
-    totalPayable: 85000,
-    isExpanded: true,
-    batches: [
-      {
-        id: 'BATCH-114',
-        date: 'Oct 12, 2026',
-        status: 'Unpaid',
-        totalAmount: 45000,
-        items: [
-          { id: 'i1', name: 'Sunflower Oil (1L)', category: 'Cooking Oil & Fats', qty: 100, cost: 320, selling: 370 },
-          { id: 'i2', name: 'Palm Oil (5L)', category: 'Cooking Oil & Fats', qty: 10, cost: 1300, selling: 1500 }
-        ]
-      }
-    ]
-  },
-];
-
 export default function SuppliersScreen() {
   const router = useRouter();
   
   const role = useAuthStore((state) => state.role);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const isAdmin = role === 'ADMIN' || role === null;
+
+  // Zustand Store Hooks
+  const suppliers = useInventoryStore((state) => state.suppliers);
+  const toggleSupplierExpand = useInventoryStore((state) => state.toggleSupplierExpand);
+  const enrollSupplierAndBatch = useInventoryStore((state) => state.enrollSupplierAndBatch);
+  const addBatchToSupplier = useInventoryStore((state) => state.addBatchToSupplier);
+  const processRefund = useInventoryStore((state) => state.processRefund);
 
   if (!isAdmin) {
     return (
@@ -69,8 +55,6 @@ export default function SuppliersScreen() {
     );
   }
 
-  const [suppliers, setSuppliers] = useState(SUPPLIERS_DATA);
-
   // Modals State
   const [isEnrollModalVisible, setIsEnrollModalVisible] = useState(false);
   const [isAddBatchModalVisible, setIsAddBatchModalVisible] = useState(false);
@@ -79,18 +63,15 @@ export default function SuppliersScreen() {
   const [activeSupplierId, setActiveSupplierId] = useState<string | null>(null);
   const [activeBatch, setActiveBatch] = useState<any | null>(null);
 
-  // Multi-Item Batch State
+  // Form States
   const [vendorName, setVendorName] = useState('');
+  const [primaryCategory, setPrimaryCategory] = useState('');
   const [batchItems, setBatchItems] = useState([
     { localId: '1', name: '', category: '', qty: '', cost: '', selling: '', photoUri: null as string | null }
   ]);
   const [focusedItemIndex, setFocusedItemIndex] = useState<number | null>(null);
+  const [refundInputs, setRefundInputs] = useState<Record<string, string>>({});
 
-  const toggleExpand = (id: string) => {
-    setSuppliers(prev => prev.map(s => s.id === id ? { ...s, isExpanded: !s.isExpanded } : s));
-  };
-
-  // Dynamic Batch Item Handlers
   const addBatchItem = () => {
     setBatchItems(prev => [...prev, { localId: Date.now().toString(), name: '', category: '', qty: '', cost: '', selling: '', photoUri: null }]);
   };
@@ -131,18 +112,39 @@ export default function SuppliersScreen() {
 
   const resetForm = () => {
     setVendorName('');
+    setPrimaryCategory('');
     setBatchItems([{ localId: '1', name: '', category: '', qty: '', cost: '', selling: '', photoUri: null }]);
     setFocusedItemIndex(null);
   };
 
   const handleEnrollSupplier = () => {
-    console.log("Enrolling Supplier:", vendorName, "Batch:", batchItems);
+    if (!vendorName.trim()) return;
+    const formattedItems = batchItems.map(item => ({
+      name: item.name,
+      category: item.category || 'General',
+      qty: parseInt(item.qty) || 0,
+      cost: parseFloat(item.cost) || 0,
+      selling: parseFloat(item.selling) || 0,
+      photoUri: item.photoUri,
+    }));
+
+    enrollSupplierAndBatch(vendorName, primaryCategory || 'General', formattedItems);
     setIsEnrollModalVisible(false);
     resetForm();
   };
 
   const handleAddBatch = () => {
-    console.log("Adding Batch to Supplier", activeSupplierId, "Items:", batchItems);
+    if (!activeSupplierId) return;
+    const formattedItems = batchItems.map(item => ({
+      name: item.name,
+      category: item.category || 'General',
+      qty: parseInt(item.qty) || 0,
+      cost: parseFloat(item.cost) || 0,
+      selling: parseFloat(item.selling) || 0,
+      photoUri: item.photoUri,
+    }));
+
+    addBatchToSupplier(activeSupplierId, formattedItems);
     setIsAddBatchModalVisible(false);
     setActiveSupplierId(null);
     resetForm();
@@ -156,8 +158,27 @@ export default function SuppliersScreen() {
 
   const openAdjustModal = (batch: any) => {
     setActiveBatch(batch);
+    setRefundInputs({});
     setIsAdjustModalVisible(true);
   };
+
+  const handleConfirmRefund = () => {
+    if (!activeSupplierId && activeBatch) {
+      // Find supplier containing this batch
+      const parentSup = suppliers.find(s => s.batches.some(b => b.id === activeBatch.id));
+      if (parentSup) {
+        const refundsList = Object.entries(refundInputs).map(([itemId, qtyStr]) => ({
+          id: itemId,
+          refundQty: parseInt(qtyStr) || 0
+        }));
+        processRefund(parentSup.id, activeBatch.id, refundsList);
+      }
+    }
+    setIsAdjustModalVisible(false);
+    setActiveBatch(null);
+  };
+
+  const totalPayableSum = suppliers.reduce((acc, s) => acc + s.totalPayable, 0);
 
   const theme = {
     bg: isDarkMode ? '#000000' : '#F8FAFC',
@@ -171,11 +192,9 @@ export default function SuppliersScreen() {
     inputBg: isDarkMode ? '#0F1419' : '#F1F5F9',
   };
 
-  // Render the dynamic item list for both Receive modals
   const renderBatchItems = () => (
     <>
       {batchItems.map((item, index) => {
-        // Autocomplete filtering logic
         const showSuggestions = focusedItemIndex === index && item.name.length > 1;
         const suggestions = EXISTING_CATALOG.filter(c => c.name.toLowerCase().includes(item.name.toLowerCase()));
 
@@ -211,7 +230,6 @@ export default function SuppliersScreen() {
               onFocus={() => setFocusedItemIndex(index)}
             />
 
-            {/* Smart Autocomplete Suggestions */}
             {showSuggestions && suggestions.length > 0 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.suggestionScroll}>
                 {suggestions.map((suggestion, sIdx) => (
@@ -264,7 +282,6 @@ export default function SuppliersScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
 
-      {/* Standardized Admin Header */}
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity style={styles.menuButton} onPress={() => router.replace('/(admin)/dashboard')}>
@@ -279,17 +296,15 @@ export default function SuppliersScreen() {
 
       <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
         
-        {/* Title & Summary Badge */}
         <View style={styles.titleContainer}>
           <View style={styles.summaryBadgeRow}>
             <View style={styles.payableBadge}>
-              <Text style={styles.payableBadgeText}>ETB 120,000 Total Payable</Text>
+              <Text style={styles.payableBadgeText}>ETB {totalPayableSum.toLocaleString()} Total Payable</Text>
             </View>
             <Text style={[styles.activeSuppliersText, { color: theme.textMuted }]}>Across {suppliers.length} active vendors</Text>
           </View>
         </View>
 
-        {/* Primary Action Button */}
         <View style={styles.actionContainer}>
           <TouchableOpacity style={[styles.mainActionBtn, { backgroundColor: theme.invertedBg }]} onPress={() => setIsEnrollModalVisible(true)}>
             <Ionicons name="add" size={20} color={theme.invertedText} style={styles.btnIcon} />
@@ -297,11 +312,10 @@ export default function SuppliersScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Suppliers Accordion List */}
         <View style={styles.listContainer}>
           {suppliers.map((supplier) => (
             <View key={supplier.id} style={[styles.supplierCard, { backgroundColor: theme.cardBg }, isDarkMode ? { borderWidth: 1, borderColor: theme.border } : styles.lightShadow]}>
-              <TouchableOpacity style={styles.supplierHeaderRow} onPress={() => toggleExpand(supplier.id)} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.supplierHeaderRow} onPress={() => toggleSupplierExpand(supplier.id)} activeOpacity={0.7}>
                 <View style={styles.supplierMetaRow}>
                   <View style={[styles.supplierIconBox, isDarkMode && { backgroundColor: '#1E293B' }]}>
                     <Ionicons name="business-outline" size={24} color="#1D61F2" />
@@ -316,7 +330,6 @@ export default function SuppliersScreen() {
                 <Ionicons name={supplier.isExpanded ? "chevron-up" : "chevron-down"} size={20} color={theme.textMuted} />
               </TouchableOpacity>
 
-              {/* Expanded Batches & Items Section */}
               {supplier.isExpanded && (
                 <View style={[styles.batchesContainer, { borderTopColor: theme.border }]}>
                   <View style={styles.batchesHeaderRow}>
@@ -374,7 +387,7 @@ export default function SuppliersScreen() {
         </View>
       </ScrollView>
 
-      {/* Enroll Supplier Modal (Vendor Details + Multi-Item Batch) */}
+      {/* Enroll Supplier Modal */}
       <Modal visible={isEnrollModalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={[styles.bottomSheet, { backgroundColor: theme.bg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, maxHeight: '95%' }]}>
@@ -388,6 +401,9 @@ export default function SuppliersScreen() {
               <Text style={[styles.inputLabel, { color: theme.text }]}>Vendor Name</Text>
               <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="e.g. Mojo Coffee Mills" placeholderTextColor={theme.textMuted} value={vendorName} onChangeText={setVendorName} />
               
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Primary Category</Text>
+              <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="e.g. Coffee Beans" placeholderTextColor={theme.textMuted} value={primaryCategory} onChangeText={setPrimaryCategory} />
+
               <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
               <Text style={[styles.sectionSubtitle, { color: theme.text }]}>Record Initial Batch</Text>
 
@@ -401,7 +417,7 @@ export default function SuppliersScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Add Batch to Existing Supplier Modal (Multi-Item) */}
+      {/* Add Batch Modal */}
       <Modal visible={isAddBatchModalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={[styles.bottomSheet, { backgroundColor: theme.bg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, maxHeight: '95%' }]}>
@@ -412,9 +428,7 @@ export default function SuppliersScreen() {
               </TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetScroll}>
-              
               {renderBatchItems()}
-
               <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.invertedBg }]} onPress={handleAddBatch}>
                 <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>Record Batch & Update Stock</Text>
               </TouchableOpacity>
@@ -434,25 +448,27 @@ export default function SuppliersScreen() {
               </TouchableOpacity>
             </View>
             <Text style={[styles.helperText, { color: theme.textMuted }]}>
-              Enter the quantity returned. This deducts from the global Stock array and reduces the supplier's payable ledger instantly.
+              Enter the quantity returned. This deducts from global Stock and reduces the supplier payable ledger instantly.
             </Text>
             
             {activeBatch?.items.map((item: any) => (
               <View key={item.id} style={[styles.refundRow, { backgroundColor: theme.inputBg, borderColor: theme.border }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.refundItemName, { color: theme.text }]}>{item.name}</Text>
-                  <Text style={[styles.refundCostInfo, { color: theme.textMuted }]}>Cost: ETB {item.cost} / unit</Text>
+                  <Text style={[styles.refundCostInfo, { color: theme.textMuted }]}>Available Qty: {item.qty} | Cost: ETB {item.cost}</Text>
                 </View>
                 <TextInput 
                   style={[styles.refundInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.cardBg }]} 
-                  placeholder={`Max ${item.qty}`} 
+                  placeholder="0" 
                   placeholderTextColor={theme.textMuted} 
-                  keyboardType="numeric" 
+                  keyboardType="numeric"
+                  value={refundInputs[item.id] || ''}
+                  onChangeText={(val) => setRefundInputs(prev => ({ ...prev, [item.id]: val }))}
                 />
               </View>
             ))}
 
-            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: '#DC2626' }]} onPress={() => setIsAdjustModalVisible(false)}>
+            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: '#DC2626' }]} onPress={handleConfirmRefund}>
               <Text style={[styles.submitBtnText, { color: '#FFFFFF' }]}>Process Deduction</Text>
             </TouchableOpacity>
           </View>
