@@ -11,6 +11,8 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -27,11 +29,17 @@ export default function SharedProfile() {
   
   const displayRole = role === 'ADMIN' ? 'System Administrator' : 'Sales Representative';
 
+  // Profile States
   const [avatarUri, setAvatarUri] = useState<string | null>(`https://ui-avatars.com/api/?name=${encodeURIComponent(authUserName)}&background=1D61F2&color=fff`);
+  const [isAvatarChanged, setIsAvatarChanged] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Security States
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const theme = {
     bg: isDarkMode ? '#000000' : '#F8FAFC',
@@ -51,18 +59,59 @@ export default function SharedProfile() {
       aspect: [1, 1],
       quality: 0.8,
     });
-    if (!result.canceled) setAvatarUri(result.assets[0].uri);
+    if (!result.canceled) {
+      setAvatarUri(result.assets[0].uri);
+      setIsAvatarChanged(true); // Reveal the Save button
+    }
+  };
+
+  const handleSaveProfile = () => {
+    setIsSavingProfile(true);
+    // Mock Backend Call
+    setTimeout(() => {
+      setIsSavingProfile(false);
+      setIsAvatarChanged(false);
+      Alert.alert('Success', 'Your profile picture has been updated.');
+    }, 800);
   };
 
   const handleUpdatePassword = () => {
-    if (newPassword !== confirmPassword) {
-      alert("New passwords do not match!");
+    if (newPassword.length < 6) {
+      Alert.alert("Invalid Length", "New password must be at least 6 characters.");
       return;
     }
-    console.log("Updating Password securely...");
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    if (newPassword !== confirmPassword) {
+      Alert.alert("Mismatch", "New passwords do not match. Please try again.");
+      return;
+    }
+    
+    setIsUpdatingPassword(true);
+    // Mock Backend Call
+    setTimeout(() => {
+      setIsUpdatingPassword(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      Alert.alert('Success', 'Your security password has been securely updated.');
+    }, 800);
+  };
+
+  const handleSignOut = () => {
+    Alert.alert(
+      "Sign Out",
+      "Are you sure you want to sign out of your account?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Sign Out", 
+          style: "destructive", 
+          onPress: () => {
+            logout(); // Clear Zustand state
+            router.replace('/'); // Force navigation to login screen
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -80,25 +129,44 @@ export default function SharedProfile() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
           
-          <View style={styles.avatarSection}>
-            <View style={styles.avatarWrapper}>
-              {avatarUri ? (
-                <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-              ) : (
-                <View style={[styles.avatarPlaceholder, { backgroundColor: theme.inputBg }]}>
-                  <Ionicons name="person" size={40} color={theme.textMuted} />
-                </View>
+          {/* PROFILE SECTION */}
+          <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }, !isDarkMode && styles.lightShadow]}>
+            <View style={styles.avatarSection}>
+              <View style={styles.avatarWrapper}>
+                {avatarUri ? (
+                  <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+                ) : (
+                  <View style={[styles.avatarPlaceholder, { backgroundColor: theme.inputBg }]}>
+                    <Ionicons name="person" size={40} color={theme.textMuted} />
+                  </View>
+                )}
+                <TouchableOpacity style={[styles.editAvatarBtn, { backgroundColor: theme.invertedBg }]} onPress={handlePickImage}>
+                  <Ionicons name="camera" size={16} color={theme.invertedText} />
+                </TouchableOpacity>
+              </View>
+              
+              <Text style={[styles.profileName, { color: theme.text }]}>{authUserName}</Text>
+              <Text style={[styles.profileRole, { color: theme.textMuted }]}>{displayRole}</Text>
+
+              {isAvatarChanged && (
+                <TouchableOpacity 
+                  style={[styles.saveProfileBtn, { backgroundColor: theme.invertedBg }]} 
+                  onPress={handleSaveProfile}
+                  disabled={isSavingProfile}
+                >
+                  {isSavingProfile ? (
+                    <ActivityIndicator color={theme.invertedText} />
+                  ) : (
+                    <Text style={[styles.saveProfileBtnText, { color: theme.invertedText }]}>Save Profile Image</Text>
+                  )}
+                </TouchableOpacity>
               )}
-              <TouchableOpacity style={[styles.editAvatarBtn, { backgroundColor: theme.invertedBg }]} onPress={handlePickImage}>
-                <Ionicons name="camera" size={16} color={theme.invertedText} />
-              </TouchableOpacity>
             </View>
-            <Text style={[styles.profileName, { color: theme.text }]}>{authUserName}</Text>
-            <Text style={[styles.profileRole, { color: theme.textMuted }]}>{displayRole}</Text>
           </View>
 
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Security</Text>
+          {/* SECURITY SECTION */}
+          <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, marginTop: 24 }, !isDarkMode && styles.lightShadow]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Update Password</Text>
             
             <Text style={[styles.inputLabel, { color: theme.text }]}>Current Password</Text>
             <View style={[styles.passwordInputContainer, { backgroundColor: theme.inputBg, borderColor: theme.border }]}>
@@ -136,18 +204,24 @@ export default function SharedProfile() {
             />
 
             <TouchableOpacity 
-              style={[styles.secondaryBtn, { borderColor: theme.border }]} 
+              style={[styles.secondaryBtn, { borderColor: theme.border, backgroundColor: theme.bg }]} 
               onPress={handleUpdatePassword}
-              disabled={!currentPassword || !newPassword || !confirmPassword}
+              disabled={!currentPassword || !newPassword || !confirmPassword || isUpdatingPassword}
             >
-              <Text style={[styles.secondaryBtnText, { color: theme.text }]}>Update Password</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.logoutBtn} onPress={() => logout()}>
-              <Ionicons name="log-out-outline" size={20} color="#DC2626" style={styles.actionIcon} />
-              <Text style={styles.logoutText}>Sign Out</Text>
+              {isUpdatingPassword ? (
+                <ActivityIndicator color={theme.text} />
+              ) : (
+                <Text style={[styles.secondaryBtnText, { color: theme.text }]}>Save New Password</Text>
+              )}
             </TouchableOpacity>
           </View>
+
+          {/* SIGN OUT SECTION */}
+          <TouchableOpacity style={styles.logoutBtn} onPress={handleSignOut}>
+            <Ionicons name="log-out-outline" size={20} color="#DC2626" style={styles.actionIcon} />
+            <Text style={styles.logoutText}>Sign Out</Text>
+          </TouchableOpacity>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -159,25 +233,32 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16 },
   menuButton: { padding: 4, marginLeft: -4 },
   headerTitle: { fontSize: 18, fontWeight: '800' },
-  scrollContentDark: { paddingBottom: 60 },
-  scrollContentLight: { paddingBottom: 60 },
-  avatarSection: { alignItems: 'center', marginTop: 24, marginBottom: 32 },
+  scrollContentDark: { paddingHorizontal: 20, paddingBottom: 60, paddingTop: 12 },
+  scrollContentLight: { paddingHorizontal: 20, paddingBottom: 60, paddingTop: 12 },
+  
+  lightShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3 },
+  card: { padding: 24, borderRadius: 24 },
+
+  avatarSection: { alignItems: 'center' },
   avatarWrapper: { position: 'relative', marginBottom: 12 },
   avatarImage: { width: 100, height: 100, borderRadius: 50 },
   avatarPlaceholder: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center' },
   editAvatarBtn: { position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#FFFFFF' },
   profileName: { fontSize: 20, fontWeight: '800', marginTop: 8 },
   profileRole: { fontSize: 14, fontWeight: '600', marginTop: 4 },
-  section: { paddingHorizontal: 24, marginBottom: 12 },
-  sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 16 },
-  inputLabel: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 12 },
+  saveProfileBtn: { marginTop: 20, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 100, minWidth: 180, alignItems: 'center' },
+  saveProfileBtnText: { fontWeight: '700', fontSize: 15 },
+
+  sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 8 },
+  inputLabel: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 16 },
   input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontWeight: '500' },
   passwordInputContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12, overflow: 'hidden' },
   passwordInput: { flex: 1, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontWeight: '500' },
   eyeBtn: { padding: 14 },
-  secondaryBtn: { marginTop: 24, paddingVertical: 16, borderRadius: 100, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  secondaryBtn: { marginTop: 24, paddingVertical: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   secondaryBtnText: { fontSize: 15, fontWeight: '700' },
+
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 32, paddingVertical: 16, borderRadius: 16, backgroundColor: 'rgba(220, 38, 38, 0.1)' },
   actionIcon: { marginRight: 12 },
-  logoutText: { color: '#DC2626', fontSize: 16, fontWeight: '700' },
+  logoutText: { color: '#DC2626', fontSize: 16, fontWeight: '800' },
 });
