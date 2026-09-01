@@ -22,24 +22,33 @@ export default function LoginScreen() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
 
-  const [roleTab, setRoleTab] = useState<'ADMIN' | 'SALES_REP'>('SALES_REP');
-  const [authMode, setAuthMode] = useState<'BIOMETRIC' | 'PIN'>('BIOMETRIC');
+  const [authMode, setAuthMode] = useState<'BIOMETRIC' | 'PIN'>('PIN');
+  const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
 
   const loginMutation = useMutation({
-    mutationFn: async (payload: { pin?: string; isBiometric?: boolean }) => {
+    mutationFn: async (payload: { username: string; pin?: string }) => {
       const response = await apiClient.post('/auth/login', {
+        username: payload.username,
         password: payload.pin,
-        role: roleTab,
       });
       return response.data;
     },
     onSuccess: async (data) => {
-      await setAuth(data.token, data.user.role);
+      // 1. Force Reset Trap
+      if (data.user.requiresPasswordChange) {
+        await setAuth(data.token, data.user.role, data.user.name);
+        router.replace('/(auth)/force-reset' as any);
+        return;
+      }
+
+      // 2. Smart Backend-Driven Routing
+      await setAuth(data.token, data.user.role, data.user.name);
+      
       if (data.user.role === 'ADMIN') {
         router.replace('/(admin)/dashboard');
       } else {
-        router.replace('/(rep)/pos');
+        router.replace('/(rep)/home');
       }
     },
     onError: (error: any) => {
@@ -56,7 +65,7 @@ export default function LoginScreen() {
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
       if (!hasHardware || !isEnrolled) {
-        Alert.alert('Biometrics Unavailable', 'Please sign in using your Security PIN.');
+        Alert.alert('Biometrics Unavailable', 'Please sign in using your credentials.');
         setAuthMode('PIN');
         return;
       }
@@ -66,24 +75,55 @@ export default function LoginScreen() {
         fallbackLabel: 'Use PIN',
       });
 
+      if (result.success) {
+        // Mock fallback for UI testing (since biometrics don't pass a username here)
+        await setAuth('dummy-jwt', 'ADMIN', 'Fetehadin N.');
+        router.replace('/(admin)/dashboard');
+      }
     } catch (err) {
       console.error(err);
       Alert.alert('Error', 'Biometric scan failed');
     }
   };
 
-  const handlePinSubmit = () => {
-  // Temporarily bypass the backend API for UI testing
-  router.replace('/(admin)/dashboard');
-};
+  const handlePinSubmit = async () => {
+    if (!username.trim() || !pin.trim()) {
+      Alert.alert('Missing Fields', 'Please enter both your Username and PIN.');
+      return;
+    }
+
+    // Mock Backend Routing for UI testing
+    const mockRole = username.toLowerCase().includes('admin') ? 'ADMIN' : 'SALES_REP';
+    const mockName = mockRole === 'ADMIN' ? 'Fetehadin N.' : 'Abebe Kebede';
+    
+    await setAuth('dummy-jwt', mockRole, mockName);
+    
+    if (mockRole === 'ADMIN') {
+      router.replace('/(admin)/dashboard');
+    } else {
+      router.replace('/(rep)/home');
+    }
+  };
+
+  // Automated In-App Waiting Room Logic
+  const handleForgotPin = () => {
+    if (!username.trim()) {
+      Alert.alert("Missing Username", "Enter your username first so we know who is requesting the reset.");
+      return;
+    }
+    
+    // Send request to backend (uncomment when API is ready)
+    // apiClient.post('/auth/request-reset', { username });
+    
+    // Push the user to the live waiting room
+    router.push({ pathname: '/(auth)/waiting-room', params: { username } } as any);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
-        
-        {/* Top Branding Section */}
         <View style={styles.header}>
           <View style={styles.logoSquircle}>
             <Feather name="box" size={28} color="#FFFFFF" />
@@ -92,74 +132,44 @@ export default function LoginScreen() {
           <Text style={styles.subtitle}>Distribution Portal</Text>
         </View>
 
-        {/* Floating White Card */}
         <View style={styles.card}>
           
-          {/* Segmented Pill Selector */}
-          <View style={styles.segmentedContainer}>
-            <TouchableOpacity
-              style={[styles.segmentTab, roleTab === 'ADMIN' && styles.segmentTabActive]}
-              onPress={() => setRoleTab('ADMIN')}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[
-                  styles.segmentText,
-                  roleTab === 'ADMIN' ? styles.segmentTextActive : styles.segmentTextInactive,
-                ]}
-              >
-                Admin
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.segmentTab, roleTab === 'SALES_REP' && styles.segmentTabActive]}
-              onPress={() => setRoleTab('SALES_REP')}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[
-                  styles.segmentText,
-                  roleTab === 'SALES_REP' ? styles.segmentTextActive : styles.segmentTextInactive,
-                ]}
-              >
-                Sales Rep
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Mode Switch: Biometrics vs PIN */}
           {authMode === 'BIOMETRIC' ? (
             <View style={styles.biometricSection}>
               <View style={styles.biometricOuterRing}>
-                <TouchableOpacity
-                  style={styles.biometricInnerBubble}
-                  onPress={handleBiometricAuth}
-                  activeOpacity={0.8}
-                >
+                <TouchableOpacity style={styles.biometricInnerBubble} onPress={handleBiometricAuth} activeOpacity={0.8}>
                   <Ionicons name="finger-print" size={54} color="#1D61F2" />
                 </TouchableOpacity>
               </View>
-
-              <Text style={styles.biometricSubtitle}>
-                Tap scanner to sign in{'\n'}with TouchID / FaceID
-              </Text>
+              <Text style={styles.biometricSubtitle}>Tap scanner to sign in{'\n'}with TouchID / FaceID</Text>
             </View>
           ) : (
             <View style={styles.pinSection}>
-              <Text style={styles.pinTitle}>Enter Security PIN</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Username</Text>
+                <TextInput
+                  style={styles.standardInput}
+                  placeholder="e.g. abebe.k"
+                  placeholderTextColor="#94A3B8"
+                  autoCapitalize="none"
+                  value={username}
+                  onChangeText={setUsername}
+                />
+              </View>
 
-              <TextInput
-                style={styles.input}
-                placeholder="PIN"
-                placeholderTextColor="#94A3B8"
-                secureTextEntry
-                keyboardType="numeric"
-                maxLength={6}
-                value={pin}
-                onChangeText={setPin}
-                autoFocus
-              />
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>PIN</Text>
+                <TextInput
+                  style={styles.pinInput}
+                  placeholder="••••••"
+                  placeholderTextColor="#94A3B8"
+                  secureTextEntry
+                  keyboardType="numeric"
+                  maxLength={6}
+                  value={pin}
+                  onChangeText={setPin}
+                />
+              </View>
 
               <TouchableOpacity
                 style={styles.signInButton}
@@ -176,7 +186,6 @@ export default function LoginScreen() {
             </View>
           )}
 
-          {/* Bottom Toggle Outlined Button (Inside Card) */}
           <TouchableOpacity
             style={styles.outlineToggleBtn}
             onPress={() => setAuthMode(authMode === 'BIOMETRIC' ? 'PIN' : 'BIOMETRIC')}
@@ -196,12 +205,8 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Forgot PIN Link (Outside Card) */}
-        <TouchableOpacity 
-          style={styles.forgotPinContainer}
-          onPress={() => Alert.alert('Reset PIN', 'Contact your system administrator.')}
-        >
-          <Text style={styles.forgotPinText}>Forgot PIN? PIN Reset</Text>
+        <TouchableOpacity style={styles.forgotPinContainer} onPress={handleForgotPin}>
+          <Text style={styles.forgotPinText}>Forgot PIN? Request Reset</Text>
         </TouchableOpacity>
 
       </ScrollView>
@@ -210,187 +215,31 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#EEF3FC', // Soft blueish background from the design
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 40,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  logoSquircle: {
-    width: 68,
-    height: 68,
-    backgroundColor: '#177CA5',
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    shadowColor: '#177CA5',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0F172A',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#64748B',
-    marginTop: 4,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 28,
-    padding: 24,
-    shadowColor: '#64748B',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    elevation: 10,
-  },
-  segmentedContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#F1F5F9',
-    borderRadius: 999,
-    padding: 6,
-    marginBottom: 32,
-  },
-  segmentTab: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  segmentTabActive: {
-    backgroundColor: '#177CA5',
-    shadowColor: '#177CA5',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  segmentText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  segmentTextActive: {
-    color: '#FFFFFF',
-  },
-  segmentTextInactive: {
-    color: '#64748B',
-  },
-  biometricSection: {
-    alignItems: 'center',
-  },
-  biometricOuterRing: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#EBF2FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  biometricInnerBubble: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: '#DFEAFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  biometricTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  biometricSubtitle: {
-    fontSize: 14,
-    color: '#64748B',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  pinSection: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  pinTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  input: {
-    width: '100%',
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    letterSpacing: 8,
-    marginBottom: 20,
-  },
-  signInButton: {
-    width: '100%',
-    backgroundColor: '#177CA5',
-    borderRadius: 16,
-    paddingVertical: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#177CA5',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  signInButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  outlineToggleBtn: {
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  outlineToggleText: {
-    color: '#177CA5',
-    fontSize: 15,
-    fontWeight: '700',
-    marginLeft: 10,
-  },
-  forgotPinContainer: {
-    marginTop: 32,
-    alignItems: 'center',
-  },
-  forgotPinText: {
-    color: '#64748B',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  container: { flex: 1, backgroundColor: '#EEF3FC' },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 40 },
+  header: { alignItems: 'center', marginBottom: 32 },
+  logoSquircle: { width: 68, height: 68, backgroundColor: '#177CA5', borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 16, shadowColor: '#177CA5', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 8 },
+  title: { fontSize: 28, fontWeight: '800', color: '#0F172A', letterSpacing: -0.5 },
+  subtitle: { fontSize: 14, fontWeight: '500', color: '#64748B', marginTop: 4 },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 28, padding: 24, shadowColor: '#64748B', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.08, shadowRadius: 24, elevation: 10 },
+  
+  biometricSection: { alignItems: 'center', marginBottom: 16 },
+  biometricOuterRing: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#EBF2FF', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  biometricInnerBubble: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#DFEAFF', alignItems: 'center', justifyContent: 'center' },
+  biometricSubtitle: { fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20, marginBottom: 16 },
+  
+  pinSection: { marginBottom: 24 },
+  inputGroup: { marginBottom: 16 },
+  inputLabel: { fontSize: 13, fontWeight: '700', color: '#64748B', marginBottom: 8, marginLeft: 4 },
+  standardInput: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16, fontSize: 16, fontWeight: '600', color: '#0F172A' },
+  pinInput: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16, fontSize: 24, fontWeight: '700', color: '#0F172A', textAlign: 'center', letterSpacing: 12 },
+  
+  signInButton: { width: '100%', backgroundColor: '#177CA5', borderRadius: 16, paddingVertical: 18, alignItems: 'center', justifyContent: 'center', marginTop: 8, shadowColor: '#177CA5', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  signInButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
+  
+  outlineToggleBtn: { borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 16, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
+  outlineToggleText: { color: '#177CA5', fontSize: 15, fontWeight: '700', marginLeft: 10 },
+  
+  forgotPinContainer: { marginTop: 32, alignItems: 'center' },
+  forgotPinText: { color: '#64748B', fontSize: 14, fontWeight: '700' },
 });
