@@ -26,35 +26,41 @@ export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
 
+  // 1. TRUE INTEGRATION MUTATION
   const loginMutation = useMutation({
     mutationFn: async (payload: { username: string; pin?: string }) => {
+      // This sends the actual POST request to your backend (e.g., Node.js or Django)
       const response = await apiClient.post('/auth/login', {
-        username: payload.username,
+        username: payload.username.trim().toLowerCase(), // Sanitize input
         password: payload.pin,
       });
       return response.data;
     },
     onSuccess: async (data) => {
-      // 1. Force Reset Trap
+      // data expects: { token: '...', user: { name: '...', role: 'ADMIN' | 'SALES_REP', requiresPasswordChange: boolean } }
+      
+      // Check for forced temporary PIN trap
       if (data.user.requiresPasswordChange) {
         await setAuth(data.token, data.user.role, data.user.name);
         router.replace('/(auth)/force-reset' as any);
         return;
       }
 
-      // 2. Smart Backend-Driven Routing
+      // Secure local storage and dynamic backend routing
       await setAuth(data.token, data.user.role, data.user.name);
       
       if (data.user.role === 'ADMIN') {
         router.replace('/(admin)/dashboard');
-      } else {
+      } else if (data.user.role === 'SALES_REP') {
         router.replace('/(rep)/home');
+      } else {
+        Alert.alert('Access Denied', 'Unrecognized user role assigned to this account.');
       }
     },
     onError: (error: any) => {
       Alert.alert(
         'Authentication Failed',
-        error?.response?.data?.message || 'Invalid credentials or network issue'
+        error?.response?.data?.message || 'Invalid credentials. Please check your Username and PIN.'
       );
     },
   });
@@ -76,9 +82,9 @@ export default function LoginScreen() {
       });
 
       if (result.success) {
-        // Mock fallback for UI testing (since biometrics don't pass a username here)
-        await setAuth('dummy-jwt', 'ADMIN', 'Fetehadin N.');
-        router.replace('/(admin)/dashboard');
+        // For biometrics to work in production, you must store an encrypted refresh token locally
+        // and exchange it with the backend here.
+        Alert.alert('Biometrics Scanned', 'Biometric token exchange needs backend integration.');
       }
     } catch (err) {
       console.error(err);
@@ -86,34 +92,22 @@ export default function LoginScreen() {
     }
   };
 
-  const handlePinSubmit = async () => {
+  // 2. CLEAN SUBMIT HANDLER
+  const handlePinSubmit = () => {
     if (!username.trim() || !pin.trim()) {
       Alert.alert('Missing Fields', 'Please enter both your Username and PIN.');
       return;
     }
 
-    // Mock Backend Routing for UI testing
-    const mockRole = username.toLowerCase().includes('admin') ? 'ADMIN' : 'SALES_REP';
-    const mockName = mockRole === 'ADMIN' ? 'Fetehadin N.' : 'Abebe Kebede';
-    
-    await setAuth('dummy-jwt', mockRole, mockName);
-    
-    if (mockRole === 'ADMIN') {
-      router.replace('/(admin)/dashboard');
-    } else {
-      router.replace('/(rep)/home');
-    }
+    // Fire the backend request
+    loginMutation.mutate({ username, pin });
   };
 
-  // Automated In-App Waiting Room Logic
   const handleForgotPin = () => {
     if (!username.trim()) {
       Alert.alert("Missing Username", "Enter your username first so we know who is requesting the reset.");
       return;
     }
-    
-    // Send request to backend (uncomment when API is ready)
-    // apiClient.post('/auth/request-reset', { username });
     
     // Push the user to the live waiting room
     router.push({ pathname: '/(auth)/waiting-room', params: { username } } as any);
@@ -149,7 +143,7 @@ export default function LoginScreen() {
                 <Text style={styles.inputLabel}>Username</Text>
                 <TextInput
                   style={styles.standardInput}
-                  placeholder="e.g. abebe.k"
+                  placeholder="e.g. admin or abebe.k"
                   placeholderTextColor="#94A3B8"
                   autoCapitalize="none"
                   value={username}
@@ -214,6 +208,7 @@ export default function LoginScreen() {
   );
 }
 
+// ... styles remain exactly the same as before
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#EEF3FC' },
   scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 40 },
