@@ -18,16 +18,17 @@ async function main() {
 
   console.log("🧹 Cleared old database records.");
 
-  // 2. Hash default passwords
-  const passwordHash = await bcrypt.hash("Password123!", 10);
+  // 2. Hash default passwords (PINs)
+  const passwordHash = await bcrypt.hash("123456", 10);
 
-  // 3. Create Users (Admin & Sales Reps)
+  // 3. Create Users (Admin & Sales Reps with usernames)
   const adminUser = await db.user.create({
     data: {
       fullName: "Mohammed Taju (Admin)",
-      phone: "0911000000",
+      username: "admin",
       passwordHash,
       role: Role.ADMIN,
+      requiresPasswordChange: false,
       creditLimit: toDecimal(0),
       creditBalance: toDecimal(0),
     },
@@ -35,27 +36,29 @@ async function main() {
 
   const salesRep1 = await db.user.create({
     data: {
-      fullName: "Dawit Tadesse (Sales Rep)",
-      phone: "0922112233",
+      fullName: "Abebe Kebede (Sales Rep)",
+      username: "abebe.k",
       passwordHash,
       role: Role.SALES_REP,
-      creditLimit: toDecimal(50000),
-      creditBalance: toDecimal(0),
+      requiresPasswordChange: true, // Triggers our frontend force-reset trap!
+      creditLimit: toDecimal(100000),
+      creditBalance: toDecimal(45000),
     },
   });
 
   const salesRep2 = await db.user.create({
     data: {
-      fullName: "Mekdes Lemma (Sales Rep)",
-      phone: "0933445566",
+      fullName: "Dawit Tadesse (Sales Rep)",
+      username: "dawit.t",
       passwordHash,
       role: Role.SALES_REP,
-      creditLimit: toDecimal(75000),
-      creditBalance: toDecimal(0),
+      requiresPasswordChange: false,
+      creditLimit: toDecimal(100000),
+      creditBalance: toDecimal(95000),
     },
   });
 
-  console.log(`👤 Created users: Admin (${adminUser.phone}), Sales Reps (${salesRep1.phone}, ${salesRep2.phone})`);
+  console.log(`👤 Created users: Admin (${adminUser.username}), Sales Reps (${salesRep1.username}, ${salesRep2.username})`);
 
   // 4. Create Suppliers
   const supplier1 = await db.supplier.create({
@@ -79,17 +82,17 @@ async function main() {
   // 5. Create Products
   const product1 = await db.product.create({
     data: {
-      name: "Highland Mineral Water (2L Pack)",
-      description: "Pack of 6 bottles of 2-liter natural mineral water",
-      price: toDecimal(450.00),
+      name: "Premium Sugar (50kg)",
+      description: "Standard industrial wholesale sack",
+      price: toDecimal(3500.00),
     },
   });
 
   const product2 = await db.product.create({
     data: {
-      name: "Faffa Food Complex Baby Formula (500g)",
-      description: "Nutritious fortified infant cereal",
-      price: toDecimal(320.00),
+      name: "Refined Cooking Oil (5L)",
+      description: "Vegetable cooking oil container",
+      price: toDecimal(1200.00),
     },
   });
 
@@ -98,23 +101,23 @@ async function main() {
   // 6. Receive Inventory Batches (FIFO setup)
   const batch1 = await db.inventoryBatch.create({
     data: {
-      batchCode: "BATCH-HL-2026-01",
+      batchCode: "BATCH-SUGAR-2026-01",
       productId: product1.id,
       supplierId: supplier1.id,
-      quantityRecieved: 200,
-      remainingQty: 200,
-      unitCostPrice: toDecimal(350.00),
+      quantityRecieved: 450,
+      remainingQty: 450,
+      unitCostPrice: toDecimal(3200.00),
     },
   });
 
   const batch2 = await db.inventoryBatch.create({
     data: {
-      batchCode: "BATCH-FA-2026-01",
+      batchCode: "BATCH-OIL-2026-01",
       productId: product2.id,
       supplierId: supplier2.id,
-      quantityRecieved: 150,
-      remainingQty: 150,
-      unitCostPrice: toDecimal(240.00),
+      quantityRecieved: 120,
+      remainingQty: 120,
+      unitCostPrice: toDecimal(1050.00),
     },
   });
 
