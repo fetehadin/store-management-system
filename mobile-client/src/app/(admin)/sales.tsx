@@ -72,28 +72,14 @@ export default function SalesRepsScreen() {
   
   const isAdmin = role === 'ADMIN' || role === null;
 
-  if (!isAdmin) {
-    return (
-      <SafeAreaView style={styles.unauthorizedContainer}>
-        <StatusBar barStyle="dark-content" />
-        <Ionicons name="lock-closed-outline" size={64} color="#DC2626" />
-        <Text style={styles.unauthorizedTitle}>Access Restricted</Text>
-        <Text style={styles.unauthorizedSubtitle}>This portal is exclusively for system administrators.</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/(rep)/pos')}>
-          <Text style={styles.backButtonText}>Return to POS</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
-
-  const [activeNav, setActiveNav] = useState('Sales');
   const [reps, setReps] = useState(SALES_REPS_DATA);
 
-  // Enrollment Modal States
+  // Secure Enrollment States
   const [isEnrollModalVisible, setIsEnrollModalVisible] = useState(false);
   const [newAgentName, setNewAgentName] = useState('');
+  const [newAgentUsername, setNewAgentUsername] = useState('');
   const [newAgentLimit, setNewAgentLimit] = useState('');
-  const [newAgentCode, setNewAgentCode] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleExpand = (id: string) => {
     setReps(prev => prev.map(rep => rep.id === id ? { ...rep, isExpanded: !rep.isExpanded } : rep));
@@ -114,18 +100,48 @@ export default function SalesRepsScreen() {
     );
   };
 
-  const handleEnrollSubmit = () => {
-    console.log({ newAgentName, newAgentLimit, newAgentCode });
-    setNewAgentName('');
-    setNewAgentLimit('');
-    setNewAgentCode('');
-    setIsEnrollModalVisible(false);
+  const handleEnrollSubmit = async () => {
+    if (!newAgentName || !newAgentUsername || !newAgentLimit) {
+      Alert.alert('Missing Fields', 'Please fill out all required fields to enroll the agent.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Mock Backend Call: apiClient.post('/admin/enroll', { name, username, limit })
+      setTimeout(() => {
+        Alert.alert(
+          'Agent Enrolled', 
+          `Account created for ${newAgentName}. The system has securely generated their temporary PIN and flagged the account for a forced reset upon their first login.`
+        );
+        
+        // Reset form and close
+        setNewAgentName('');
+        setNewAgentUsername('');
+        setNewAgentLimit('');
+        setIsEnrollModalVisible(false);
+        setIsSubmitting(false);
+      }, 800);
+    } catch (error) {
+      Alert.alert('Enrollment Failed', 'Could not communicate with the server.');
+      setIsSubmitting(false);
+    }
   };
 
-  const generateCode = () => {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setNewAgentCode(code);
-  };
+  if (!isAdmin) {
+    return (
+      <SafeAreaView style={styles.unauthorizedContainer}>
+        <StatusBar barStyle="dark-content" />
+        <Ionicons name="lock-closed-outline" size={64} color="#DC2626" />
+        <Text style={styles.unauthorizedTitle}>Access Restricted</Text>
+        <Text style={styles.unauthorizedSubtitle}>This portal is exclusively for system administrators.</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/(rep)/pos')}>
+          <Text style={styles.backButtonText}>Return to Dashboard</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   const theme = {
     bg: isDarkMode ? '#000000' : '#F8FAFC',
@@ -144,7 +160,6 @@ export default function SalesRepsScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
 
-      {/* Header */}
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity 
@@ -162,7 +177,6 @@ export default function SalesRepsScreen() {
 
       <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
         
-        {/* Unified Summary Card */}
         <View style={styles.summaryContainer}>
           <View style={[
             styles.unifiedSummaryCard, 
@@ -189,7 +203,6 @@ export default function SalesRepsScreen() {
           </View>
         </View>
 
-        {/* Primary Action Button */}
         <View style={styles.actionContainer}>
           <TouchableOpacity 
             style={[styles.mainActionBtn, { backgroundColor: theme.invertedBg }]} 
@@ -200,7 +213,6 @@ export default function SalesRepsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Sales Rep Accordion List */}
         <View style={styles.listContainer}>
           {reps.map((rep) => (
             <View 
@@ -213,20 +225,14 @@ export default function SalesRepsScreen() {
                 rep.isWarning && isDarkMode && { borderColor: '#DC2626' }
               ]}
             >
-              <TouchableOpacity 
-                style={styles.repTopRow} 
-                onPress={() => toggleExpand(rep.id)}
-                activeOpacity={0.7}
-              >
+              <TouchableOpacity style={styles.repTopRow} onPress={() => toggleExpand(rep.id)} activeOpacity={0.7}>
                 <View style={[styles.repAvatarPlaceholder, isDarkMode && { backgroundColor: '#1E293B' }]}>
                   {rep.avatar ? (
                     <Image source={{ uri: rep.avatar }} style={styles.repAvatar} />
                   ) : (
                     <Ionicons name="person-outline" size={24} color={theme.textMuted} />
                   )}
-                  {rep.isWarning && (
-                    <View style={styles.warningIndicatorAvatar} />
-                  )}
+                  {rep.isWarning && <View style={styles.warningIndicatorAvatar} />}
                 </View>
                 
                 <View style={styles.repInfo}>
@@ -239,14 +245,9 @@ export default function SalesRepsScreen() {
                   </View>
                 </View>
                 
-                <Ionicons 
-                  name={rep.isExpanded ? "chevron-up" : "chevron-down"} 
-                  size={20} 
-                  color={theme.textMuted} 
-                />
+                <Ionicons name={rep.isExpanded ? "chevron-up" : "chevron-down"} size={20} color={theme.textMuted} />
               </TouchableOpacity>
 
-              {/* Expanded Ledger Section */}
               {rep.isExpanded && (
                 <View style={[styles.ledgerContainer, { borderTopColor: theme.border }]}>
                   <View style={styles.ledgerHeaderRow}>
@@ -266,17 +267,13 @@ export default function SalesRepsScreen() {
                         <Text style={[styles.txDay, { color: theme.text }]}>{tx.day}</Text>
                       </View>
                       <View style={styles.txRight}>
-                        <Text style={[
-                          styles.txAmount, 
-                          tx.type === 'Paid' ? { color: '#059669' } : { color: theme.text }
-                        ]}>
+                        <Text style={[styles.txAmount, tx.type === 'Paid' ? { color: '#059669' } : { color: theme.text }]}>
                           {tx.type === 'Paid' ? '-' : '+'} ETB {tx.amount}
                         </Text>
                       </View>
                     </View>
                   ))}
 
-                  {/* Remove Agent Button */}
                   <TouchableOpacity 
                     style={[styles.removeAgentBtn, { backgroundColor: isDarkMode ? '#3F1D1D' : '#FEF2F2' }]} 
                     onPress={() => handleRemoveAgent(rep.id, rep.name)}
@@ -292,13 +289,13 @@ export default function SalesRepsScreen() {
 
       </ScrollView>
 
-      {/* Enroll Agent Bottom Sheet Modal */}
+      {/* Upgraded Secure Enrollment Bottom Sheet */}
       <Modal visible={isEnrollModalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={[styles.bottomSheet, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }]}>
             
             <View style={styles.sheetHeader}>
-              <Text style={[styles.sheetTitle, { color: theme.text }]}>Enroll New Agent</Text>
+              <Text style={[styles.sheetTitle, { color: theme.text }]}>Secure Agent Enrollment</Text>
               <TouchableOpacity onPress={() => setIsEnrollModalVisible(false)} style={styles.closeBtn}>
                 <Ionicons name="close" size={24} color={theme.textMuted} />
               </TouchableOpacity>
@@ -315,9 +312,19 @@ export default function SalesRepsScreen() {
                 onChangeText={setNewAgentName}
               />
 
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Approved Credit Limit (ETB)</Text>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>System Username / Phone Number</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
+                placeholder="e.g. abebe.k or 0911..."
+                placeholderTextColor={theme.textMuted}
+                autoCapitalize="none"
+                value={newAgentUsername}
+                onChangeText={setNewAgentUsername}
+              />
+
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Approved Credit Limit (ETB)</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border, marginBottom: 8 }]}
                 placeholder="e.g. 100000"
                 placeholderTextColor={theme.textMuted}
                 keyboardType="numeric"
@@ -325,31 +332,18 @@ export default function SalesRepsScreen() {
                 onChangeText={setNewAgentLimit}
               />
 
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Agent Entry Code</Text>
-              <View style={[styles.codeInputRow, { backgroundColor: theme.inputBg, borderColor: theme.border }]}>
-                <TextInput
-                  style={[styles.codeInput, { color: theme.text }]}
-                  placeholder="6-digit PIN"
-                  placeholderTextColor={theme.textMuted}
-                  keyboardType="numeric"
-                  maxLength={6}
-                  value={newAgentCode}
-                  onChangeText={setNewAgentCode}
-                />
-                <TouchableOpacity style={styles.generateBtn} onPress={generateCode}>
-                  <Text style={[styles.generateBtnText, { color: theme.invertedBg }]}>Generate</Text>
-                </TouchableOpacity>
-              </View>
-
               <Text style={[styles.helperText, { color: theme.textMuted }]}>
-                Share this entry code with the agent. They will use it to create their account and fill in their contact details.
+                The system will automatically generate a temporary 6-digit access code for this user. They will be forced to change it upon their first login.
               </Text>
 
               <TouchableOpacity 
-                style={[styles.submitBtn, { backgroundColor: theme.invertedBg }]} 
+                style={[styles.submitBtn, { backgroundColor: theme.invertedBg, opacity: isSubmitting ? 0.7 : 1 }]} 
                 onPress={handleEnrollSubmit}
+                disabled={isSubmitting}
               >
-                <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>Send Enrollment Invite</Text>
+                <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>
+                  {isSubmitting ? 'Enrolling...' : 'Submit & Generate Code'}
+                </Text>
               </TouchableOpacity>
 
             </ScrollView>
@@ -423,16 +417,6 @@ const styles = StyleSheet.create({
   backButton: { backgroundColor: '#1D61F2', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 100 },
   backButtonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
 
-  darkBottomNav: { borderTopWidth: StyleSheet.hairlineWidth, paddingBottom: 24, paddingTop: 12, flexDirection: 'row', alignItems: 'center' },
-  darkNavItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
-  darkNavText: { fontSize: 10, fontWeight: '500', marginTop: 4 },
-  
-  lightBottomNavContainer: { position: 'absolute', bottom: 24, left: 20, right: 20 },
-  lightBottomNav: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 100, paddingHorizontal: 8, paddingVertical: 8, justifyContent: 'space-between', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 15 },
-  lightNavItem: { alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 8 },
-  lightNavItemActive: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#1D61F2', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 100 },
-  lightNavText: { fontSize: 10, fontWeight: '600', marginTop: 4 },
-
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
   bottomSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '90%' },
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
@@ -442,11 +426,6 @@ const styles = StyleSheet.create({
   
   inputLabel: { fontSize: 14, fontWeight: '700', marginBottom: 8, marginTop: 12 },
   input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, fontWeight: '500' },
-  
-  codeInputRow: { flexDirection: 'row', borderWidth: 1, borderRadius: 12, overflow: 'hidden', alignItems: 'center' },
-  codeInput: { flex: 1, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, fontWeight: '700', letterSpacing: 2 },
-  generateBtn: { paddingHorizontal: 16, paddingVertical: 14, borderLeftWidth: 1, borderColor: 'rgba(0,0,0,0.1)' },
-  generateBtnText: { fontWeight: '700', fontSize: 14 },
   
   helperText: { fontSize: 13, marginTop: 12, lineHeight: 18 },
   submitBtn: { marginTop: 32, paddingVertical: 16, borderRadius: 100, alignItems: 'center', justifyContent: 'center' },
