@@ -9,7 +9,9 @@ import {
   TextInput, 
   Alert, 
   Platform,
-  StatusBar 
+  StatusBar,
+  Modal,
+  KeyboardAvoidingView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -21,6 +23,12 @@ const MOCK_HISTORY = [
   { id: '3', type: 'CHECKOUT', date: 'Oct 10, 2026', amount: 12500, desc: 'Market Restock' },
 ];
 
+// Simulating the backend's knowledge of what this Rep currently holds
+const MOCK_ACTIVE_INVENTORY = [
+  { id: 'item_1', name: 'Premium Sugar (50kg)', qtyCheckedOut: 10 },
+  { id: 'item_2', name: 'Refined Cooking Oil (5L)', qtyCheckedOut: 5 },
+];
+
 export default function RepLedgerScreen() {
   const router = useRouter();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
@@ -29,6 +37,12 @@ export default function RepLedgerScreen() {
   const [isUploadFormOpen, setIsUploadFormOpen] = useState(false);
   const [uploadAmount, setUploadAmount] = useState('');
   const [uploadNotes, setUploadNotes] = useState('');
+
+  // Refund/Return State
+  const [isRefundModalVisible, setIsRefundModalVisible] = useState(false);
+  const [refundItem, setRefundItem] = useState('');
+  const [refundQty, setRefundQty] = useState('');
+  const [refundReason, setRefundReason] = useState(''); // New Reason State
 
   const CURRENT_DEBT = 45200;
   const CREDIT_LIMIT = 150000;
@@ -43,7 +57,7 @@ export default function RepLedgerScreen() {
     inputBg: isDarkMode ? '#0F1419' : '#F1F5F9',
     invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5',
     invertedText: isDarkMode ? '#000000' : '#FFFFFF',
-    primary: '#1D61F2',
+    primary: '#177CA5',
   };
 
   const handleUpload = () => {
@@ -55,6 +69,56 @@ export default function RepLedgerScreen() {
     setIsUploadFormOpen(false);
     setUploadAmount('');
     setUploadNotes('');
+  };
+
+  const handleRefundSubmit = () => {
+    // 1. Basic Field Validation
+    if (!refundItem.trim() || !refundQty.trim() || !refundReason.trim()) {
+      Alert.alert('Missing Fields', 'Please enter the item name, quantity, and reason for return.');
+      return;
+    }
+
+    const requestedQty = parseInt(refundQty, 10);
+    if (isNaN(requestedQty) || requestedQty <= 0) {
+      Alert.alert('Invalid Quantity', 'Please enter a valid numeric quantity greater than 0.');
+      return;
+    }
+
+    // 2. Mock Backend Validation Logic
+    // In production, the backend receives the payload and runs this exact check against the database
+    const sanitizedSearchTerm = refundItem.trim().toLowerCase();
+    
+    const holdingItem = MOCK_ACTIVE_INVENTORY.find(
+      (item) => item.name.toLowerCase() === sanitizedSearchTerm
+    );
+
+    if (!holdingItem) {
+      Alert.alert(
+        'Item Not Found', 
+        `System records show you have not checked out "${refundItem}". Please verify the item name.`
+      );
+      return;
+    }
+
+    if (requestedQty > holdingItem.qtyCheckedOut) {
+      Alert.alert(
+        'Invalid Quantity', 
+        `You only have ${holdingItem.qtyCheckedOut} units of "${holdingItem.name}" registered to your account. You cannot return ${requestedQty}.`
+      );
+      return;
+    }
+
+    // 3. Success (Passes all checks)
+    Alert.alert(
+      'Return Request Submitted', 
+      `Your request to return ${requestedQty}x ${holdingItem.name} for the reason: "${refundReason}" has been forwarded. Your debt will be adjusted once the warehouse confirms receipt.`
+    );
+    
+    // Clean up
+    setIsRefundModalVisible(false);
+    setRefundItem('');
+    setRefundQty('');
+    setRefundReason('');
   };
 
   return (
@@ -85,57 +149,76 @@ export default function RepLedgerScreen() {
           <Text style={[styles.limitText, { color: theme.textMuted }]}>Credit Limit: ETB {CREDIT_LIMIT.toLocaleString()}</Text>
         </View>
 
-        {/* Elegant Upload Receipt Accordion */}
-        <View style={[styles.accordionCard, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }, !isDarkMode && styles.lightShadow]}>
-          <TouchableOpacity 
-            style={styles.accordionTrigger}
-            onPress={() => setIsUploadFormOpen(!isUploadFormOpen)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.accordionHeaderLeft}>
-              <View style={[styles.iconBox, { backgroundColor: isDarkMode ? '#0F1419' : '#EFF6FF' }]}>
-                <Ionicons name="receipt-outline" size={20} color="#1D61F2" />
+        {/* Action Group: Upload Payment & Return Stock */}
+        <View style={styles.actionGroupContainer}>
+          
+          {/* Elegant Upload Receipt Accordion */}
+          <View style={[styles.actionCard, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }, !isDarkMode && styles.lightShadow]}>
+            <TouchableOpacity 
+              style={styles.actionTrigger}
+              onPress={() => setIsUploadFormOpen(!isUploadFormOpen)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.actionHeaderLeft}>
+                <View style={[styles.iconBox, { backgroundColor: isDarkMode ? '#0F1419' : '#EFF6FF' }]}>
+                  <Ionicons name="receipt-outline" size={20} color="#1D61F2" />
+                </View>
+                <Text style={[styles.actionTitle, { color: theme.text }]}>Upload Payment Receipt</Text>
               </View>
-              <Text style={[styles.accordionTitle, { color: theme.text }]}>Upload Payment Receipt</Text>
-            </View>
-            <Ionicons name={isUploadFormOpen ? "chevron-up" : "chevron-down"} size={20} color={theme.textMuted} />
-          </TouchableOpacity>
+              <Ionicons name={isUploadFormOpen ? "chevron-up" : "chevron-down"} size={20} color={theme.textMuted} />
+            </TouchableOpacity>
 
-          {isUploadFormOpen && (
-            <View style={[styles.accordionBody, { borderTopColor: theme.border }]}>
-              
-              {/* Rep Name implicitly known by the system; removed input */}
-              
-              <Text style={[styles.label, { color: theme.text }]}>Amount Deposited (ETB)</Text>
-              <TextInput 
-                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} 
-                placeholder="0.00" 
-                placeholderTextColor={theme.textMuted} 
-                keyboardType="numeric" 
-                value={uploadAmount} 
-                onChangeText={setUploadAmount} 
-              />
+            {isUploadFormOpen && (
+              <View style={[styles.actionBody, { borderTopColor: theme.border }]}>
+                <Text style={[styles.label, { color: theme.text }]}>Amount Deposited (ETB)</Text>
+                <TextInput 
+                  style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} 
+                  placeholder="0.00" 
+                  placeholderTextColor={theme.textMuted} 
+                  keyboardType="numeric" 
+                  value={uploadAmount} 
+                  onChangeText={setUploadAmount} 
+                />
 
-              <Text style={[styles.label, { color: theme.text }]}>Additional Info (Bank, TX Ref)</Text>
-              <TextInput 
-                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border, height: 80 }]} 
-                placeholder="e.g. Paid via CBE Birr" 
-                placeholderTextColor={theme.textMuted} 
-                multiline 
-                value={uploadNotes} 
-                onChangeText={setUploadNotes} 
-              />
+                <Text style={[styles.label, { color: theme.text }]}>Additional Info (Bank, TX Ref)</Text>
+                <TextInput 
+                  style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border, height: 80 }]} 
+                  placeholder="e.g. Paid via CBE Birr" 
+                  placeholderTextColor={theme.textMuted} 
+                  multiline 
+                  value={uploadNotes} 
+                  onChangeText={setUploadNotes} 
+                />
 
-              <TouchableOpacity style={[styles.uploadImageBtn, { borderColor: theme.border, backgroundColor: theme.inputBg }]}>
-                <Ionicons name="camera" size={24} color={theme.primary} />
-                <Text style={[styles.uploadImageText, { color: theme.primary }]}>Attach Photo</Text>
-              </TouchableOpacity>
+                <TouchableOpacity style={[styles.uploadImageBtn, { borderColor: theme.border, backgroundColor: theme.inputBg }]}>
+                  <Ionicons name="camera" size={24} color={theme.primary} />
+                  <Text style={[styles.uploadImageText, { color: theme.primary }]}>Attach Photo</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.invertedBg }]} onPress={handleUpload}>
-                <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>Submit to Admin</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+                <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.invertedBg }]} onPress={handleUpload}>
+                  <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>Submit to Admin</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Return Stock Button (Opens Bottom Sheet) */}
+          <View style={[styles.actionCard, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }, !isDarkMode && styles.lightShadow]}>
+            <TouchableOpacity 
+              style={styles.actionTrigger}
+              onPress={() => setIsRefundModalVisible(true)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.actionHeaderLeft}>
+                <View style={[styles.iconBox, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFF1F2' }]}>
+                  <Ionicons name="return-down-back" size={20} color="#E11D48" />
+                </View>
+                <Text style={[styles.actionTitle, { color: theme.text }]}>Return Stock</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
+            </TouchableOpacity>
+          </View>
+          
         </View>
 
         {/* Elegant History Ledger */}
@@ -164,6 +247,67 @@ export default function RepLedgerScreen() {
         </View>
 
       </ScrollView>
+
+      {/* --- REFUND STOCK BOTTOM SHEET --- */}
+      <Modal visible={isRefundModalVisible} animationType="slide" transparent>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+          <View style={[styles.bottomSheet, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }]}>
+            
+            <View style={styles.sheetHeader}>
+              <Text style={[styles.sheetTitle, { color: theme.text }]}>Return Stock</Text>
+              <TouchableOpacity onPress={() => setIsRefundModalVisible(false)} style={styles.closeBtn}>
+                <Ionicons name="close" size={24} color={theme.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.sheetScroll} showsVerticalScrollIndicator={false}>
+              
+              <Text style={[styles.label, { color: theme.text }]}>Item Name (Type exactly to test)</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
+                placeholder="e.g. Premium Sugar (50kg)"
+                placeholderTextColor={theme.textMuted}
+                value={refundItem}
+                onChangeText={setRefundItem}
+              />
+
+              <Text style={[styles.label, { color: theme.text }]}>Quantity to Return</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
+                placeholder="e.g. 5"
+                placeholderTextColor={theme.textMuted}
+                keyboardType="numeric"
+                value={refundQty}
+                onChangeText={setRefundQty}
+              />
+
+              {/* New Reason Field */}
+              <Text style={[styles.label, { color: theme.text }]}>Reason for Return</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border, height: 80 }]}
+                placeholder="e.g. Damaged packaging, expired, unable to sell..."
+                placeholderTextColor={theme.textMuted}
+                multiline
+                value={refundReason}
+                onChangeText={setRefundReason}
+              />
+
+              <Text style={styles.helperText}>
+                Returning stock requires Admin approval. Your debt will be credited once the warehouse confirms receipt.
+              </Text>
+
+              <TouchableOpacity 
+                style={[styles.submitBtn, { backgroundColor: theme.invertedBg, marginTop: 12 }]} 
+                onPress={handleRefundSubmit}
+              >
+                <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>Submit Return Request</Text>
+              </TouchableOpacity>
+
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -186,20 +330,30 @@ const styles = StyleSheet.create({
   progressBar: { height: '100%', borderRadius: 3 },
   limitText: { fontSize: 13, fontWeight: '600' },
 
-  // Upload Accordion
-  accordionCard: { borderRadius: 24, marginBottom: 32, overflow: 'hidden' },
-  accordionTrigger: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
-  accordionHeaderLeft: { flexDirection: 'row', alignItems: 'center' },
+  // Action Cards (Upload & Return)
+  actionGroupContainer: { marginBottom: 32, gap: 12 },
+  actionCard: { borderRadius: 24, overflow: 'hidden' },
+  actionTrigger: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
+  actionHeaderLeft: { flexDirection: 'row', alignItems: 'center' },
   iconBox: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  accordionTitle: { fontSize: 16, fontWeight: '700' },
+  actionTitle: { fontSize: 16, fontWeight: '700' },
   
-  accordionBody: { paddingHorizontal: 20, paddingBottom: 24, paddingTop: 16, borderTopWidth: 1 },
+  actionBody: { paddingHorizontal: 20, paddingBottom: 24, paddingTop: 16, borderTopWidth: 1 },
   label: { fontSize: 13, fontWeight: '700', marginBottom: 8 },
   input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontWeight: '600', marginBottom: 16 },
   uploadImageBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderWidth: 1, borderStyle: 'dashed', borderRadius: 12, marginBottom: 20 },
   uploadImageText: { fontWeight: '700', marginLeft: 8, fontSize: 15 },
   submitBtn: { paddingVertical: 16, borderRadius: 100, alignItems: 'center', justifyContent: 'center' },
   submitBtnText: { fontSize: 16, fontWeight: '800' },
+
+  // Bottom Sheet Modal
+  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+  bottomSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '90%' },
+  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  sheetTitle: { fontSize: 20, fontWeight: '800' },
+  closeBtn: { padding: 4 },
+  sheetScroll: { paddingBottom: 40 },
+  helperText: { fontSize: 13, color: '#64748B', lineHeight: 18, marginTop: 4, marginBottom: 16 },
 
   // History List
   sectionTitle: { fontSize: 20, fontWeight: '800', marginBottom: 16, letterSpacing: -0.5 },
