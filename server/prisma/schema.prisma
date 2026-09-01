@@ -36,22 +36,22 @@ enum IssuanceStatus {
 //CORE ENTITIES(USERS, SUPPLIERS, PRODUCTS)
 
 model User {
-  id                 String  @id @default(uuid()) 
-  fullName           String  
-  phone              String  @unique
-  passwordHash       String
-  role               Role    @default(SALES_REP)
+  id                     String   @id @default(uuid()) 
+  fullName               String  
+  username               String   @unique 
+  passwordHash           String
+  role                   Role     @default(SALES_REP)
+  requiresPasswordChange Boolean  @default(false) 
+  
+  isActive               Boolean  @default(true) 
 
+  creditLimit            Decimal  @default("0.00") @db.Decimal(12, 2)
+  creditBalance          Decimal  @default("0.00") @db.Decimal(12, 2)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
-  //modelB wholesale credit guardrails
-
-  creditLimit        Decimal   @default("0.00") @db.Decimal(12, 2)
-  creditBalance      Decimal   @default("0.00") @db.Decimal(12, 2)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-
-  stockIssusances       StockIssuance[]
-  paymentProofs         PaymentProof[]
+  stockIssusances        StockIssuance[]
+  paymentProofs          PaymentProof[]
 }
 
 model Supplier {
