@@ -52,6 +52,7 @@ model User {
 
   stockIssusances StockIssuance[]
   paymentProofs   PaymentProof[]
+  sales           Sale[]
 }
 
 model Supplier {
@@ -74,6 +75,18 @@ model Product {
   updatedAt   DateTime @updatedAt
 
   batches InventoryBatch[]
+  sales   Sale[]
+}
+
+model Retailer {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String?  @unique
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales Sale[]
 }
 
 // FIFO INVENTORY BATCHES
@@ -115,7 +128,24 @@ model IssuanceItem {
   productId      String
   wholesalePrice Decimal       @db.Decimal(12, 2)
   qtyIssued      Int
-  cogsCalculated Decimal       @db.Decimal(12, 2) // Locked FIFO cost at moment of checkout
+  qtyRemaining   Int
+  cogsCalculated Decimal       @db.Decimal(12, 2)
+}
+
+// RETAIL SALES TRACKING
+
+model Sale {
+  id            String   @id @default(uuid())
+  salesRepId    String
+  salesRep      User     @relation(fields: [salesRepId], references: [id], onDelete: Restrict)
+  retailerId    String
+  retailer      Retailer @relation(fields: [retailerId], references: [id], onDelete: Restrict)
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity      Int
+  totalAmount   Decimal  @db.Decimal(12, 2)
+  paymentMethod String
+  createdAt     DateTime @default(now())
 }
 
 model PaymentProof {

@@ -152,6 +152,15 @@ exports.Prisma.ProductScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.RetailerScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  phone: 'phone',
+  address: 'address',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.InventoryBatchScalarFieldEnum = {
   id: 'id',
   batchCode: 'batchCode',
@@ -179,7 +188,19 @@ exports.Prisma.IssuanceItemScalarFieldEnum = {
   productId: 'productId',
   wholesalePrice: 'wholesalePrice',
   qtyIssued: 'qtyIssued',
+  qtyRemaining: 'qtyRemaining',
   cogsCalculated: 'cogsCalculated'
+};
+
+exports.Prisma.SaleScalarFieldEnum = {
+  id: 'id',
+  salesRepId: 'salesRepId',
+  retailerId: 'retailerId',
+  productId: 'productId',
+  quantity: 'quantity',
+  totalAmount: 'totalAmount',
+  paymentMethod: 'paymentMethod',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.PaymentProofScalarFieldEnum = {
@@ -254,9 +275,11 @@ exports.Prisma.ModelName = {
   User: 'User',
   Supplier: 'Supplier',
   Product: 'Product',
+  Retailer: 'Retailer',
   InventoryBatch: 'InventoryBatch',
   StockIssuance: 'StockIssuance',
   IssuanceItem: 'IssuanceItem',
+  Sale: 'Sale',
   PaymentProof: 'PaymentProof',
   LedgerEntry: 'LedgerEntry'
 };

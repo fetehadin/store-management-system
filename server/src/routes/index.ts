@@ -6,6 +6,7 @@ import ledgerRoutes from "./ledger.routes.js";
 import supplierRoutes from "./supplier.routes.js";
 import productRoutes from "./product.routes.js";
 import reportRoutes from "./report.routes.js";
+import saleRoutes from "./sale.routes.js";
 
 const router = Router();
 
@@ -17,5 +18,6 @@ router.use("/ledger", ledgerRoutes);
 router.use("/suppliers", supplierRoutes);
 router.use("/products", productRoutes);
 router.use("/reports", reportRoutes);
+router.use("/sales", saleRoutes); 
 
 export default router;
