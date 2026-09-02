@@ -6,12 +6,15 @@ import {
   updatePin,
 } from "../controllers/auth.controller.js";
 import { authenticate } from "../middlewares/authenticate.js";
+import { authorize } from "../middlewares/authorize.js";
 
 const router = Router();
 
 // Public Authentication Endpoints
-router.post("/register", registerUser);
 router.post("/login", loginUser);
+
+// Protected Admin Endpoints
+router.post("/register", authenticate, authorize("ADMIN"), registerUser);
 
 // Protected Session Endpoints
 router.post("/update-pin", authenticate, updatePin);
