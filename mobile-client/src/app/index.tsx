@@ -37,21 +37,23 @@ export default function LoginScreen() {
       return response.data;
     },
     onSuccess: async (data) => {
-      // data expects: { token: '...', user: { name: '...', role: 'ADMIN' | 'SALES_REP', requiresPasswordChange: boolean } }
+      // 1. Map the backend Express role to your frontend Zustand type
+      const frontendRole = data.user.role === 'SALES_REP' ? 'REP' : data.user.role;
       
-      // Check for forced temporary PIN trap
+      // 2. Check for forced temporary PIN trap
       if (data.user.requiresPasswordChange) {
-        await setAuth(data.token, data.user.role, data.user.name);
+        await setAuth(data.token, frontendRole, data.user.name);
         router.replace('/(auth)/force-reset' as any);
         return;
       }
 
-      // Secure local storage and dynamic backend routing
-      await setAuth(data.token, data.user.role, data.user.name);
+      // 3. Save to Secure Store and Zustand using the mapped role
+      await setAuth(data.token, frontendRole, data.user.name);
       
-      if (data.user.role === 'ADMIN') {
+      // 4. Dynamic routing using the mapped role
+      if (frontendRole === 'ADMIN') {
         router.replace('/(admin)/dashboard');
-      } else if (data.user.role === 'SALES_REP') {
+      } else if (frontendRole === 'REP') {
         router.replace('/(rep)/home');
       } else {
         Alert.alert('Access Denied', 'Unrecognized user role assigned to this account.');
