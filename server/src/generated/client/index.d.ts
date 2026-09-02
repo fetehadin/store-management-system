@@ -1745,9 +1745,11 @@ export namespace Prisma {
   export type UserMinAggregateOutputType = {
     id: string | null
     fullName: string | null
-    phone: string | null
+    username: string | null
     passwordHash: string | null
     role: $Enums.Role | null
+    requiresPasswordChange: boolean | null
+    isActive: boolean | null
     creditLimit: Decimal | null
     creditBalance: Decimal | null
     createdAt: Date | null
@@ -1757,9 +1759,11 @@ export namespace Prisma {
   export type UserMaxAggregateOutputType = {
     id: string | null
     fullName: string | null
-    phone: string | null
+    username: string | null
     passwordHash: string | null
     role: $Enums.Role | null
+    requiresPasswordChange: boolean | null
+    isActive: boolean | null
     creditLimit: Decimal | null
     creditBalance: Decimal | null
     createdAt: Date | null
@@ -1769,9 +1773,11 @@ export namespace Prisma {
   export type UserCountAggregateOutputType = {
     id: number
     fullName: number
-    phone: number
+    username: number
     passwordHash: number
     role: number
+    requiresPasswordChange: number
+    isActive: number
     creditLimit: number
     creditBalance: number
     createdAt: number
@@ -1793,9 +1799,11 @@ export namespace Prisma {
   export type UserMinAggregateInputType = {
     id?: true
     fullName?: true
-    phone?: true
+    username?: true
     passwordHash?: true
     role?: true
+    requiresPasswordChange?: true
+    isActive?: true
     creditLimit?: true
     creditBalance?: true
     createdAt?: true
@@ -1805,9 +1813,11 @@ export namespace Prisma {
   export type UserMaxAggregateInputType = {
     id?: true
     fullName?: true
-    phone?: true
+    username?: true
     passwordHash?: true
     role?: true
+    requiresPasswordChange?: true
+    isActive?: true
     creditLimit?: true
     creditBalance?: true
     createdAt?: true
@@ -1817,9 +1827,11 @@ export namespace Prisma {
   export type UserCountAggregateInputType = {
     id?: true
     fullName?: true
-    phone?: true
+    username?: true
     passwordHash?: true
     role?: true
+    requiresPasswordChange?: true
+    isActive?: true
     creditLimit?: true
     creditBalance?: true
     createdAt?: true
@@ -1916,9 +1928,11 @@ export namespace Prisma {
   export type UserGroupByOutputType = {
     id: string
     fullName: string
-    phone: string
+    username: string
     passwordHash: string
     role: $Enums.Role
+    requiresPasswordChange: boolean
+    isActive: boolean
     creditLimit: Decimal
     creditBalance: Decimal
     createdAt: Date
@@ -1947,9 +1961,11 @@ export namespace Prisma {
   export type UserSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     fullName?: boolean
-    phone?: boolean
+    username?: boolean
     passwordHash?: boolean
     role?: boolean
+    requiresPasswordChange?: boolean
+    isActive?: boolean
     creditLimit?: boolean
     creditBalance?: boolean
     createdAt?: boolean
@@ -1962,9 +1978,11 @@ export namespace Prisma {
   export type UserSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     fullName?: boolean
-    phone?: boolean
+    username?: boolean
     passwordHash?: boolean
     role?: boolean
+    requiresPasswordChange?: boolean
+    isActive?: boolean
     creditLimit?: boolean
     creditBalance?: boolean
     createdAt?: boolean
@@ -1974,9 +1992,11 @@ export namespace Prisma {
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     fullName?: boolean
-    phone?: boolean
+    username?: boolean
     passwordHash?: boolean
     role?: boolean
+    requiresPasswordChange?: boolean
+    isActive?: boolean
     creditLimit?: boolean
     creditBalance?: boolean
     createdAt?: boolean
@@ -1986,16 +2006,18 @@ export namespace Prisma {
   export type UserSelectScalar = {
     id?: boolean
     fullName?: boolean
-    phone?: boolean
+    username?: boolean
     passwordHash?: boolean
     role?: boolean
+    requiresPasswordChange?: boolean
+    isActive?: boolean
     creditLimit?: boolean
     creditBalance?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "fullName" | "phone" | "passwordHash" | "role" | "creditLimit" | "creditBalance" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "fullName" | "username" | "passwordHash" | "role" | "requiresPasswordChange" | "isActive" | "creditLimit" | "creditBalance" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     stockIssusances?: boolean | User$stockIssusancesArgs<ExtArgs>
     paymentProofs?: boolean | User$paymentProofsArgs<ExtArgs>
@@ -2013,9 +2035,11 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: string
       fullName: string
-      phone: string
+      username: string
       passwordHash: string
       role: $Enums.Role
+      requiresPasswordChange: boolean
+      isActive: boolean
       creditLimit: Prisma.Decimal
       creditBalance: Prisma.Decimal
       createdAt: Date
@@ -2447,9 +2471,11 @@ export namespace Prisma {
   interface UserFieldRefs {
     readonly id: FieldRef<"User", 'String'>
     readonly fullName: FieldRef<"User", 'String'>
-    readonly phone: FieldRef<"User", 'String'>
+    readonly username: FieldRef<"User", 'String'>
     readonly passwordHash: FieldRef<"User", 'String'>
     readonly role: FieldRef<"User", 'Role'>
+    readonly requiresPasswordChange: FieldRef<"User", 'Boolean'>
+    readonly isActive: FieldRef<"User", 'Boolean'>
     readonly creditLimit: FieldRef<"User", 'Decimal'>
     readonly creditBalance: FieldRef<"User", 'Decimal'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
@@ -10910,9 +10936,11 @@ export namespace Prisma {
   export const UserScalarFieldEnum: {
     id: 'id',
     fullName: 'fullName',
-    phone: 'phone',
+    username: 'username',
     passwordHash: 'passwordHash',
     role: 'role',
+    requiresPasswordChange: 'requiresPasswordChange',
+    isActive: 'isActive',
     creditLimit: 'creditLimit',
     creditBalance: 'creditBalance',
     createdAt: 'createdAt',
@@ -11079,6 +11107,13 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Boolean'
+   */
+  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+  /**
    * Reference to a field of type 'Decimal'
    */
   export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
@@ -11185,9 +11220,11 @@ export namespace Prisma {
     NOT?: UserWhereInput | UserWhereInput[]
     id?: StringFilter<"User"> | string
     fullName?: StringFilter<"User"> | string
-    phone?: StringFilter<"User"> | string
+    username?: StringFilter<"User"> | string
     passwordHash?: StringFilter<"User"> | string
     role?: EnumRoleFilter<"User"> | $Enums.Role
+    requiresPasswordChange?: BoolFilter<"User"> | boolean
+    isActive?: BoolFilter<"User"> | boolean
     creditLimit?: DecimalFilter<"User"> | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFilter<"User"> | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFilter<"User"> | Date | string
@@ -11199,9 +11236,11 @@ export namespace Prisma {
   export type UserOrderByWithRelationInput = {
     id?: SortOrder
     fullName?: SortOrder
-    phone?: SortOrder
+    username?: SortOrder
     passwordHash?: SortOrder
     role?: SortOrder
+    requiresPasswordChange?: SortOrder
+    isActive?: SortOrder
     creditLimit?: SortOrder
     creditBalance?: SortOrder
     createdAt?: SortOrder
@@ -11212,27 +11251,31 @@ export namespace Prisma {
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
     id?: string
-    phone?: string
+    username?: string
     AND?: UserWhereInput | UserWhereInput[]
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
     fullName?: StringFilter<"User"> | string
     passwordHash?: StringFilter<"User"> | string
     role?: EnumRoleFilter<"User"> | $Enums.Role
+    requiresPasswordChange?: BoolFilter<"User"> | boolean
+    isActive?: BoolFilter<"User"> | boolean
     creditLimit?: DecimalFilter<"User"> | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFilter<"User"> | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     stockIssusances?: StockIssuanceListRelationFilter
     paymentProofs?: PaymentProofListRelationFilter
-  }, "id" | "phone">
+  }, "id" | "username">
 
   export type UserOrderByWithAggregationInput = {
     id?: SortOrder
     fullName?: SortOrder
-    phone?: SortOrder
+    username?: SortOrder
     passwordHash?: SortOrder
     role?: SortOrder
+    requiresPasswordChange?: SortOrder
+    isActive?: SortOrder
     creditLimit?: SortOrder
     creditBalance?: SortOrder
     createdAt?: SortOrder
@@ -11250,9 +11293,11 @@ export namespace Prisma {
     NOT?: UserScalarWhereWithAggregatesInput | UserScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"User"> | string
     fullName?: StringWithAggregatesFilter<"User"> | string
-    phone?: StringWithAggregatesFilter<"User"> | string
+    username?: StringWithAggregatesFilter<"User"> | string
     passwordHash?: StringWithAggregatesFilter<"User"> | string
     role?: EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
+    requiresPasswordChange?: BoolWithAggregatesFilter<"User"> | boolean
+    isActive?: BoolWithAggregatesFilter<"User"> | boolean
     creditLimit?: DecimalWithAggregatesFilter<"User"> | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalWithAggregatesFilter<"User"> | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
@@ -11774,9 +11819,11 @@ export namespace Prisma {
   export type UserCreateInput = {
     id?: string
     fullName: string
-    phone: string
+    username: string
     passwordHash: string
     role?: $Enums.Role
+    requiresPasswordChange?: boolean
+    isActive?: boolean
     creditLimit?: Decimal | DecimalJsLike | number | string
     creditBalance?: Decimal | DecimalJsLike | number | string
     createdAt?: Date | string
@@ -11788,9 +11835,11 @@ export namespace Prisma {
   export type UserUncheckedCreateInput = {
     id?: string
     fullName: string
-    phone: string
+    username: string
     passwordHash: string
     role?: $Enums.Role
+    requiresPasswordChange?: boolean
+    isActive?: boolean
     creditLimit?: Decimal | DecimalJsLike | number | string
     creditBalance?: Decimal | DecimalJsLike | number | string
     createdAt?: Date | string
@@ -11802,9 +11851,11 @@ export namespace Prisma {
   export type UserUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
-    phone?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    requiresPasswordChange?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -11816,9 +11867,11 @@ export namespace Prisma {
   export type UserUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
-    phone?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    requiresPasswordChange?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -11830,9 +11883,11 @@ export namespace Prisma {
   export type UserCreateManyInput = {
     id?: string
     fullName: string
-    phone: string
+    username: string
     passwordHash: string
     role?: $Enums.Role
+    requiresPasswordChange?: boolean
+    isActive?: boolean
     creditLimit?: Decimal | DecimalJsLike | number | string
     creditBalance?: Decimal | DecimalJsLike | number | string
     createdAt?: Date | string
@@ -11842,9 +11897,11 @@ export namespace Prisma {
   export type UserUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
-    phone?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    requiresPasswordChange?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -11854,9 +11911,11 @@ export namespace Prisma {
   export type UserUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
-    phone?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    requiresPasswordChange?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -12438,6 +12497,11 @@ export namespace Prisma {
     not?: NestedEnumRoleFilter<$PrismaModel> | $Enums.Role
   }
 
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type DecimalFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
@@ -12483,9 +12547,11 @@ export namespace Prisma {
   export type UserCountOrderByAggregateInput = {
     id?: SortOrder
     fullName?: SortOrder
-    phone?: SortOrder
+    username?: SortOrder
     passwordHash?: SortOrder
     role?: SortOrder
+    requiresPasswordChange?: SortOrder
+    isActive?: SortOrder
     creditLimit?: SortOrder
     creditBalance?: SortOrder
     createdAt?: SortOrder
@@ -12500,9 +12566,11 @@ export namespace Prisma {
   export type UserMaxOrderByAggregateInput = {
     id?: SortOrder
     fullName?: SortOrder
-    phone?: SortOrder
+    username?: SortOrder
     passwordHash?: SortOrder
     role?: SortOrder
+    requiresPasswordChange?: SortOrder
+    isActive?: SortOrder
     creditLimit?: SortOrder
     creditBalance?: SortOrder
     createdAt?: SortOrder
@@ -12512,9 +12580,11 @@ export namespace Prisma {
   export type UserMinOrderByAggregateInput = {
     id?: SortOrder
     fullName?: SortOrder
-    phone?: SortOrder
+    username?: SortOrder
     passwordHash?: SortOrder
     role?: SortOrder
+    requiresPasswordChange?: SortOrder
+    isActive?: SortOrder
     creditLimit?: SortOrder
     creditBalance?: SortOrder
     createdAt?: SortOrder
@@ -12552,6 +12622,14 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumRoleFilter<$PrismaModel>
     _max?: NestedEnumRoleFilter<$PrismaModel>
+  }
+
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
@@ -13074,6 +13152,10 @@ export namespace Prisma {
     set?: $Enums.Role
   }
 
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
+  }
+
   export type DecimalFieldUpdateOperationsInput = {
     set?: Decimal | DecimalJsLike | number | string
     increment?: Decimal | DecimalJsLike | number | string
@@ -13383,6 +13465,11 @@ export namespace Prisma {
     not?: NestedEnumRoleFilter<$PrismaModel> | $Enums.Role
   }
 
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
   export type NestedDecimalFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
@@ -13441,6 +13528,14 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumRoleFilter<$PrismaModel>
     _max?: NestedEnumRoleFilter<$PrismaModel>
+  }
+
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
@@ -13939,9 +14034,11 @@ export namespace Prisma {
   export type UserCreateWithoutStockIssusancesInput = {
     id?: string
     fullName: string
-    phone: string
+    username: string
     passwordHash: string
     role?: $Enums.Role
+    requiresPasswordChange?: boolean
+    isActive?: boolean
     creditLimit?: Decimal | DecimalJsLike | number | string
     creditBalance?: Decimal | DecimalJsLike | number | string
     createdAt?: Date | string
@@ -13952,9 +14049,11 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutStockIssusancesInput = {
     id?: string
     fullName: string
-    phone: string
+    username: string
     passwordHash: string
     role?: $Enums.Role
+    requiresPasswordChange?: boolean
+    isActive?: boolean
     creditLimit?: Decimal | DecimalJsLike | number | string
     creditBalance?: Decimal | DecimalJsLike | number | string
     createdAt?: Date | string
@@ -14007,9 +14106,11 @@ export namespace Prisma {
   export type UserUpdateWithoutStockIssusancesInput = {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
-    phone?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    requiresPasswordChange?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -14020,9 +14121,11 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutStockIssusancesInput = {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
-    phone?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    requiresPasswordChange?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -14113,9 +14216,11 @@ export namespace Prisma {
   export type UserCreateWithoutPaymentProofsInput = {
     id?: string
     fullName: string
-    phone: string
+    username: string
     passwordHash: string
     role?: $Enums.Role
+    requiresPasswordChange?: boolean
+    isActive?: boolean
     creditLimit?: Decimal | DecimalJsLike | number | string
     creditBalance?: Decimal | DecimalJsLike | number | string
     createdAt?: Date | string
@@ -14126,9 +14231,11 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutPaymentProofsInput = {
     id?: string
     fullName: string
-    phone: string
+    username: string
     passwordHash: string
     role?: $Enums.Role
+    requiresPasswordChange?: boolean
+    isActive?: boolean
     creditLimit?: Decimal | DecimalJsLike | number | string
     creditBalance?: Decimal | DecimalJsLike | number | string
     createdAt?: Date | string
@@ -14155,9 +14262,11 @@ export namespace Prisma {
   export type UserUpdateWithoutPaymentProofsInput = {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
-    phone?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    requiresPasswordChange?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -14168,9 +14277,11 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutPaymentProofsInput = {
     id?: StringFieldUpdateOperationsInput | string
     fullName?: StringFieldUpdateOperationsInput | string
-    phone?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
     role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    requiresPasswordChange?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
     creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
