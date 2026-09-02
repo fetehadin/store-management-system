@@ -2,7 +2,8 @@ import app from "./app.js";
 import { env } from "./config/env.js";
 import { db } from "./config/db.js";
 
-const server = app.listen(env.PORT, () => {
+// ADD '0.0.0.0' RIGHT HERE:
+const server = app.listen(env.PORT, '0.0.0.0', () => {
   console.log(`Server running in ${env.NODE_ENV} mode on port ${env.PORT}`);
 });
 
