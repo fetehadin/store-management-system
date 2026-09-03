@@ -289,9 +289,6 @@ export default function SuppliersScreen() {
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.text }]}>Active Suppliers</Text>
         </View>
-        <View style={styles.headerRight}>
-          <Image source={{ uri: 'https://ui-avatars.com/api/?name=Admin&background=1D61F2&color=fff' }} style={styles.avatar} />
-        </View>
       </View>
 
       <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
