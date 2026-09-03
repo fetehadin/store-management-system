@@ -25,14 +25,21 @@ export default function SharedProfile() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const role = useAuthStore((state) => state.role);
   const authUserName = useAuthStore((state) => (state as any).userName || 'Fetehadin Negash');
+  const authProfilePic = useAuthStore((state) => state.profilePic);
   const logout = useAuthStore((state) => state.logout);
   
   const displayRole = role === 'ADMIN' ? 'System Administrator' : 'Sales Representative';
 
+  const BASE_IP = 'http://10.104.108.101:5000';
+  const initialAvatar = authProfilePic 
+    ? `${BASE_IP}${authProfilePic}` 
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(authUserName)}&background=1D61F2&color=fff`;
+
   // Profile States
-  const [avatarUri, setAvatarUri] = useState<string | null>(`https://ui-avatars.com/api/?name=${encodeURIComponent(authUserName)}&background=1D61F2&color=fff`);
+  const [avatarUri, setAvatarUri] = useState<string | null>(initialAvatar);
   const [isAvatarChanged, setIsAvatarChanged] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const updateProfilePic = useAuthStore((state) => state.updateProfilePic);
 
   // Security States
   const [currentPassword, setCurrentPassword] = useState('');
@@ -61,19 +68,25 @@ export default function SharedProfile() {
     });
     if (!result.canceled) {
       setAvatarUri(result.assets[0].uri);
-      setIsAvatarChanged(true); // Reveal the Save button
+      setIsAvatarChanged(true);
     }
   };
 
   const handleSaveProfile = () => {
-    setIsSavingProfile(true);
-    // Mock Backend Call
-    setTimeout(() => {
-      setIsSavingProfile(false);
-      setIsAvatarChanged(false);
-      Alert.alert('Success', 'Your profile picture has been updated.');
-    }, 800);
-  };
+  setIsSavingProfile(true);
+  
+  setTimeout(() => {
+    setIsSavingProfile(false);
+    setIsAvatarChanged(false);
+    
+    // Save the local image to Zustand so the Home page sees it immediately!
+    if (avatarUri) {
+      updateProfilePic(avatarUri);
+    }
+    
+    Alert.alert('Success', 'Your profile picture has been updated locally.');
+  }, 800);
+};
 
   const handleUpdatePassword = () => {
     if (newPassword.length < 6) {
@@ -106,8 +119,8 @@ export default function SharedProfile() {
           text: "Sign Out", 
           style: "destructive", 
           onPress: () => {
-            logout(); // Clear Zustand state
-            router.replace('/'); // Force navigation to login screen
+            logout();
+            router.replace('/');
           }
         }
       ]
@@ -129,7 +142,6 @@ export default function SharedProfile() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
           
-          {/* PROFILE SECTION */}
           <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }, !isDarkMode && styles.lightShadow]}>
             <View style={styles.avatarSection}>
               <View style={styles.avatarWrapper}>
@@ -140,8 +152,8 @@ export default function SharedProfile() {
                     <Ionicons name="person" size={40} color={theme.textMuted} />
                   </View>
                 )}
-                <TouchableOpacity style={[styles.editAvatarBtn, { backgroundColor: theme.invertedBg }]} onPress={handlePickImage}>
-                  <Ionicons name="camera" size={16} color={theme.invertedText} />
+                <TouchableOpacity style={[styles.editAvatarBtn, { backgroundColor: theme.invertedBg }]}>
+                  <Ionicons name="camera" size={16} color={theme.invertedText} onPress={handlePickImage} />
                 </TouchableOpacity>
               </View>
               
@@ -164,7 +176,6 @@ export default function SharedProfile() {
             </View>
           </View>
 
-          {/* SECURITY SECTION */}
           <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, marginTop: 24 }, !isDarkMode && styles.lightShadow]}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Update Password</Text>
             
@@ -216,7 +227,6 @@ export default function SharedProfile() {
             </TouchableOpacity>
           </View>
 
-          {/* SIGN OUT SECTION */}
           <TouchableOpacity style={styles.logoutBtn} onPress={handleSignOut}>
             <Ionicons name="log-out-outline" size={20} color="#DC2626" style={styles.actionIcon} />
             <Text style={styles.logoutText}>Sign Out</Text>

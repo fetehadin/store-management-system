@@ -13,6 +13,7 @@ import {
   TextInput,
   Platform,
   Alert,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
@@ -31,6 +32,10 @@ export default function RepDashboard() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
   const userName = useAuthStore((state) => (state as any).userName || 'Sales Rep');
+  
+  // Pull profile picture and set base IP for remote serving
+  const authProfilePic = useAuthStore((state) => state.profilePic);
+  const BASE_IP = 'http://10.104.108.101:5000';
 
   // Filter State
   const [activeFilter, setActiveFilter] = useState('Today');
@@ -74,8 +79,19 @@ export default function RepDashboard() {
       {/* Global Header */}
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
         <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(rep)/profile')}>
-          <Ionicons name="person-circle" size={32} color={theme.textMuted} />
-        </TouchableOpacity>
+            {authProfilePic ? (
+              <Image 
+                source={{ 
+                  uri: authProfilePic.startsWith('file://') 
+                    ? authProfilePic 
+                    : `${BASE_IP}${authProfilePic}` 
+                }} 
+                style={{ width: 32, height: 32, borderRadius: 16 }} 
+              />
+            ) : (
+              <Ionicons name="person-circle" size={32} color={theme.textMuted} />
+            )}
+          </TouchableOpacity>
         
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(rep)/messages')}>
