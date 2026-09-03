@@ -26,36 +26,30 @@ export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
 
-  // 1. TRUE INTEGRATION MUTATION
   const loginMutation = useMutation({
     mutationFn: async (payload: { username: string; pin?: string }) => {
-      // This sends the actual POST request to your backend
       const response = await apiClient.post('/auth/login', {
-        username: payload.username.trim().toLowerCase(), // Sanitize input
+        username: payload.username.trim().toLowerCase(),
         password: payload.pin,
       });
-      // response.data is the entire JSON payload from the Express controller
       return response.data;
     },
     onSuccess: async (responsePayload) => {
-      // FIX: Extract the nested user object from the backend response structure
       const user = responsePayload.data.user;
       const token = responsePayload.token;
 
-      // 1. Map the backend Express role to your frontend Zustand type
       const frontendRole = user.role === 'SALES_REP' ? 'REP' : user.role;
       
-      // 2. Check for forced temporary PIN trap
       if (user.requiresPasswordChange) {
-        await setAuth(token, frontendRole, user.fullName);
+        // Updated to pass profilePic
+        await setAuth(token, frontendRole, user.fullName, user.profilePic);
         router.replace('/(auth)/force-reset' as any);
         return;
       }
 
-      // 3. Save to Secure Store and Zustand using the mapped role
-      await setAuth(token, frontendRole, user.fullName);
+      // Updated to pass profilePic
+      await setAuth(token, frontendRole, user.fullName, user.profilePic);
       
-      // 4. Dynamic routing using the mapped role
       if (frontendRole === 'ADMIN') {
         router.replace('/(admin)/dashboard' as any);
       } else if (frontendRole === 'REP') {
@@ -97,14 +91,11 @@ export default function LoginScreen() {
     }
   };
 
-  // 2. CLEAN SUBMIT HANDLER
   const handlePinSubmit = () => {
     if (!username.trim() || !pin.trim()) {
       Alert.alert('Missing Fields', 'Please enter both your Username and PIN.');
       return;
     }
-
-    // Fire the backend request
     loginMutation.mutate({ username, pin });
   };
 
@@ -113,8 +104,6 @@ export default function LoginScreen() {
       Alert.alert("Missing Username", "Enter your username first so we know who is requesting the reset.");
       return;
     }
-    
-    // Push the user to the live waiting room
     router.push({ pathname: '/(auth)/waiting-room', params: { username } } as any);
   };
 

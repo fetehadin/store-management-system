@@ -6,9 +6,12 @@ interface AuthState {
   token: string | null;
   role: 'ADMIN' | 'REP' | null;
   userName: string | null;
+  profilePic: string | null; // <-- NEW
+  updateProfilePic: (newUri: string) => void;
   isAuthenticated: boolean;
   isDarkMode: boolean;
-  setAuth: (token: string, role: 'ADMIN' | 'REP', userName: string) => Promise<void>;
+  // Updated signature to accept profilePic
+  setAuth: (token: string, role: 'ADMIN' | 'REP', userName: string, profilePic?: string | null) => Promise<void>;
   logout: () => Promise<void>;
   toggleTheme: () => void;
 }
@@ -17,10 +20,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   role: null,
   userName: null,
+  profilePic: null,
+  updateProfilePic: (newUri) => set({ profilePic: newUri }),
   isAuthenticated: false,
   isDarkMode: false,
 
-  setAuth: async (token, role, userName) => {
+  setAuth: async (token, role, userName, profilePic = null) => {
     // Platform check to prevent web crashes
     if (Platform.OS !== 'web') {
       await SecureStore.setItemAsync('auth_token', token);
@@ -28,7 +33,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem('auth_token', token);
     }
     
-    set({ token, role, userName, isAuthenticated: true });
+    // Save profilePic to state
+    set({ token, role, userName, profilePic, isAuthenticated: true });
   },
 
   logout: async () => {
@@ -39,7 +45,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.removeItem('auth_token');
     }
     
-    set({ token: null, role: null, userName: null, isAuthenticated: false });
+    // Clear profilePic on logout
+    set({ token: null, role: null, userName: null, profilePic: null, isAuthenticated: false });
   },
 
   toggleTheme: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
