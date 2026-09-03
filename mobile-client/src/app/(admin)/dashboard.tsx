@@ -14,6 +14,7 @@ import {
   TouchableWithoutFeedback,
   ViewToken,
   Platform,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
@@ -57,6 +58,10 @@ export default function AdminDashboard() {
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
   const userName = useAuthStore((state) => (state as any).userName || 'Admin');
   
+  // Pull profile picture and set base IP for remote serving
+  const authProfilePic = useAuthStore((state) => state.profilePic);
+  const BASE_IP = 'http://10.104.108.101:5000';
+
   const flatListRef = useRef<FlatList>(null);
   const currentCards = FINANCE_DATA[activeFilter] || FINANCE_DATA['Total'];
 
@@ -99,7 +104,18 @@ export default function AdminDashboard() {
       {/* Header */}
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
         <TouchableOpacity style={styles.iconButton} onPress={() => setIsProfileMenuVisible(true)}>
-          <Ionicons name="person-circle" size={32} color={theme.textMuted} />
+          {authProfilePic ? (
+            <Image 
+              source={{ 
+                uri: authProfilePic.startsWith('file://') 
+                  ? authProfilePic 
+                  : `${BASE_IP}${authProfilePic}` 
+              }} 
+              style={{ width: 32, height: 32, borderRadius: 16 }} 
+            />
+          ) : (
+            <Ionicons name="person-circle" size={32} color={theme.textMuted} />
+          )}
         </TouchableOpacity>
         
         <View style={styles.headerRight}>
@@ -113,8 +129,7 @@ export default function AdminDashboard() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
-        
+      <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>       
         {/* Greeting & Dropdown Filter */}
         <View style={styles.greetingHeaderRow}>
           <View style={styles.greetingTextContainer}>
@@ -238,7 +253,7 @@ export default function AdminDashboard() {
         </View>
       </ScrollView>
 
-      {/* Left Side Drawer (X App Style) */}
+      {/* Left Side Drawer*/}
       <Modal visible={isProfileMenuVisible} animationType="fade" transparent>
         <View style={styles.drawerOverlay}>
           <TouchableOpacity 
@@ -253,7 +268,18 @@ export default function AdminDashboard() {
                 {/* User Header */}
                 <View style={styles.drawerHeader}>
                   <View style={[styles.largeAvatarPlaceholder, isDarkMode && { backgroundColor: '#0F1419' }]}>
-                    <Ionicons name="person" size={32} color={theme.textMuted} />
+                    {authProfilePic ? (
+                      <Image 
+                        source={{ 
+                          uri: authProfilePic.startsWith('file://') 
+                            ? authProfilePic 
+                            : `${BASE_IP}${authProfilePic}` 
+                        }} 
+                        style={{ width: 56, height: 56, borderRadius: 28 }} 
+                      />
+                    ) : (
+                      <Ionicons name="person" size={32} color={theme.textMuted} />
+                    )}
                   </View>
                   <View style={styles.drawerUserInfo}>
                     <Text style={[styles.drawerName, { color: theme.text }]} numberOfLines={1}>{userName}</Text>
@@ -270,12 +296,12 @@ export default function AdminDashboard() {
                     <Text style={[styles.drawerMenuText, { color: theme.text }]}>Profile</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.drawerMenuItem} onPress={() => navigateFromProfile('/(admin)/notes')}>
+                  <TouchableOpacity style={styles.drawerMenuItem} onPress={() => navigateFromProfile('/(admin)/note')}>
                     <Ionicons name="journal-outline" size={26} color={theme.text} style={styles.drawerMenuIcon} />
                     <Text style={[styles.drawerMenuText, { color: theme.text }]}>Notes</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.drawerMenuItem} onPress={() => navigateFromProfile('/(admin)/messages')}>
+                  <TouchableOpacity style={styles.drawerMenuItem} onPress={() => navigateFromProfile('/(admin)/message')}>
                     <Ionicons name="mail-outline" size={26} color={theme.text} style={styles.drawerMenuIcon} />
                     <Text style={[styles.drawerMenuText, { color: theme.text }]}>Messages</Text>
                     <View style={styles.menuBadge}><Text style={styles.menuBadgeText}>2</Text></View>
@@ -367,7 +393,7 @@ const styles = StyleSheet.create({
   drawerContent: { flex: 1, padding: 24, paddingTop: Platform.OS === 'android' ? 24 : 12 },
   
   drawerHeader: { flexDirection: 'column', alignItems: 'flex-start', marginBottom: 16 },
-  largeAvatarPlaceholder: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  largeAvatarPlaceholder: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginBottom: 12, overflow: 'hidden' },
   drawerUserInfo: { justifyContent: 'center' },
   drawerName: { fontSize: 20, fontWeight: '800', marginBottom: 2 },
   drawerRole: { fontSize: 14, fontWeight: '500' },
