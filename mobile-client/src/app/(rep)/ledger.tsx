@@ -11,8 +11,10 @@ import {
   Platform,
   StatusBar,
   Modal,
+  Image,
   KeyboardAvoidingView
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
@@ -37,12 +39,13 @@ export default function RepLedgerScreen() {
   const [isUploadFormOpen, setIsUploadFormOpen] = useState(false);
   const [uploadAmount, setUploadAmount] = useState('');
   const [uploadNotes, setUploadNotes] = useState('');
+  const [receiptUri, setReceiptUri] = useState<string | null>(null);
 
   // Refund/Return State
   const [isRefundModalVisible, setIsRefundModalVisible] = useState(false);
   const [refundItem, setRefundItem] = useState('');
   const [refundQty, setRefundQty] = useState('');
-  const [refundReason, setRefundReason] = useState(''); // New Reason State
+  const [refundReason, setRefundReason] = useState('');
 
   const CURRENT_DEBT = 45200;
   const CREDIT_LIMIT = 150000;
@@ -60,19 +63,46 @@ export default function RepLedgerScreen() {
     primary: '#177CA5',
   };
 
+  const pickImage = async () => {
+    // 1. Request permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'We need access to your camera roll to attach a receipt.');
+      return;
+    }
+
+    // 2. Launch the image picker
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setReceiptUri(result.assets[0].uri);
+    }
+  };
+
   const handleUpload = () => {
     if (!uploadAmount) {
       Alert.alert('Error', 'Enter a payment amount.');
       return;
     }
+    if (!receiptUri) {
+      Alert.alert('Error', 'Please attach a photo of the receipt before submitting.');
+      return;
+    }
+    
+    // In a real app, you would use FormData here to upload the image to Express
     Alert.alert('Success', `Receipt for ETB ${uploadAmount} submitted to admin for approval.`);
     setIsUploadFormOpen(false);
     setUploadAmount('');
     setUploadNotes('');
+    setReceiptUri(null); // Clear after upload
   };
 
   const handleRefundSubmit = () => {
-    // 1. Basic Field Validation
     if (!refundItem.trim() || !refundQty.trim() || !refundReason.trim()) {
       Alert.alert('Missing Fields', 'Please enter the item name, quantity, and reason for return.');
       return;
@@ -84,8 +114,6 @@ export default function RepLedgerScreen() {
       return;
     }
 
-    // 2. Mock Backend Validation Logic
-    // In production, the backend receives the payload and runs this exact check against the database
     const sanitizedSearchTerm = refundItem.trim().toLowerCase();
     
     const holdingItem = MOCK_ACTIVE_INVENTORY.find(
@@ -108,13 +136,11 @@ export default function RepLedgerScreen() {
       return;
     }
 
-    // 3. Success (Passes all checks)
     Alert.alert(
       'Return Request Submitted', 
       `Your request to return ${requestedQty}x ${holdingItem.name} for the reason: "${refundReason}" has been forwarded. Your debt will be adjusted once the warehouse confirms receipt.`
     );
     
-    // Clean up
     setIsRefundModalVisible(false);
     setRefundItem('');
     setRefundQty('');
@@ -125,7 +151,6 @@ export default function RepLedgerScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
 
-      {/* Header with Back Navigation */}
       <View style={[styles.header, { borderBottomColor: theme.border, borderBottomWidth: isDarkMode ? StyleSheet.hairlineWidth : 1 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={26} color={theme.text} />
@@ -136,7 +161,6 @@ export default function RepLedgerScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
-        {/* Debt Overview Card */}
         <View style={[styles.debtCard, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }, !isDarkMode && styles.lightShadow]}>
           <View style={styles.debtHeaderRow}>
             <Text style={[styles.debtTitle, { color: theme.textMuted }]}>OUTSTANDING DEBT</Text>
@@ -149,10 +173,8 @@ export default function RepLedgerScreen() {
           <Text style={[styles.limitText, { color: theme.textMuted }]}>Credit Limit: ETB {CREDIT_LIMIT.toLocaleString()}</Text>
         </View>
 
-        {/* Action Group: Upload Payment & Return Stock */}
         <View style={styles.actionGroupContainer}>
           
-          {/* Elegant Upload Receipt Accordion */}
           <View style={[styles.actionCard, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }, !isDarkMode && styles.lightShadow]}>
             <TouchableOpacity 
               style={styles.actionTrigger}
@@ -190,9 +212,30 @@ export default function RepLedgerScreen() {
                   onChangeText={setUploadNotes} 
                 />
 
-                <TouchableOpacity style={[styles.uploadImageBtn, { borderColor: theme.border, backgroundColor: theme.inputBg }]}>
-                  <Ionicons name="camera" size={24} color={theme.primary} />
-                  <Text style={[styles.uploadImageText, { color: theme.primary }]}>Attach Photo</Text>
+                <TouchableOpacity 
+                  style={[
+                    styles.uploadImageBtn, 
+                    { 
+                      borderColor: theme.border, 
+                      backgroundColor: theme.inputBg,
+                      overflow: 'hidden', 
+                      padding: receiptUri ? 0 : 16 
+                    }
+                  ]}
+                  onPress={pickImage}
+                >
+                  {receiptUri ? (
+                    <Image 
+                      source={{ uri: receiptUri }} 
+                      style={{ width: '100%', height: 120, borderRadius: 12 }} 
+                      resizeMode="cover" 
+                    />
+                  ) : (
+                    <>
+                      <Ionicons name="camera" size={24} color={theme.primary} />
+                      <Text style={[styles.uploadImageText, { color: theme.primary }]}>Attach Photo</Text>
+                    </>
+                  )}
                 </TouchableOpacity>
 
                 <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.invertedBg }]} onPress={handleUpload}>
@@ -202,7 +245,6 @@ export default function RepLedgerScreen() {
             )}
           </View>
 
-          {/* Return Stock Button (Opens Bottom Sheet) */}
           <View style={[styles.actionCard, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }, !isDarkMode && styles.lightShadow]}>
             <TouchableOpacity 
               style={styles.actionTrigger}
@@ -221,7 +263,6 @@ export default function RepLedgerScreen() {
           
         </View>
 
-        {/* Elegant History Ledger */}
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Transaction History</Text>
         <View style={styles.historyContainer}>
           {MOCK_HISTORY.map((tx) => {
@@ -248,7 +289,6 @@ export default function RepLedgerScreen() {
 
       </ScrollView>
 
-      {/* --- REFUND STOCK BOTTOM SHEET --- */}
       <Modal visible={isRefundModalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={[styles.bottomSheet, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }]}>
@@ -281,7 +321,6 @@ export default function RepLedgerScreen() {
                 onChangeText={setRefundQty}
               />
 
-              {/* New Reason Field */}
               <Text style={[styles.label, { color: theme.text }]}>Reason for Return</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border, height: 80 }]}

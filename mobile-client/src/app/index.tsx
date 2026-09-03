@@ -29,32 +29,37 @@ export default function LoginScreen() {
   // 1. TRUE INTEGRATION MUTATION
   const loginMutation = useMutation({
     mutationFn: async (payload: { username: string; pin?: string }) => {
-      // This sends the actual POST request to your backend (e.g., Node.js or Django)
+      // This sends the actual POST request to your backend
       const response = await apiClient.post('/auth/login', {
         username: payload.username.trim().toLowerCase(), // Sanitize input
         password: payload.pin,
       });
+      // response.data is the entire JSON payload from the Express controller
       return response.data;
     },
-    onSuccess: async (data) => {
+    onSuccess: async (responsePayload) => {
+      // FIX: Extract the nested user object from the backend response structure
+      const user = responsePayload.data.user;
+      const token = responsePayload.token;
+
       // 1. Map the backend Express role to your frontend Zustand type
-      const frontendRole = data.user.role === 'SALES_REP' ? 'REP' : data.user.role;
+      const frontendRole = user.role === 'SALES_REP' ? 'REP' : user.role;
       
       // 2. Check for forced temporary PIN trap
-      if (data.user.requiresPasswordChange) {
-        await setAuth(data.token, frontendRole, data.user.name);
+      if (user.requiresPasswordChange) {
+        await setAuth(token, frontendRole, user.fullName);
         router.replace('/(auth)/force-reset' as any);
         return;
       }
 
       // 3. Save to Secure Store and Zustand using the mapped role
-      await setAuth(data.token, frontendRole, data.user.name);
+      await setAuth(token, frontendRole, user.fullName);
       
       // 4. Dynamic routing using the mapped role
       if (frontendRole === 'ADMIN') {
-        router.replace('/(admin)/dashboard');
+        router.replace('/(admin)/dashboard' as any);
       } else if (frontendRole === 'REP') {
-        router.replace('/(rep)/home');
+        router.replace('/(rep)/home' as any);
       } else {
         Alert.alert('Access Denied', 'Unrecognized user role assigned to this account.');
       }
@@ -84,8 +89,6 @@ export default function LoginScreen() {
       });
 
       if (result.success) {
-        // For biometrics to work in production, you must store an encrypted refresh token locally
-        // and exchange it with the backend here.
         Alert.alert('Biometrics Scanned', 'Biometric token exchange needs backend integration.');
       }
     } catch (err) {
@@ -210,7 +213,6 @@ export default function LoginScreen() {
   );
 }
 
-// ... styles remain exactly the same as before
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#EEF3FC' },
   scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 40 },
