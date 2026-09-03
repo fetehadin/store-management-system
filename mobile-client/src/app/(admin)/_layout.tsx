@@ -31,10 +31,10 @@ export default function AdminLayout() {
       <Tabs.Screen name="suppliers" options={{ title: 'Suppliers', tabBarIcon: ({ color, focused }) => (<Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} />) }} />
       <Tabs.Screen name="approvals" options={{ title: 'Approvals', tabBarIcon: ({ color, focused }) => (<Ionicons name={focused ? 'checkmark-circle' : 'checkmark-circle-outline'} size={24} color={color} />) }} />
 
-      {/* SECURELY HIDDEN FROM BOTTOM BAR */}
+      {/* EXPLICITLY HIDE SIDEBAR SCREENS FROM THE BOTTOM TAB BAR */}
       <Tabs.Screen name="profile" options={{ href: null }} />
-      <Tabs.Screen name="notes" options={{ href: null }} />
-      <Tabs.Screen name="messages" options={{ href: null }} />
+      <Tabs.Screen name="note" options={{ href: null }} />
+      <Tabs.Screen name="message" options={{ href: null }} />
     </Tabs>
   );
 }
