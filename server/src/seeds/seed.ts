@@ -1,12 +1,12 @@
 import { db } from "../config/db.js";
-import bcrypt from "bcrypt";
+import { hashPassword } from "../utils/password.js"; // Use our shared utility!
 import { Role } from "../generated/client/index.js";
 import { toDecimal } from "../utils/decimal.js";
 
 async function main() {
   console.log("🌱 Starting database seed...");
 
-  // 1. Clean existing data (respecting foreign key relationships)
+  // 1. Clean existing data
   await db.ledgerEntry.deleteMany({});
   await db.paymentProof.deleteMany({});
   await db.issuanceItem.deleteMany({});
@@ -18,10 +18,10 @@ async function main() {
 
   console.log("🧹 Cleared old database records.");
 
-  // 2. Hash default passwords (PINs)
-  const passwordHash = await bcrypt.hash("123456", 10);
+  // 2. Hash default passwords using our unified utility
+  const passwordHash = await hashPassword("123456");
 
-  // 3. Create Users (Admin & Sales Reps with usernames)
+  // 3. Create Users
   const adminUser = await db.user.create({
     data: {
       fullName: "Mohammed Taju (Admin)",
@@ -40,7 +40,7 @@ async function main() {
       username: "abebe.k",
       passwordHash,
       role: Role.SALES_REP,
-      requiresPasswordChange: true, // Triggers our frontend force-reset trap!
+      requiresPasswordChange: true,
       creditLimit: toDecimal(100000),
       creditBalance: toDecimal(45000),
     },

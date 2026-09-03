@@ -1,9 +1,9 @@
 import bcrypt from "bcryptjs";
 
-const SALT_ROUNDS = 12;
+const SALT_ROUNDS = 10; // Match your seed salt rounds
 
 /**
- * Hashes a plaintext password or PIN using bcrypt with 12 salt rounds.
+ * Hashes a plaintext password or PIN using bcryptjs.
  */
 export const hashPassword = async (plaintext: string): Promise<string> => {
   return bcrypt.hash(plaintext, SALT_ROUNDS);
