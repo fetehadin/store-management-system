@@ -1,26 +1,12 @@
 import { z } from "zod";
 
 export const submitPaymentSchema = z.object({
-  transactionRedId: z
-    .string()
-    .min(3, "Transaction reference ID is required")
-    .max(100)
-    .trim(),
-  amount: z
-    .number()
-    .positive("Payment amount must be greater than zero"),
-  senderName: z
-    .string()
-    .max(100)
-    .optional(),
-  reasonRemark: z
-    .string()
-    .max(255)
-    .optional(),
-  receipeImageUrl: z
-    .string()
-    .url("Must be a valid image URL")
-    .optional(),
+  transactionRedId: z.string().min(1, "Transaction reference ID is required"),
+  amount: z.number().positive("Amount must be greater than zero"),
+  bankName: z.string().min(1, "Bank name is required"), // <--- ADD THIS LINE
+  senderName: z.string().optional(),
+  reasonRemark: z.string().optional(),
+  receipeImageUrl: z.string().optional(),
 });
 
 export const reviewPaymentSchema = z.object({
