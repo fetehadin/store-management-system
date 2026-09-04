@@ -56,19 +56,21 @@ export const submitPayment = async (
     }
 
     // 3. Create the pending payment proof
+   // 3. Create the pending payment proof
+    // 3. Create the pending payment proof
     const paymentProof = await db.paymentProof.create({
       data: {
         userId,
         transactionRedId: validated.transactionRedId,
         sha256Hash,
         amount: toDecimal(validated.amount),
+        bankName: validated.bankName, // <--- ADD THIS LINE HERE!
         senderName: validated.senderName,
         reasonRemark: validated.reasonRemark,
         receipeImageUrl: validated.receipeImageUrl,
         status: ProofStatus.PENDING,
       },
     });
-
     res.status(201).json({
       status: "success",
       message: "Payment proof submitted successfully and is PENDING review",
@@ -86,102 +88,81 @@ export const submitPayment = async (
 };
 
 /**
- * @route   PATCH /api/v1/payments/:id/approve
- * @desc    Approve a pending payment proof & deduct from creditBalance (Admin only)
+ * @route   GET /api/v1/payments/pending
+ * @desc    Get all pending payment proofs (Admin only)
  * @access  Protected (ADMIN)
  */
-export const approvePayment = async (
+export const getPendingPayments = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const id = String(req.params.id);
-    const validated = reviewPaymentSchema.parse(req.body);
-
-    const proof = await db.paymentProof.findUnique({
-      where: { id },
-    });
-
-    if (!proof) {
-      throw new NotFoundError("Payment proof not found");
-    }
-
-    if (proof.status !== ProofStatus.PENDING) {
-      throw new BadRequestError(
-        `Payment proof has already been processed with status: ${proof.status}`
-      );
-    }
-
-    // Explicitly fetch the associated Sales Rep
-    const salesRep = await db.user.findUnique({
-      where: { id: proof.userId },
-    });
-
-    if (!salesRep) {
-      throw new NotFoundError("Associated Sales Rep account not found");
-    }
-
-    // ACID Transaction: 1. Approve status -> 2. Subtract ETB -> 3. Write Ledger Entry
-    const result = await db.$transaction(async (tx) => {
-      const updatedProof = await tx.paymentProof.update({
-        where: { id: proof.id },
-        data: {
-          status: ProofStatus.APPROVED,
-          adminRemark: validated.adminRemark,
-        },
-      });
-
-      const newBalance = toDecimal(salesRep.creditBalance).sub(
-        toDecimal(proof.amount)
-      );
-
-      const updatedUser = await tx.user.update({
-        where: { id: proof.userId },
-        data: {
-          creditBalance: newBalance,
-        },
-      });
-
-      // AUTOMATED LEDGER WIRE: record credit payment entry
-      const ledgerEntry = await tx.ledgerEntry.create({
-        data: {
-          fromEntity: AuditEntity.SALES_REP,
-          fromEntityId: salesRep.id,
-          toEntity: AuditEntity.ADMIN_STORE, // <-- MATCHED TO YOUR EXACT SCHEMA ENUM!
-          amount: proof.amount,
-          transferMethod: "BANK_PAYMENT_PROOF",
-          receiptUrl: proof.receipeImageUrl,
-          auditRemark: `Auto-ledger: Approved bank receipt (Ref: ${proof.transactionRedId})`,
-          transactionRefId: `PAY-${proof.id}`,
-        },
-      });
-
-      return { updatedProof, updatedUser, ledgerEntry };
+    const pendingProofs = await db.paymentProof.findMany({
+      where: { status: ProofStatus.PENDING },
+      include: {
+        user: { select: { fullName: true } },
+      },
+      orderBy: { createdAt: "desc" },
     });
 
     res.status(200).json({
       status: "success",
-      message: "Payment approved, credit balance reduced, and ledger entry recorded successfully",
-      data: {
-        paymentProof: {
-          id: result.updatedProof.id,
-          transactionRedId: result.updatedProof.transactionRedId,
-          amount: formatETB(result.updatedProof.amount),
-          status: result.updatedProof.status,
-          adminRemark: result.updatedProof.adminRemark,
-        },
-        salesRep: {
-          id: result.updatedUser.id,
-          fullName: result.updatedUser.fullName,
-          newCreditBalance: formatETB(result.updatedUser.creditBalance),
-          creditLimit: formatETB(result.updatedUser.creditLimit),
-        },
-        auditLedgerEntryId: result.ledgerEntry.id,
-      },
+      data: pendingProofs,
     });
   } catch (err) {
     next(err);
+  }
+};
+
+/**
+ * @route   PATCH /api/v1/payments/:id/approve
+ * @desc    Approve a pending payment proof & deduct from creditBalance (Admin only)
+ * @access  Protected (ADMIN)
+ */
+export const approvePayment = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const adminId = req.user?.id;
+    
+    const payment = await db.paymentProof.findUnique({ where: { id } });
+    if (!payment || payment.status !== 'PENDING') {
+      res.status(400).json({ message: "Payment not found or already processed." });
+      return;
+    }
+
+    // Atomic Mathematical Transaction
+    await db.$transaction([
+      db.paymentProof.update({
+        where: { id },
+        data: { status: 'APPROVED', adminRemark: req.body.adminRemark || 'Approved' }
+      }),
+      db.user.update({
+        where: { id: payment.userId },
+        data: { creditBalance: { decrement: payment.amount } }
+      }),
+      db.user.update({
+        where: { id: adminId }, // Assuming the admin's account holds company funds
+        data: { creditBalance: { increment: payment.amount } }
+      }),
+      db.ledgerEntry.create({
+        data: {
+          fromEntity: 'SALES_REP',
+          fromEntityId: payment.userId,
+          toEntity: 'ADMIN_STORE',
+          toEntityId: adminId, 
+          amount: payment.amount,
+          transferMethod: payment.bankName,
+          transactionRefId: payment.transactionRedId,
+          auditRemark: "Admin approved payment",
+        }
+      })
+    ]);
+
+    res.status(200).json({ message: "Payment approved. Balances updated." });
+  } catch (error) {
+    console.error("Ledger Transaction Error:", error);
+    res.status(500).json({ message: "Critical math error during approval." });
   }
 };
 

@@ -213,3 +213,60 @@ export const issueStock = async (
     next(err);
   }
 };
+
+export const getMyStock = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new BadRequestError("User authentication required");
+    }
+
+    // 1. Fetch all issuances for this Sales Rep that are active
+    const issuances = await db.stockIssuance.findMany({
+      where: { userId: userId, status: "ISSUED" },
+      include: { items: true },
+    });
+
+    // 2. Aggregate quantities by productId (in case they checked out the same item twice)
+    const stockMap = new Map<string, { qty: number; price: number }>();
+
+    for (const issuance of issuances) {
+      for (const item of issuance.items) {
+        // Fallback to qtyIssued if qtyRemaining wasn't strictly populated
+        const qtyAvailable = item.qtyRemaining ?? item.qtyIssued;
+        
+        if (qtyAvailable > 0) {
+          const current = stockMap.get(item.productId) || { qty: 0, price: Number(item.wholesalePrice) };
+          stockMap.set(item.productId, {
+            qty: current.qty + qtyAvailable,
+            price: Number(item.wholesalePrice),
+          });
+        }
+      }
+    }
+
+    // 3. Fetch Product details (names) so the mobile app can display them
+    const productIds = Array.from(stockMap.keys());
+    const products = await db.product.findMany({
+      where: { id: { in: productIds } }
+    });
+    
+    const productMap = new Map(products.map(p => [p.id, p.name]));
+
+    // 4. Format exactly how the mobile app expects it
+    const formattedStock = Array.from(stockMap.entries()).map(([productId, data]) => ({
+      id: productId,
+      name: productMap.get(productId) || "Unknown Product",
+      sellingPrice: data.price,
+      qtyHeld: data.qty
+    }));
+
+    res.status(200).json({ data: formattedStock });
+  } catch (err) {
+    next(err);
+  }
+};
