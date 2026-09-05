@@ -2,10 +2,10 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 // Change this from 10.240.23.101 to your new IP
-const API_BASE_URL = "http://10.104.108.101:5000/api/v1";
+const BASE_URL = 'http://172.30.75.101:5000/api/v1';
 
 export const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: BASE_URL,
   timeout: 10000, // 10 seconds timeout 
   headers: {
     'Content-Type': 'application/json',

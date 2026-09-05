@@ -10,10 +10,12 @@ interface AuthState {
   updateProfilePic: (newUri: string) => void;
   isAuthenticated: boolean;
   isDarkMode: boolean;
-  // Updated signature to accept profilePic
   setAuth: (token: string, role: 'ADMIN' | 'REP', userName: string, profilePic?: string | null) => Promise<void>;
   logout: () => Promise<void>;
   toggleTheme: () => void;
+  creditBalance: number;
+  creditLimit: number;
+  setBalances: (balance: number, limit: number) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -24,6 +26,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   updateProfilePic: (newUri) => set({ profilePic: newUri }),
   isAuthenticated: false,
   isDarkMode: false,
+  creditBalance: 0,
+  creditLimit: 0,
+  setBalances: (balance, limit) => set({ creditBalance: balance, creditLimit: limit }),
 
   setAuth: async (token, role, userName, profilePic = null) => {
     // Platform check to prevent web crashes
