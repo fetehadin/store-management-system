@@ -1,23 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  StatusBar,
-  FlatList,
-  Dimensions,
-  Modal,
-  TouchableWithoutFeedback,
-  ViewToken,
-  Platform,
-  Image,
+  View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity,
+  StatusBar, FlatList, Dimensions, Modal, TouchableWithoutFeedback,
+  ViewToken, Platform, Image, RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
+import { apiClient } from '../../api/client';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 40;
@@ -25,45 +16,55 @@ const CARD_SPACING = 16;
 
 const TIME_FILTERS = ['Today', 'Yesterday', 'This Week', 'Total'];
 
-// Demo Data
-const FINANCE_DATA = {
-  'Today': [
-    { id: '0', title: 'Total Net Balance', amount: 'ETB 12,400', icon: 'pie-chart-outline' as const },
-    { id: '1', title: 'Total Revenue (Sales)', amount: 'ETB 18,500', icon: 'wallet-outline' as const },
-    { id: '2', title: 'Total Debt (Suppliers)', amount: 'ETB 6,100', icon: 'receipt-outline' as const },
-  ],
-  'Total': [
-    { id: '0', title: 'Total Net Balance', amount: 'ETB 125,300', icon: 'pie-chart-outline' as const },
-    { id: '1', title: 'Total Revenue (Sales)', amount: 'ETB 240,500', icon: 'wallet-outline' as const },
-    { id: '2', title: 'Total Debt (Suppliers)', amount: 'ETB 115,200', icon: 'receipt-outline' as const },
-  ]
-};
-
 const CORE_MODULES = [
   { id: 'Stock', title: 'Inventory & Stock', sub: 'Monitor warehouse capacities', icon: 'cube-outline', lightBg: '#EBF2FF', lightColor: '#1D61F2', route: '/(admin)/stock' },
   { id: 'Sales', title: 'Sales Ledger', sub: 'Audit field transactions', icon: 'bar-chart-outline', lightBg: '#E6F9F2', lightColor: '#059669', route: '/(admin)/sales' },
   { id: 'Suppliers', title: 'Supplier Directory', sub: 'Manage vendors and credit', icon: 'people-outline', lightBg: '#ECFDF5', lightColor: '#10B981', route: '/(admin)/suppliers' },
 ];
 
+const BASE_IP = 'http://172.30.75.101:5000';
+
 export default function AdminDashboard() {
-  const [activeCardIndex, setActiveCardIndex] = useState(0);
-  const [activeFilter, setActiveFilter] = useState<keyof typeof FINANCE_DATA>('Total');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  
-  // Profile Drawer State
-  const [isProfileMenuVisible, setIsProfileMenuVisible] = useState(false);
-  
   const router = useRouter();
+  
+  // Auth & Theme State
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
   const userName = useAuthStore((state) => (state as any).userName || 'Admin');
-  
-  // Pull profile picture and set base IP for remote serving
-  const authProfilePic = useAuthStore((state) => state.profilePic);
-  const BASE_IP = 'http://10.104.108.101:5000';
+  const authProfilePic = useAuthStore((state) => (state as any).profilePic);
+  const logout = useAuthStore((state) => state.logout);
 
+  // UI State
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
+  const [activeFilter, setActiveFilter] = useState('Total');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isProfileMenuVisible, setIsProfileMenuVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const flatListRef = useRef<FlatList>(null);
-  const currentCards = FINANCE_DATA[activeFilter] || FINANCE_DATA['Total'];
+
+  // LIVE FETCH: Pull financial aggregates based on selected filter with Optimistic UI rendering
+  const { data: stats, refetch } = useQuery({
+    queryKey: ['admin-finance-summary', activeFilter],
+    queryFn: async () => {
+      const response = await apiClient.get('/analytics/summary', { params: { period: activeFilter } });
+      return response.data?.data;
+    },
+    // Prevent UI layout shifts by instantly feeding placeholder data
+    placeholderData: { netBalance: 0, totalRevenue: 0, totalDebt: 0 }
+  });
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
+  // Dynamically map backend numbers into carousel cards
+  const currentCards = [
+    { id: '0', title: 'Total Net Balance', amount: `ETB ${Number(stats?.netBalance || 0).toLocaleString()}`, icon: 'pie-chart-outline' as const },
+    { id: '1', title: 'Total Revenue (Sales)', amount: `ETB ${Number(stats?.totalRevenue || 0).toLocaleString()}`, icon: 'wallet-outline' as const },
+    { id: '2', title: 'Total Debt (Suppliers)', amount: `ETB ${Number(stats?.totalDebt || 0).toLocaleString()}`, icon: 'receipt-outline' as const },
+  ];
 
   const theme = {
     bg: isDarkMode ? '#000000' : '#F8FAFC',
@@ -82,11 +83,10 @@ export default function AdminDashboard() {
       setActiveCardIndex(viewableItems[0].index);
     }
   }).current;
-
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
   const handleFilterSelect = (filter: string) => {
-    setActiveFilter(filter as keyof typeof FINANCE_DATA);
+    setActiveFilter(filter);
     setIsDropdownOpen(false);
     setActiveCardIndex(0);
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
@@ -106,11 +106,7 @@ export default function AdminDashboard() {
         <TouchableOpacity style={styles.iconButton} onPress={() => setIsProfileMenuVisible(true)}>
           {authProfilePic ? (
             <Image 
-              source={{ 
-                uri: authProfilePic.startsWith('file://') 
-                  ? authProfilePic 
-                  : `${BASE_IP}${authProfilePic}` 
-              }} 
+              source={{ uri: authProfilePic.startsWith('file://') ? authProfilePic : `${BASE_IP}${authProfilePic}` }} 
               style={{ width: 32, height: 32, borderRadius: 16 }} 
             />
           ) : (
@@ -119,7 +115,7 @@ export default function AdminDashboard() {
         </TouchableOpacity>
         
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => navigateFromProfile('/(admin)/messages')}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => navigateFromProfile('/(admin)/message')}>
             <Ionicons name="notifications-outline" size={22} color={theme.text} />
             <View style={styles.notificationBadge} />
           </TouchableOpacity>
@@ -129,11 +125,15 @@ export default function AdminDashboard() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>       
+      <ScrollView 
+        contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}
+      >       
         {/* Greeting & Dropdown Filter */}
         <View style={styles.greetingHeaderRow}>
           <View style={styles.greetingTextContainer}>
-            <Text style={[styles.greetingTitle, { color: theme.text }]}>Hello, {userName}</Text>
+            <Text style={[styles.greetingTitle, { color: theme.text }]}>Hello, {userName.split(' ')[0]}</Text>
             <Text style={[styles.greetingSubtitle, { color: theme.textMuted }]}>Your operational summary.</Text>
           </View>
           
@@ -168,7 +168,7 @@ export default function AdminDashboard() {
           </TouchableWithoutFeedback>
         </Modal>
 
-        {/* Full-Width Sliding Carousel */}
+        {/* Full-Width Sliding Carousel - No Loading Wrapper */}
         <View style={styles.cardsWrapper}>
           <FlatList
             ref={flatListRef}
@@ -236,9 +236,7 @@ export default function AdminDashboard() {
             <TouchableOpacity 
               key={item.id} 
               style={[styles.listItem, isDarkMode ? { borderBottomWidth: 1, borderBottomColor: theme.border } : styles.lightListItem]}
-              onPress={() => {
-                router.replace(item.route as any);
-              }}
+              onPress={() => router.replace(item.route as any)}
             >
               <View style={[styles.listIconWrapper, !isDarkMode && { backgroundColor: item.lightBg }]}>
                 <Ionicons name={item.icon as any} size={22} color={isDarkMode ? theme.text : item.lightColor} />
@@ -253,7 +251,7 @@ export default function AdminDashboard() {
         </View>
       </ScrollView>
 
-      {/* Left Side Drawer*/}
+      {/* Left Side Drawer */}
       <Modal visible={isProfileMenuVisible} animationType="fade" transparent>
         <View style={styles.drawerOverlay}>
           <TouchableOpacity 
@@ -270,11 +268,7 @@ export default function AdminDashboard() {
                   <View style={[styles.largeAvatarPlaceholder, isDarkMode && { backgroundColor: '#0F1419' }]}>
                     {authProfilePic ? (
                       <Image 
-                        source={{ 
-                          uri: authProfilePic.startsWith('file://') 
-                            ? authProfilePic 
-                            : `${BASE_IP}${authProfilePic}` 
-                        }} 
+                        source={{ uri: authProfilePic.startsWith('file://') ? authProfilePic : `${BASE_IP}${authProfilePic}` }} 
                         style={{ width: 56, height: 56, borderRadius: 28 }} 
                       />
                     ) : (
@@ -293,27 +287,32 @@ export default function AdminDashboard() {
                 <View style={styles.drawerMenuList}>
                   <TouchableOpacity style={styles.drawerMenuItem} onPress={() => navigateFromProfile('/(admin)/profile')}>
                     <Ionicons name="person-outline" size={26} color={theme.text} style={styles.drawerMenuIcon} />
-                    <Text style={[styles.drawerMenuText, { color: theme.text }]}>Profile</Text>
+                    <Text style={[styles.drawerMenuText, { color: theme.text }]}>Profile & Security</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity style={styles.drawerMenuItem} onPress={() => navigateFromProfile('/(admin)/note')}>
                     <Ionicons name="journal-outline" size={26} color={theme.text} style={styles.drawerMenuIcon} />
-                    <Text style={[styles.drawerMenuText, { color: theme.text }]}>Notes</Text>
+                    <Text style={[styles.drawerMenuText, { color: theme.text }]}>Admin Notes</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity style={styles.drawerMenuItem} onPress={() => navigateFromProfile('/(admin)/message')}>
                     <Ionicons name="mail-outline" size={26} color={theme.text} style={styles.drawerMenuIcon} />
                     <Text style={[styles.drawerMenuText, { color: theme.text }]}>Messages</Text>
-                    <View style={styles.menuBadge}><Text style={styles.menuBadgeText}>2</Text></View>
                   </TouchableOpacity>
                 </View>
 
                 {/* Spacer pushes logout to the bottom */}
                 <View style={{ flex: 1 }} />
-
                 <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
-                <TouchableOpacity style={styles.logoutBtn} onPress={() => console.log('Logout')}>
+                {/* Wired Secure Logout */}
+                <TouchableOpacity 
+                  style={styles.logoutBtn} 
+                  onPress={() => {
+                    setIsProfileMenuVisible(false);
+                    logout();
+                  }}
+                >
                   <Ionicons name="log-out-outline" size={26} color="#DC2626" style={styles.drawerMenuIcon} />
                   <Text style={[styles.drawerMenuText, { color: '#DC2626' }]}>Sign Out</Text>
                 </TouchableOpacity>
@@ -386,7 +385,6 @@ const styles = StyleSheet.create({
   listTitle: { fontSize: 16, fontWeight: '700', marginBottom: 2 },
   listSubtitle: { fontSize: 14 },
 
-  // Left Drawer Styles (X App Equivalent)
   drawerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', flexDirection: 'row' },
   sideDrawer: { width: SCREEN_WIDTH * 0.75, height: '100%', borderTopRightRadius: 24, borderBottomRightRadius: 24, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 2, height: 0 }, shadowOpacity: 0.15, shadowRadius: 10, elevation: 5 },
   drawerSafeArea: { flex: 1 },
@@ -402,9 +400,6 @@ const styles = StyleSheet.create({
   drawerMenuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16 },
   drawerMenuIcon: { marginRight: 20 },
   drawerMenuText: { fontSize: 18, fontWeight: '700', flex: 1 },
-  
-  menuBadge: { backgroundColor: '#1D61F2', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
-  menuBadgeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
 
   divider: { height: 1, marginVertical: 8 },
   logoutBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingBottom: Platform.OS === 'ios' ? 0 : 16 },

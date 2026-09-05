@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image, StatusBar, Modal, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator
+  View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image, StatusBar, Modal, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
+import { apiClient } from '../../api/client';
 
-const BASE_URL = 'http://172.30.75.101:5000/api/v1';
-
+const BASE_IP = 'http://172.30.75.101:5000';
 
 const resolveImageUrl = (url: string) => {
   if (!url) return '';
@@ -17,23 +18,13 @@ const resolveImageUrl = (url: string) => {
 
 export default function ApprovalsScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const role = useAuthStore((state) => state.role);
-  const token = useAuthStore((state) => (state as any).token); 
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  const isAdmin = role === 'ADMIN' || role === null;
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN' || role === null; // Adjust based on your exact enum
 
   // Tab State
   const [activeTab, setActiveTab] = useState<'PAYMENTS' | 'RETURNS'>('PAYMENTS');
-
-  // Data States
-  const [receipts, setReceipts] = useState<any[]>([]);
-  const [pendingReturns, setPendingReturns] = useState<any[]>([
-    // Mock data until backend route is live
-    { id: 'ret_1', repName: 'Fetehadin Negash', reason: 'Items packaging damaged during transit.', totalValue: 1900, items: [{ name: 'Cooking Oil 5L', qty: 2 }] }
-  ]);
-  
-  const [isLoading, setIsLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
   
   // Modals State
   const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
@@ -42,91 +33,90 @@ export default function ApprovalsScreen() {
   const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  const fetchPendingData = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${BASE_IP}/api/v1/payments/pending`, { headers: { Authorization: `Bearer ${token}` } });
-      const json = await response.json();
-      if (response.ok) setReceipts(json.data || []);
-      
-      // TODO: Fetch pending returns when backend is ready
-      // const retRes = await fetch(`${BASE_IP}/api/v1/returns/pending`, { headers: { Authorization: `Bearer ${token}` } });
-      // const retJson = await retRes.json();
-      // if (retRes.ok) setPendingReturns(retJson.data || []);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // 1. LIVE DATA: Fetch Pending Financial Receipts
+  const { data: receipts = [], isLoading: isLoadingPayments, refetch: refetchPayments } = useQuery({
+    queryKey: ['pending-payments'],
+    queryFn: async () => {
+      const response = await apiClient.get('/payments/pending');
+      return response.data?.data || [];
+    },
+    enabled: isAdmin,
+  });
 
-  useEffect(() => {
-    if (isAdmin) fetchPendingData();
-  }, [isAdmin]);
+  // 2. LIVE DATA: Fetch Pending Stock Returns
+  const { data: returns = [], isLoading: isLoadingReturns, refetch: refetchReturns } = useQuery({
+    queryKey: ['pending-returns'],
+    queryFn: async () => {
+      const response = await apiClient.get('/returns/pending');
+      return response.data?.data || [];
+    },
+    enabled: isAdmin,
+  });
 
-  // Payment Handlers
-  const handleApprove = async (id: string) => {
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([refetchPayments(), refetchReturns()]);
+    setRefreshing(false);
+  }, [refetchPayments, refetchReturns]);
+
+  // Mutations for Admin Actions
+  const approvePaymentMutation = useMutation({
+    mutationFn: async (id: string) => apiClient.patch(`/payments/${id}/approve`, { adminRemark: 'Approved via Admin App' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending-payments'] });
+      Alert.alert('Success', 'Payment approved and ledger updated.');
+    },
+    onError: (error: any) => Alert.alert('Error', error.response?.data?.message || 'Failed to approve.'),
+  });
+
+  const rejectPaymentMutation = useMutation({
+    mutationFn: async ({ id, remark }: { id: string, remark: string }) => apiClient.patch(`/payments/${id}/reject`, { adminRemark: remark }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending-payments'] });
+      setIsRejectModalVisible(false);
+      setRejectReason('');
+    },
+    onError: (error: any) => Alert.alert('Error', error.response?.data?.message || 'Failed to reject.'),
+  });
+
+  const processReturnMutation = useMutation({
+    mutationFn: async ({ id, destination }: { id: string, destination: string }) => apiClient.post(`/returns/${id}/approve`, { destination }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending-returns'] });
+      Alert.alert('Success', 'Return processed and rep debt updated.');
+    },
+    onError: (error: any) => Alert.alert('Error', error.response?.data?.message || 'Failed to process return.'),
+  });
+
+  // Action Handlers
+  const handleApprove = (id: string) => {
     Alert.alert("Confirm Approval", "Are you sure you want to approve this receipt and deduct the rep's debt?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Approve", style: "default", onPress: async () => {
-          setIsProcessing(true);
-          try {
-            const res = await fetch(`${BASE_IP}/api/v1/payments/${id}/approve`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-              body: JSON.stringify({ adminRemark: 'Approved via Admin App' })
-            });
-            if (res.ok) {
-              setReceipts(prev => prev.filter(r => r.id !== id));
-              Alert.alert('Success', 'Payment approved and ledger updated.');
-            } else {
-              const err = await res.json();
-              Alert.alert('Error', err.message || 'Failed to approve.');
-            }
-          } catch (error) { Alert.alert('Error', 'Network request failed.'); } finally { setIsProcessing(false); }
-        }
-      }
+      { text: "Approve", onPress: () => approvePaymentMutation.mutate(id) }
     ]);
   };
 
-  const openRejectModal = (id: string) => { setActiveReceiptId(id); setIsRejectModalVisible(true); };
-
-  const handleConfirmReject = async () => {
-    if (!activeReceiptId) return;
-    setIsProcessing(true);
-    try {
-      const res = await fetch(`${BASE_IP}/api/v1/payments/${activeReceiptId}/reject`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ adminRemark: rejectReason }) 
-      });
-      if (res.ok) {
-        setReceipts(prev => prev.filter(r => r.id !== activeReceiptId));
-        setIsRejectModalVisible(false);
-        setRejectReason('');
-      } else {
-        const err = await res.json();
-        Alert.alert('Error', err.message || 'Failed to reject.');
-      }
-    } catch (error) { Alert.alert('Error', 'Network request failed.'); } finally { setIsProcessing(false); }
+  const openRejectModal = (id: string) => { 
+    setActiveReceiptId(id); 
+    setIsRejectModalVisible(true); 
   };
 
-  const openImageViewer = (imageUrl: string) => { setSelectedImage(resolveImageUrl(imageUrl)); setIsImageViewerVisible(true); };
+  const handleConfirmReject = () => {
+    if (!activeReceiptId) return;
+    rejectPaymentMutation.mutate({ id: activeReceiptId, remark: rejectReason });
+  };
 
-  // Return Handlers
-  const handleProcessReturn = async (id: string, destination: 'WAREHOUSE' | 'SUPPLIER') => {
+  const handleProcessReturn = (id: string, destination: 'WAREHOUSE' | 'SUPPLIER') => {
     Alert.alert("Confirm Action", `Direct items to ${destination === 'WAREHOUSE' ? 'Warehouse Stock' : 'Supplier Return'} and deduct ETB value from rep's debt?`, [
       { text: "Cancel", style: "cancel" },
-      { text: "Confirm", onPress: async () => {
-          setIsProcessing(true);
-          try {
-            // TODO: Wire to backend router when ready
-            // await fetch(`${BASE_IP}/api/v1/returns/${id}/approve`, { method: 'POST', body: JSON.stringify({ destination }) });
-            setPendingReturns(prev => prev.filter(r => r.id !== id));
-            Alert.alert('Success', 'Return processed and rep debt updated.');
-          } catch (error) { Alert.alert('Error', 'Failed to process return.'); } finally { setIsProcessing(false); }
-      }}
+      { text: "Confirm", onPress: () => processReturnMutation.mutate({ id, destination }) }
     ]);
+  };
+
+  const openImageViewer = (imageUrl: string) => { 
+    setSelectedImage(resolveImageUrl(imageUrl)); 
+    setIsImageViewerVisible(true); 
   };
 
   const theme = {
@@ -140,10 +130,12 @@ export default function ApprovalsScreen() {
         <Ionicons name="lock-closed-outline" size={64} color="#DC2626" />
         <Text style={styles.unauthorizedTitle}>Access Restricted</Text>
         <Text style={styles.unauthorizedSubtitle}>This portal is exclusively for system administrators.</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/(rep)/pos')}><Text style={styles.backButtonText}>Return to POS</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/(rep)/home')}><Text style={styles.backButtonText}>Return to Home</Text></TouchableOpacity>
       </SafeAreaView>
     );
   }
+
+  const isProcessingAny = approvePaymentMutation.isPending || rejectPaymentMutation.isPending || processReturnMutation.isPending;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
@@ -165,11 +157,16 @@ export default function ApprovalsScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}
+      >
         
+        {/* PAYMENTS TAB */}
         {activeTab === 'PAYMENTS' && (
           <View style={styles.feedContainer}>
-            {isLoading ? <ActivityIndicator size="large" color="#177CA5" style={{ marginTop: 60 }} />
+            {isLoadingPayments ? <ActivityIndicator size="large" color="#177CA5" style={{ marginTop: 60 }} />
             : receipts.length === 0 ? (
               <View style={styles.emptyState}>
                 <Ionicons name="checkmark-done-circle-outline" size={48} color={theme.textMuted} />
@@ -177,7 +174,7 @@ export default function ApprovalsScreen() {
                 <Text style={[styles.emptyStateSub, { color: theme.textMuted }]}>There are no pending receipts to verify.</Text>
               </View>
             ) : (
-              receipts.map((item) => (
+              receipts.map((item: any) => (
                 <View key={item.id} style={[styles.approvalCard, { backgroundColor: theme.cardBg }, isDarkMode ? { borderWidth: 1, borderColor: theme.border } : styles.lightShadow]}>
                   <View style={styles.leftAccentBar} />
                   <View style={styles.cardMainContent}>
@@ -215,11 +212,11 @@ export default function ApprovalsScreen() {
                     {item.reasonRemark && <Text style={{ color: theme.textMuted, fontSize: 13, marginBottom: 16, fontStyle: 'italic' }}>" {item.reasonRemark} "</Text>}
 
                     <View style={styles.actionRow}>
-                      <TouchableOpacity style={[styles.approveBtn, isProcessing && { opacity: 0.5 }]} onPress={() => handleApprove(item.id)} disabled={isProcessing}>
+                      <TouchableOpacity style={[styles.approveBtn, isProcessingAny && { opacity: 0.5 }]} onPress={() => handleApprove(item.id)} disabled={isProcessingAny}>
                         <Ionicons name="finger-print" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
                         <Text style={styles.approveBtnText}>Approve & Clear</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={[styles.rejectBtn, isDarkMode && { borderColor: theme.border }, isProcessing && { opacity: 0.5 }]} onPress={() => openRejectModal(item.id)} disabled={isProcessing}>
+                      <TouchableOpacity style={[styles.rejectBtn, isDarkMode && { borderColor: theme.border }, isProcessingAny && { opacity: 0.5 }]} onPress={() => openRejectModal(item.id)} disabled={isProcessingAny}>
                         <Ionicons name="close" size={18} color="#DC2626" style={{ marginRight: 4 }} />
                         <Text style={styles.rejectBtnText}>Reject</Text>
                       </TouchableOpacity>
@@ -231,44 +228,46 @@ export default function ApprovalsScreen() {
           </View>
         )}
 
+        {/* RETURNS TAB */}
         {activeTab === 'RETURNS' && (
           <View style={styles.feedContainer}>
-            {pendingReturns.length === 0 ? (
+            {isLoadingReturns ? <ActivityIndicator size="large" color="#E11D48" style={{ marginTop: 60 }} />
+            : returns.length === 0 ? (
                <View style={styles.emptyState}>
                  <Ionicons name="cube-outline" size={48} color={theme.textMuted} />
                  <Text style={[styles.emptyStateTitle, { color: theme.text }]}>No Returns</Text>
                  <Text style={[styles.emptyStateSub, { color: theme.textMuted }]}>There are no pending stock returns.</Text>
                </View>
             ) : (
-              pendingReturns.map(ret => (
+              returns.map((ret: any) => (
                 <View key={ret.id} style={[styles.approvalCard, { backgroundColor: theme.cardBg }, isDarkMode ? { borderWidth: 1, borderColor: theme.border } : styles.lightShadow]}>
                   <View style={[styles.leftAccentBar, { backgroundColor: '#E11D48' }]} />
                   <View style={styles.cardMainContent}>
                     <View style={styles.cardHeaderRow}>
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.repName, { color: theme.text }]}>{ret.repName}</Text>
+                        <Text style={[styles.repName, { color: theme.text }]}>{ret.user?.fullName || 'Unknown Rep'}</Text>
                         <Text style={{ color: theme.textMuted, fontSize: 12 }}>Requests Stock Return</Text>
                       </View>
-                      <Text style={[styles.amountText, { color: theme.text }]}>ETB {ret.totalValue.toLocaleString()}</Text>
+                      <Text style={[styles.amountText, { color: theme.text }]}>ETB {Number(ret.totalValue || 0).toLocaleString()}</Text>
                     </View>
 
                     <View style={[styles.docPreviewBox, { backgroundColor: theme.docBg, flexDirection: 'column', alignItems: 'flex-start' }]}>
                       <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text, marginBottom: 6 }}>Returned Items:</Text>
-                      {ret.items.map((i: any, idx: number) => (
-                        <Text key={idx} style={{ fontSize: 13, color: theme.textMuted }}>• {i.qty}x {i.name}</Text>
+                      {ret.items?.map((i: any, idx: number) => (
+                        <Text key={idx} style={{ fontSize: 13, color: theme.textMuted }}>• {i.qtyReturned || i.qty}x {i.product?.name || 'Item'}</Text>
                       ))}
                     </View>
 
                     <Text style={{ color: theme.textMuted, fontSize: 13, marginBottom: 16, fontStyle: 'italic' }}>
-                      Reason: "{ret.reason}"
+                      Reason: "{ret.reason || 'N/A'}"
                     </Text>
 
                     <View style={{ gap: 8 }}>
-                      <TouchableOpacity style={[styles.approveReturnBtn, { backgroundColor: '#059669' }]} onPress={() => handleProcessReturn(ret.id, 'WAREHOUSE')}>
+                      <TouchableOpacity style={[styles.approveReturnBtn, { backgroundColor: '#059669' }, isProcessingAny && { opacity: 0.5 }]} disabled={isProcessingAny} onPress={() => handleProcessReturn(ret.id, 'WAREHOUSE')}>
                         <Ionicons name="cube-outline" size={16} color="#FFF" style={{ marginRight: 6 }} />
                         <Text style={styles.approveBtnText}>Accept & Return to Stock</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={[styles.approveReturnBtn, { backgroundColor: '#D97706' }]} onPress={() => handleProcessReturn(ret.id, 'SUPPLIER')}>
+                      <TouchableOpacity style={[styles.approveReturnBtn, { backgroundColor: '#D97706' }, isProcessingAny && { opacity: 0.5 }]} disabled={isProcessingAny} onPress={() => handleProcessReturn(ret.id, 'SUPPLIER')}>
                         <Ionicons name="swap-horizontal-outline" size={16} color="#FFF" style={{ marginRight: 6 }} />
                         <Text style={styles.approveBtnText}>Accept & Route to Supplier</Text>
                       </TouchableOpacity>
@@ -292,8 +291,8 @@ export default function ApprovalsScreen() {
             <Text style={[styles.inputLabel, { color: theme.text }]}>Reason for Rejection</Text>
             <TextInput style={[styles.textArea, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="e.g. The uploaded image is blurry and illegible..." placeholderTextColor={theme.textMuted} multiline numberOfLines={4} value={rejectReason} onChangeText={setRejectReason} autoFocus />
             <Text style={[styles.helperText, { color: theme.textMuted }]}>This note will be sent directly to the agent to help them correct and re-submit the payment.</Text>
-            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: '#DC2626' }]} onPress={handleConfirmReject} disabled={!rejectReason.trim() || isProcessing}>
-              <Text style={[styles.submitBtnText, { color: '#FFFFFF' }, (!rejectReason.trim() || isProcessing) && { opacity: 0.7 }]}>{isProcessing ? 'Processing...' : 'Confirm Rejection'}</Text>
+            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: '#DC2626' }]} onPress={handleConfirmReject} disabled={!rejectReason.trim() || rejectPaymentMutation.isPending}>
+              <Text style={[styles.submitBtnText, { color: '#FFFFFF' }, (!rejectReason.trim() || rejectPaymentMutation.isPending) && { opacity: 0.7 }]}>{rejectPaymentMutation.isPending ? 'Processing...' : 'Confirm Rejection'}</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
