@@ -2,11 +2,15 @@ import React, { useState } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
-import { Platform, StyleSheet, View, Text, TouchableOpacity, Modal, SafeAreaView } from 'react-native';
+import { Platform, StyleSheet, View, Text, TouchableOpacity, Modal, SafeAreaView, Image } from 'react-native';
 
 export default function RepLayout() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
+  // Dynamically pull the exact user details saved during login
   const userName = useAuthStore((state) => (state as any).userName || 'Sales Rep');
+  const profilePic = useAuthStore((state) => (state as any).profilePic);
+  const userRole = useAuthStore((state) => (state as any).role || 'REP');
+  
   const router = useRouter();
   const logout = useAuthStore((state) => state.logout);
 
@@ -49,13 +53,11 @@ export default function RepLayout() {
           options={{ title: 'Ledger', tabBarIcon: ({ color, focused }) => (<Ionicons name={focused ? 'wallet' : 'wallet-outline'} size={24} color={color} />) }} 
         />
         
-        {/* Fixed Note Tab */}
         <Tabs.Screen 
           name="note" 
           options={{ title: 'My Notes', tabBarIcon: ({ color, focused }) => (<Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={24} color={color} />) }} 
         />
 
-        {/* Restored Message Tab */}
         <Tabs.Screen 
           name="message" 
           options={{ title: 'Messages', tabBarIcon: ({ color, focused }) => (<Ionicons name={focused ? 'mail' : 'mail-outline'} size={24} color={color} />) }} 
@@ -63,8 +65,6 @@ export default function RepLayout() {
 
         {/* SECURELY HIDDEN FROM BOTTOM BAR */}
         <Tabs.Screen name="profile" options={{ href: null }} />
-        
-        {/* Hide any accidental plural file variations */}
         <Tabs.Screen name="messages" options={{ href: null }} />
         <Tabs.Screen name="notes" options={{ href: null }} />
         <Tabs.Screen name="pos" options={{ href: null }} />
@@ -78,9 +78,17 @@ export default function RepLayout() {
             <SafeAreaView style={{ flex: 1 }}>
               <View style={styles.drawerContent}>
                 <View style={styles.drawerHeader}>
-                  <View style={styles.avatar}><Ionicons name="person" size={24} color="#64748B" /></View>
+                  {/* DYNAMIC AVATAR: Show real picture if they have one, else fallback to icon */}
+                  {profilePic ? (
+                    <Image source={{ uri: profilePic }} style={styles.avatarImage} />
+                  ) : (
+                    <View style={styles.avatarIconPlaceholder}>
+                      <Ionicons name="person" size={24} color="#64748B" />
+                    </View>
+                  )}
+                  
                   <Text style={[styles.drawerName, { color: isDarkMode ? '#FFF' : '#000' }]}>{userName}</Text>
-                  <Text style={styles.drawerRole}>Field Sales Rep</Text>
+                  <Text style={styles.drawerRole}>{userRole === 'REP' || userRole === 'SALES_REP' ? 'Field Sales Rep' : 'Staff'}</Text>
                 </View>
                 
                 <View style={styles.divider} />
@@ -90,7 +98,6 @@ export default function RepLayout() {
                   <Text style={[styles.drawerItemText, { color: isDarkMode ? '#FFF' : '#000' }]}>Profile</Text>
                 </TouchableOpacity>
 
-                {/* You can keep Messages in the drawer as well, or remove this TouchableOpacity if the bottom tab is enough */}
                 <TouchableOpacity style={styles.drawerItem} onPress={() => navigateFromDrawer('/(rep)/message')}>
                   <Ionicons name="mail-outline" size={24} color={isDarkMode ? '#FFF' : '#000'} style={styles.drawerIcon} />
                   <Text style={[styles.drawerItemText, { color: isDarkMode ? '#FFF' : '#000' }]}>Messages</Text>
@@ -123,7 +130,8 @@ const styles = StyleSheet.create({
   sideDrawer: { width: '75%', height: '100%', borderTopRightRadius: 24, borderBottomRightRadius: 24, padding: 24 },
   drawerContent: { flex: 1, paddingTop: 16 },
   drawerHeader: { marginBottom: 16 },
-  avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  avatarImage: { width: 48, height: 48, borderRadius: 24, marginBottom: 12 },
+  avatarIconPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   drawerName: { fontSize: 20, fontWeight: '800' },
   drawerRole: { fontSize: 14, color: '#64748B', fontWeight: '500' },
   divider: { height: 1, backgroundColor: '#E2E8F0', marginVertical: 16 },

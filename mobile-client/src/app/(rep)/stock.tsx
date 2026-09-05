@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -10,26 +10,41 @@ import {
   Alert, 
   Platform,
   StatusBar,
-  ActivityIndicator
+  ActivityIndicator,
+  RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
-import { useInventoryStore } from '../../store/inventoryStore';
-
-const BASE_IP = 'http://172.30.75.101:5000';
+import { apiClient } from '../../api/client';
 
 export default function RepStockScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  const token = useAuthStore((state) => (state as any).token);
-  
-  const stock = useInventoryStore((state) => state.stock); 
   
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [cart, setCart] = useState<Record<string, number>>({});
   const [isProcessing, setIsProcessing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // 1. LIVE DATA: Fetch real products from the backend
+  const { data: products = [], isLoading, refetch } = useQuery({
+    queryKey: ['warehouse-products'],
+    queryFn: async () => {
+      const response = await apiClient.get('/products');
+      // Adjust this based on your actual backend response structure
+      return response.data?.data || [];
+    },
+  });
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   const theme = {
     bg: isDarkMode ? '#000000' : '#F8FAFC',
@@ -42,17 +57,20 @@ export default function RepStockScreen() {
     inputBg: isDarkMode ? '#0F1419' : '#F1F5F9',
   };
 
-  const CATEGORIES = ['All', ...Array.from(new Set(stock.map(item => item.category)))];
+  // Dynamically generate categories from live products
+  const CATEGORIES = ['All', ...Array.from(new Set(products.map((item: any) => item.category || 'General')))];
 
-  const filteredStock = stock.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
+  const filteredStock = products.filter((item: any) => {
+    const matchesSearch = item.name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = activeCategory === 'All' || (item.category || 'General') === activeCategory;
     return matchesSearch && matchesCategory;
   });
 
   const cartTotal = Object.entries(cart).reduce((total, [id, qty]) => {
-    const item = stock.find(s => s.id === id);
-    return total + (item ? item.sellingPrice * qty : 0);
+    const item = products.find((s: any) => s.id === id);
+    // Assuming backend returns item.price. Adjust if it uses item.sellingPrice or item.wholesalePrice
+    const price = item ? Number(item.price || item.wholesalePrice || 0) : 0;
+    return total + (price * qty);
   }, 0);
 
   const updateCartDelta = (id: string, delta: number, maxAvailable: number) => {
@@ -91,52 +109,32 @@ export default function RepStockScreen() {
             setIsProcessing(true);
             
             try {
-              // 1. Send the checkout to the REAL database
+              // 2. LIVE CHECKOUT: Dispatch API requests
               for (const [itemId, qty] of Object.entries(cart)) {
                 if (qty > 0) {
-                  const item = stock.find(s => s.id === itemId);
+                  const item = products.find((s: any) => s.id === itemId);
                   if (!item) continue;
 
-                  const response = await fetch(`${BASE_IP}/api/v1/inventory/issue`, {
-                    method: 'POST',
-                    headers: { 
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                      salesRepId: (useAuthStore.getState() as any).user?.id, 
-                      productId: item.id,
-                      qtyIssued: qty,
-                      wholesalePrice: item.sellingPrice
-                    })
+                  // Use apiClient instead of raw fetch - it auto-attaches tokens and base URL
+                  await apiClient.post('/inventory/issue', {
+                    productId: item.id,
+                    qtyIssued: qty,
+                    wholesalePrice: Number(item.price || item.wholesalePrice || 0)
                   });
-
-                  if (!response.ok) {
-                    const err = await response.json();
-                    throw new Error(err.message || 'Failed to issue stock');
-                  }
                 }
               }
 
-              // 2. ONLY update local state if the database succeeds
-              useAuthStore.setState((state: any) => ({
-                creditBalance: (state.creditBalance || 0) + cartTotal
-              }));
-
-              useInventoryStore.setState((state: any) => ({
-                stock: state.stock.map((item: any) => {
-                  if (cart[item.id]) {
-                    return { ...item, stock: item.stock - cart[item.id] };
-                  }
-                  return item;
-                })
-              }));
-
               Alert.alert("Success", "Stock dispatched and debt updated successfully.");
+              
+              // Clear cart and invalidate cache to force a fresh pull of financials on the Home screen
               setCart({});
+              queryClient.invalidateQueries({ queryKey: ['rep-profile-financials'] });
+              queryClient.invalidateQueries({ queryKey: ['warehouse-products'] });
+              
               router.replace('/(rep)/home');
             } catch (error: any) {
-              Alert.alert('Error', error.message || 'Network request failed. Please try again.');
+              const errorMsg = error.response?.data?.message || error.message || 'Network request failed.';
+              Alert.alert('Checkout Failed', errorMsg);
             } finally {
               setIsProcessing(false);
             }
@@ -171,7 +169,7 @@ export default function RepStockScreen() {
 
       <View style={styles.categoriesWrapper}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesScroll}>
-          {CATEGORIES.map((cat) => {
+          {(CATEGORIES as string[]).map((cat) => {
             const isActive = activeCategory === cat;
             return (
               <TouchableOpacity 
@@ -192,54 +190,67 @@ export default function RepStockScreen() {
         </ScrollView>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {filteredStock.map(item => {
-          const currentQty = cart[item.id] || 0;
-          const isOutOfStock = item.stock === 0;
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}
+      >
+        {isLoading ? (
+          <ActivityIndicator size="large" color={theme.invertedBg} style={{ marginTop: 40 }} />
+        ) : filteredStock.length === 0 ? (
+          <Text style={[styles.emptyText, { color: theme.textMuted }]}>No products available in the warehouse.</Text>
+        ) : (
+          filteredStock.map((item: any) => {
+            const currentQty = cart[item.id] || 0;
+            // Fallback to 999 if your backend doesn't aggregate physical stock limits yet
+            const maxAvailable = item.currentStock ?? 999; 
+            const price = Number(item.price || item.wholesalePrice || 0);
+            const isOutOfStock = maxAvailable <= 0;
 
-          return (
-            <View key={item.id} style={[styles.productCard, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }, !isDarkMode && styles.lightShadow]}>
-              <View style={[styles.iconPlaceholder, { backgroundColor: theme.inputBg }]}>
-                <Ionicons name={item.icon as any} size={28} color={theme.textMuted} />
-              </View>
-              
-              <View style={styles.productDetails}>
-                <Text style={[styles.productName, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
-                <Text style={[styles.productPrice, { color: '#059669' }]}>Sells for ETB {item.sellingPrice}</Text>
-                <Text style={[styles.stockText, { color: isOutOfStock ? '#DC2626' : theme.textMuted }]}>
-                  {isOutOfStock ? 'Out of Stock' : `${item.stock} Available`}
-                </Text>
-              </View>
-
-              <View style={[styles.stepper, { backgroundColor: isDarkMode ? '#0F1419' : '#F8FAFC' }]}>
-                <TouchableOpacity 
-                  style={[styles.stepBtn, { borderColor: theme.border }]} 
-                  onPress={() => updateCartDelta(item.id, -1, item.stock)}
-                  disabled={currentQty === 0}
-                >
-                  <Ionicons name="remove" size={16} color={currentQty === 0 ? theme.textMuted : theme.text} />
-                </TouchableOpacity>
+            return (
+              <View key={item.id} style={[styles.productCard, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }, !isDarkMode && styles.lightShadow]}>
+                <View style={[styles.iconPlaceholder, { backgroundColor: theme.inputBg }]}>
+                  <Ionicons name={item.icon || 'cube-outline'} size={28} color={theme.textMuted} />
+                </View>
                 
-                <TextInput
-                  style={[styles.stepQtyInput, { color: theme.text }]}
-                  value={currentQty === 0 ? '' : currentQty.toString()}
-                  placeholder="0"
-                  placeholderTextColor={theme.textMuted}
-                  keyboardType="numeric"
-                  onChangeText={(text) => handleManualInput(item.id, text, item.stock)}
-                />
+                <View style={styles.productDetails}>
+                  <Text style={[styles.productName, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
+                  <Text style={[styles.productPrice, { color: '#059669' }]}>Sells for ETB {price.toLocaleString()}</Text>
+                  <Text style={[styles.stockText, { color: isOutOfStock ? '#DC2626' : theme.textMuted }]}>
+                    {isOutOfStock ? 'Out of Stock' : (item.currentStock ? `${maxAvailable} Available` : 'Available')}
+                  </Text>
+                </View>
 
-                <TouchableOpacity 
-                  style={[styles.stepBtn, { borderColor: theme.border }]} 
-                  onPress={() => updateCartDelta(item.id, 1, item.stock)}
-                  disabled={currentQty >= item.stock || isOutOfStock}
-                >
-                  <Ionicons name="add" size={16} color={currentQty >= item.stock || isOutOfStock ? theme.textMuted : theme.text} />
-                </TouchableOpacity>
+                <View style={[styles.stepper, { backgroundColor: isDarkMode ? '#0F1419' : '#F8FAFC' }]}>
+                  <TouchableOpacity 
+                    style={[styles.stepBtn, { borderColor: theme.border }]} 
+                    onPress={() => updateCartDelta(item.id, -1, maxAvailable)}
+                    disabled={currentQty === 0}
+                  >
+                    <Ionicons name="remove" size={16} color={currentQty === 0 ? theme.textMuted : theme.text} />
+                  </TouchableOpacity>
+                  
+                  <TextInput
+                    style={[styles.stepQtyInput, { color: theme.text }]}
+                    value={currentQty === 0 ? '' : currentQty.toString()}
+                    placeholder="0"
+                    placeholderTextColor={theme.textMuted}
+                    keyboardType="numeric"
+                    onChangeText={(text) => handleManualInput(item.id, text, maxAvailable)}
+                  />
+
+                  <TouchableOpacity 
+                    style={[styles.stepBtn, { borderColor: theme.border }]} 
+                    onPress={() => updateCartDelta(item.id, 1, maxAvailable)}
+                    disabled={currentQty >= maxAvailable || isOutOfStock}
+                  >
+                    <Ionicons name="add" size={16} color={currentQty >= maxAvailable || isOutOfStock ? theme.textMuted : theme.text} />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          );
-        })}
+            );
+          })
+        )}
       </ScrollView>
 
       <View style={[styles.checkoutFooter, { backgroundColor: theme.bg, borderTopColor: theme.border }]}>
@@ -285,6 +296,7 @@ const styles = StyleSheet.create({
   stepper: { flexDirection: 'row', alignItems: 'center', borderRadius: 10, padding: 4 },
   stepBtn: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
   stepQtyInput: { width: 44, textAlign: 'center', fontSize: 16, fontWeight: '800', padding: 0 },
+  emptyText: { textAlign: 'center', marginTop: 40, fontSize: 15, fontWeight: '500' },
   checkoutFooter: { position: 'absolute', bottom: Platform.OS === 'ios' ? 85 : 65, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 16, borderTopWidth: 1 },
   checkoutBtn: { paddingHorizontal: 24, paddingVertical: 16, borderRadius: 100, minWidth: 140, alignItems: 'center' }
 });

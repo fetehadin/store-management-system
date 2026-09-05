@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import {
   View,
@@ -10,21 +10,24 @@ import {
   StatusBar,
   Modal,
   TouchableWithoutFeedback,
-  TextInput,
-  Platform,
-  Alert,
   Image,
+  RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '../../api/client';
 
 const TIME_FILTERS = ['Today', 'Yesterday', 'This Week', 'Total'];
 
 const REP_MODULES = [
   { id: 'Stock', title: 'Stock & Checkout', sub: 'Manage field inventory', icon: 'cube-outline', lightBg: '#EBF2FF', lightColor: '#1D61F2', route: '/(rep)/stock' },
   { id: 'Ledger', title: 'My Ledger', sub: 'View transaction history', icon: 'wallet-outline', lightBg: '#E6F9F2', lightColor: '#059669', route: '/(rep)/ledger' },
-  { id: 'Notes', title: 'My Notes', sub: 'Daily field diary', icon: 'journal-outline', lightBg: '#FEF2F2', lightColor: '#DC2626', route: '/(rep)/notes' },
+  { id: 'Notes', title: 'My Notes', sub: 'Daily field diary', icon: 'journal-outline', lightBg: '#FEF2F2', lightColor: '#DC2626', route: '/(rep)/note' },
 ];
+
+// Always use your active local network IP or production URL
+const BASE_IP = 'http://172.30.75.101:5000';
 
 export default function RepDashboard() {
   const router = useRouter();
@@ -32,24 +35,46 @@ export default function RepDashboard() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
   const userName = useAuthStore((state) => (state as any).userName || 'Sales Rep');
+  const authProfilePic = useAuthStore((state) => (state as any).profilePic);
   
-  // Pull profile picture and set base IP for remote serving
-  const authProfilePic = useAuthStore((state) => state.profilePic);
-  const BASE_IP = 'http://10.104.108.101:5000';
-
-  // Filter State
+  // Zustand store values (acts as initial cache)
+  const creditBalance = useAuthStore((state) => state.creditBalance) || 0;
+  const creditLimit = useAuthStore((state) => state.creditLimit) || 0;
+  
   const [activeFilter, setActiveFilter] = useState('Today');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  
-  // Upload Form Accordion State
-  const [isUploadFormOpen, setIsUploadFormOpen] = useState(false);
-  const [uploadAmount, setUploadAmount] = useState('');
-  const [uploadNotes, setUploadNotes] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Financials
-  const CURRENT_DEBT = 45200;
-  const CREDIT_LIMIT = 150000;
-  const debtPercentage = Math.min((CURRENT_DEBT / CREDIT_LIMIT) * 100, 100);
+  // 1. LIVE DATA SYNC: Fetch the latest financial profile from the backend
+  const { refetch } = useQuery({
+    queryKey: ['rep-profile-financials'],
+    queryFn: async () => {
+      // Note: adjust this endpoint if your user profile fetch route is named differently (e.g., /auth/me or /users/profile)
+      const response = await apiClient.get('/auth/me'); 
+      const user = response.data.data;
+      
+      // Update the global store so the rest of the app instantly knows the new debt
+      useAuthStore.setState({
+        creditBalance: Number(user.creditBalance),
+        creditLimit: Number(user.creditLimit)
+      });
+      
+      return user;
+    },
+    // Don't auto-fetch aggressively, let the user pull-to-refresh to save mobile data
+    enabled: true, 
+  });
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
+  // Dynamic Debt Calculation
+  const debtPercentage = creditLimit > 0 
+    ? Math.min((creditBalance / creditLimit) * 100, 100) 
+    : 0;
 
   const theme = {
     bg: isDarkMode ? '#000000' : '#F8FAFC',
@@ -59,17 +84,6 @@ export default function RepDashboard() {
     invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5',
     invertedText: isDarkMode ? '#000000' : '#FFFFFF',
     inputBg: isDarkMode ? '#0F1419' : '#F1F5F9',
-  };
-
-  const handleUploadSubmit = () => {
-    if (!uploadAmount) {
-      Alert.alert("Missing Details", "Please enter the deposit amount.");
-      return;
-    }
-    Alert.alert("Success", `Receipt for ETB ${uploadAmount} submitted for Admin approval.`);
-    setIsUploadFormOpen(false);
-    setUploadAmount('');
-    setUploadNotes('');
   };
 
   return (
@@ -94,7 +108,7 @@ export default function RepDashboard() {
           </TouchableOpacity>
         
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(rep)/messages')}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(rep)/message')}>
             <Ionicons name="notifications-outline" size={22} color={theme.text} />
             <View style={styles.notificationBadge} />
           </TouchableOpacity>
@@ -104,12 +118,18 @@ export default function RepDashboard() {
         </View>
       </View>
 
-      {/* <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}> */}
+      <ScrollView 
+        contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />
+        }
+      >
         
         {/* Greeting & Dropdown Filter */}
         <View style={styles.greetingHeaderRow}>
           <View style={styles.greetingTextContainer}>
-            {/* <Text style={[styles.greetingTitle, { color: theme.text }]}>Hello, {userName}</Text> */}
+            <Text style={[styles.greetingTitle, { color: theme.text }]}>Hello, {userName.split(' ')[0]}</Text>
             <Text style={[styles.greetingSubtitle, { color: theme.textMuted }]}>Field Operations Dashboard</Text>
           </View>
           
@@ -144,7 +164,7 @@ export default function RepDashboard() {
           </TouchableWithoutFeedback>
         </Modal>
 
-        {/* Hero Debt Card & Upload Accordion */}
+        {/* Hero Debt Card */}
         <View style={styles.cardsWrapper}>
           <View style={[styles.financeCard, { backgroundColor: theme.invertedBg }, !isDarkMode && styles.lightModePrimaryShadow]}>
             <View style={styles.cardHeader}>
@@ -155,12 +175,12 @@ export default function RepDashboard() {
             
             <View style={styles.cardBody}>
               <Text style={[styles.cardLabel, { color: theme.invertedText }]}>ACTIVE DEBT BALANCE</Text>
-              <Text style={[styles.cardAmount, { color: theme.invertedText }]}>ETB {CURRENT_DEBT.toLocaleString()}</Text>
+              <Text style={[styles.cardAmount, { color: theme.invertedText }]}>ETB {creditBalance.toLocaleString()}</Text>
               
               <View style={styles.progressContainer}>
                 <View style={[styles.progressBar, { width: `${debtPercentage}%`, backgroundColor: debtPercentage > 85 ? '#DC2626' : (isDarkMode ? '#000' : '#FFFFFF') }]} />
               </View>
-              <Text style={[styles.limitText, { color: theme.invertedText }]}>Credit Limit: ETB {CREDIT_LIMIT.toLocaleString()}</Text>
+              <Text style={[styles.limitText, { color: theme.invertedText }]}>Credit Limit: ETB {creditLimit.toLocaleString()}</Text>
             </View>
 
           </View>
@@ -188,7 +208,7 @@ export default function RepDashboard() {
           ))}
         </View>
 
-      {/* </ScrollView> */}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -231,18 +251,6 @@ const styles = StyleSheet.create({
   progressContainer: { height: 6, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 3, marginTop: 16, marginBottom: 8, overflow: 'hidden' },
   progressBar: { height: '100%', borderRadius: 3 },
   limitText: { fontSize: 12, fontWeight: '600', opacity: 0.8 },
-
-  divider: { height: 1, marginVertical: 16 },
-  
-  uploadTrigger: { flexDirection: 'row', alignItems: 'center' },
-  uploadTriggerText: { fontSize: 15, fontWeight: '700' },
-  
-  uploadFormContainer: { marginTop: 16 },
-  uploadInput: { paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12, fontSize: 15, fontWeight: '600', marginBottom: 12 },
-  attachBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderWidth: 1, borderStyle: 'dashed', borderRadius: 12, marginBottom: 16 },
-  attachText: { fontWeight: '700', marginLeft: 8 },
-  submitBtn: { paddingVertical: 16, borderRadius: 100, alignItems: 'center', justifyContent: 'center' },
-  submitBtnText: { color: '#FFF', fontSize: 15, fontWeight: '800' },
 
   sectionContainer: { paddingHorizontal: 20, marginBottom: 32 },
   sectionTitle: { fontSize: 20, fontWeight: '800', marginBottom: 16, letterSpacing: -0.5 },
