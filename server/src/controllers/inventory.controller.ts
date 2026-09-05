@@ -52,6 +52,11 @@ export const issueStock = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // 1. AUTO-INJECT THE ID FROM THE LOGIN TOKEN (BULLETPROOF)
+    if (req.user?.id) {
+      req.body.salesRepId = req.user.id;
+    }
+
     const validated = issueStockSchema.parse(req.body);
 
     // 1. Verify Sales Rep exists and has correct role
@@ -170,7 +175,7 @@ export const issueStock = async (
       // 5d. AUTOMATED LEDGER WIRE: create audit trail entry debiting the Sales Rep
       const ledgerEntry = await tx.ledgerEntry.create({
         data: {
-          fromEntity: AuditEntity.ADMIN_STORE, // <-- MATCHED TO YOUR EXACT SCHEMA ENUM!
+          fromEntity: AuditEntity.ADMIN_STORE,
           toEntity: AuditEntity.SALES_REP,
           toEntityId: salesRep.id,
           amount: totalIssuanceValue,

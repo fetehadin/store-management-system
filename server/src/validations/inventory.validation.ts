@@ -20,7 +20,7 @@ export const createStockBatchSchema = z.object({
 export const issueStockSchema = z.object({
   salesRepId: z
     .string()
-    .uuid("Invalid Sales Rep user ID format"),
+    .min(1, "Sales Rep ID is required"), // Changed from .uuid() to .min(1)
   productId: z
     .string()
     .min(1, "Product ID is required"),

@@ -217,3 +217,49 @@ export const rejectPayment = async (
     next(err);
   }
 };
+
+export const getMessages = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) throw new Error("Unauthorized");
+
+    let messages = [];
+
+    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+      // ADMIN: Generate alerts for Pending Receipts
+      const pending = await db.paymentProof.findMany({ 
+        where: { status: 'PENDING' }, 
+        include: { user: true },
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      messages = pending.map(p => ({
+        id: `msg_admin_${p.id}`,
+        title: 'New Receipt Uploaded',
+        body: `${p.user?.fullName || 'A rep'} uploaded a receipt for ETB ${Number(p.amount).toLocaleString()}. Please verify in Approvals.`,
+        date: p.createdAt,
+        type: 'WARNING'
+      }));
+    } else {
+      // REP: Generate alerts for Approved/Rejected Receipts
+      const processed = await db.paymentProof.findMany({
+        where: { userId: user.id, status: { in: ['REJECTED', 'APPROVED'] } },
+        orderBy: { updatedAt: 'desc' }
+      });
+      
+      messages = processed.map(p => ({
+        id: `msg_rep_${p.id}`,
+        title: p.status === 'APPROVED' ? 'Receipt Approved' : 'Receipt Rejected',
+        body: p.status === 'APPROVED' 
+          ? `Your receipt for ETB ${Number(p.amount).toLocaleString()} has been verified and your debt is cleared.` 
+          : `Your receipt for ETB ${Number(p.amount).toLocaleString()} was rejected. Reason: "${p.adminRemark || 'No reason provided.'}"`,
+        date: p.updatedAt,
+        type: p.status === 'REJECTED' ? 'ERROR' : 'SUCCESS'
+      }));
+    }
+
+    res.status(200).json({ status: 'success', data: messages });
+  } catch (err) {
+    next(err);
+  }
+};
