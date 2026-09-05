@@ -20,7 +20,7 @@ enum ProofStatus {
   REJECTED
 }
 
-enum AuditEntity{
+enum AuditEntity {
   ADMIN_STORE
   SALES_REP
   SUPPLIER
@@ -33,7 +33,18 @@ enum IssuanceStatus {
   PARTIAL_RETURNED
 }
 
-//CORE ENTITIES(USERS, SUPPLIERS, PRODUCTS)
+enum ReturnStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ReturnDestination {
+  WAREHOUSE
+  SUPPLIER
+}
+
+//CORE ENTITIES (USERS, SUPPLIERS, PRODUCTS, BANKS)
 
 model User {
   id                     String   @id @default(uuid()) 
@@ -53,6 +64,8 @@ model User {
   stockIssusances        StockIssuance[]
   paymentProofs          PaymentProof[]
   sales                  Sale[]
+
+  returns  StockReturn[]
 }
 
 model Supplier {
@@ -87,6 +100,16 @@ model Retailer {
   updatedAt         DateTime         @updatedAt
 
   sales             Sale[]
+}
+
+// ----------------------------------------------------
+// NEW: SUPPORTED BANKS (For Admin Dropdown Management)
+// ----------------------------------------------------
+model SupportedBank {
+  id        String   @id @default(uuid())
+  name      String   @unique // e.g. "Commercial Bank of Ethiopia (CBE)"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
 }
 
 // FIFO INVENTORY BATCHES
@@ -149,14 +172,15 @@ model Sale {
 }
 
 model PaymentProof{
-  id             String        @id @default(uuid())
-  userId         String
-  user           User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  id               String        @id @default(uuid())
+  userId           String
+  user             User          @relation(fields: [userId], references: [id], onDelete: Restrict)
   
   //3-layer anti-duplicatoin security shield(DB-level unique constraint)
   transactionRedId String      @unique
   sha256Hash       String      @unique
   amount           Decimal     @db.Decimal(12, 2)
+  bankName         String      // <--- ADDED THIS FOR THE DROPDOWN / "OTHER" SUPPORT
   senderName       String?
   reasonRemark     String?
   receipeImageUrl  String?
@@ -169,7 +193,6 @@ model PaymentProof{
 }
 
 // 6. IMMUTABLE FINANCIAL AUDIT LEDGER
-
 
 model LedgerEntry {
   id               String       @id @default(uuid())
@@ -186,4 +209,26 @@ model LedgerEntry {
   createdAt        DateTime     @default(now())
 
   @@index([fromEntity, toEntity, transactionDate])
+}
+
+
+model StockReturn {
+  id          String            @id @default(uuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id])
+  totalValue  Decimal
+  reason      String
+  status      ReturnStatus      @default(PENDING)
+  destination ReturnDestination?
+  items       ReturnItem[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model ReturnItem {
+  id            String      @id @default(uuid())
+  stockReturnId String
+  stockReturn   StockReturn @relation(fields: [stockReturnId], references: [id])
+  itemId        String      // References your Inventory Item ID
+  quantity      Int
 }

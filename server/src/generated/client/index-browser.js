@@ -161,6 +161,13 @@ exports.Prisma.RetailerScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.SupportedBankScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  isActive: 'isActive',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.InventoryBatchScalarFieldEnum = {
   id: 'id',
   batchCode: 'batchCode',
@@ -209,6 +216,7 @@ exports.Prisma.PaymentProofScalarFieldEnum = {
   transactionRedId: 'transactionRedId',
   sha256Hash: 'sha256Hash',
   amount: 'amount',
+  bankName: 'bankName',
   senderName: 'senderName',
   reasonRemark: 'reasonRemark',
   receipeImageUrl: 'receipeImageUrl',
@@ -276,6 +284,7 @@ exports.Prisma.ModelName = {
   Supplier: 'Supplier',
   Product: 'Product',
   Retailer: 'Retailer',
+  SupportedBank: 'SupportedBank',
   InventoryBatch: 'InventoryBatch',
   StockIssuance: 'StockIssuance',
   IssuanceItem: 'IssuanceItem',

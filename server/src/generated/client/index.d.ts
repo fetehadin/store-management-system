@@ -34,6 +34,11 @@ export type Product = $Result.DefaultSelection<Prisma.$ProductPayload>
  */
 export type Retailer = $Result.DefaultSelection<Prisma.$RetailerPayload>
 /**
+ * Model SupportedBank
+ * 
+ */
+export type SupportedBank = $Result.DefaultSelection<Prisma.$SupportedBankPayload>
+/**
  * Model InventoryBatch
  * 
  */
@@ -281,6 +286,16 @@ export class PrismaClient<
     * ```
     */
   get retailer(): Prisma.RetailerDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.supportedBank`: Exposes CRUD operations for the **SupportedBank** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SupportedBanks
+    * const supportedBanks = await prisma.supportedBank.findMany()
+    * ```
+    */
+  get supportedBank(): Prisma.SupportedBankDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.inventoryBatch`: Exposes CRUD operations for the **InventoryBatch** model.
@@ -792,6 +807,7 @@ export namespace Prisma {
     Supplier: 'Supplier',
     Product: 'Product',
     Retailer: 'Retailer',
+    SupportedBank: 'SupportedBank',
     InventoryBatch: 'InventoryBatch',
     StockIssuance: 'StockIssuance',
     IssuanceItem: 'IssuanceItem',
@@ -813,7 +829,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "supplier" | "product" | "retailer" | "inventoryBatch" | "stockIssuance" | "issuanceItem" | "sale" | "paymentProof" | "ledgerEntry"
+      modelProps: "user" | "supplier" | "product" | "retailer" | "supportedBank" | "inventoryBatch" | "stockIssuance" | "issuanceItem" | "sale" | "paymentProof" | "ledgerEntry"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1110,6 +1126,80 @@ export namespace Prisma {
           count: {
             args: Prisma.RetailerCountArgs<ExtArgs>
             result: $Utils.Optional<RetailerCountAggregateOutputType> | number
+          }
+        }
+      }
+      SupportedBank: {
+        payload: Prisma.$SupportedBankPayload<ExtArgs>
+        fields: Prisma.SupportedBankFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SupportedBankFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SupportedBankPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SupportedBankFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SupportedBankPayload>
+          }
+          findFirst: {
+            args: Prisma.SupportedBankFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SupportedBankPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SupportedBankFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SupportedBankPayload>
+          }
+          findMany: {
+            args: Prisma.SupportedBankFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SupportedBankPayload>[]
+          }
+          create: {
+            args: Prisma.SupportedBankCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SupportedBankPayload>
+          }
+          createMany: {
+            args: Prisma.SupportedBankCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SupportedBankCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SupportedBankPayload>[]
+          }
+          delete: {
+            args: Prisma.SupportedBankDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SupportedBankPayload>
+          }
+          update: {
+            args: Prisma.SupportedBankUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SupportedBankPayload>
+          }
+          deleteMany: {
+            args: Prisma.SupportedBankDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SupportedBankUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.SupportedBankUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SupportedBankPayload>[]
+          }
+          upsert: {
+            args: Prisma.SupportedBankUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SupportedBankPayload>
+          }
+          aggregate: {
+            args: Prisma.SupportedBankAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSupportedBank>
+          }
+          groupBy: {
+            args: Prisma.SupportedBankGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SupportedBankGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SupportedBankCountArgs<ExtArgs>
+            result: $Utils.Optional<SupportedBankCountAggregateOutputType> | number
           }
         }
       }
@@ -1684,6 +1774,7 @@ export namespace Prisma {
     supplier?: SupplierOmit
     product?: ProductOmit
     retailer?: RetailerOmit
+    supportedBank?: SupportedBankOmit
     inventoryBatch?: InventoryBatchOmit
     stockIssuance?: StockIssuanceOmit
     issuanceItem?: IssuanceItemOmit
@@ -6559,6 +6650,993 @@ export namespace Prisma {
 
 
   /**
+   * Model SupportedBank
+   */
+
+  export type AggregateSupportedBank = {
+    _count: SupportedBankCountAggregateOutputType | null
+    _min: SupportedBankMinAggregateOutputType | null
+    _max: SupportedBankMaxAggregateOutputType | null
+  }
+
+  export type SupportedBankMinAggregateOutputType = {
+    id: string | null
+    name: string | null
+    isActive: boolean | null
+    createdAt: Date | null
+  }
+
+  export type SupportedBankMaxAggregateOutputType = {
+    id: string | null
+    name: string | null
+    isActive: boolean | null
+    createdAt: Date | null
+  }
+
+  export type SupportedBankCountAggregateOutputType = {
+    id: number
+    name: number
+    isActive: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type SupportedBankMinAggregateInputType = {
+    id?: true
+    name?: true
+    isActive?: true
+    createdAt?: true
+  }
+
+  export type SupportedBankMaxAggregateInputType = {
+    id?: true
+    name?: true
+    isActive?: true
+    createdAt?: true
+  }
+
+  export type SupportedBankCountAggregateInputType = {
+    id?: true
+    name?: true
+    isActive?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type SupportedBankAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SupportedBank to aggregate.
+     */
+    where?: SupportedBankWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SupportedBanks to fetch.
+     */
+    orderBy?: SupportedBankOrderByWithRelationInput | SupportedBankOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SupportedBankWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SupportedBanks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SupportedBanks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SupportedBanks
+    **/
+    _count?: true | SupportedBankCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SupportedBankMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SupportedBankMaxAggregateInputType
+  }
+
+  export type GetSupportedBankAggregateType<T extends SupportedBankAggregateArgs> = {
+        [P in keyof T & keyof AggregateSupportedBank]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSupportedBank[P]>
+      : GetScalarType<T[P], AggregateSupportedBank[P]>
+  }
+
+
+
+
+  export type SupportedBankGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SupportedBankWhereInput
+    orderBy?: SupportedBankOrderByWithAggregationInput | SupportedBankOrderByWithAggregationInput[]
+    by: SupportedBankScalarFieldEnum[] | SupportedBankScalarFieldEnum
+    having?: SupportedBankScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SupportedBankCountAggregateInputType | true
+    _min?: SupportedBankMinAggregateInputType
+    _max?: SupportedBankMaxAggregateInputType
+  }
+
+  export type SupportedBankGroupByOutputType = {
+    id: string
+    name: string
+    isActive: boolean
+    createdAt: Date
+    _count: SupportedBankCountAggregateOutputType | null
+    _min: SupportedBankMinAggregateOutputType | null
+    _max: SupportedBankMaxAggregateOutputType | null
+  }
+
+  type GetSupportedBankGroupByPayload<T extends SupportedBankGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SupportedBankGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SupportedBankGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SupportedBankGroupByOutputType[P]>
+            : GetScalarType<T[P], SupportedBankGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SupportedBankSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["supportedBank"]>
+
+  export type SupportedBankSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["supportedBank"]>
+
+  export type SupportedBankSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["supportedBank"]>
+
+  export type SupportedBankSelectScalar = {
+    id?: boolean
+    name?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+  }
+
+  export type SupportedBankOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "isActive" | "createdAt", ExtArgs["result"]["supportedBank"]>
+
+  export type $SupportedBankPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SupportedBank"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      name: string
+      isActive: boolean
+      createdAt: Date
+    }, ExtArgs["result"]["supportedBank"]>
+    composites: {}
+  }
+
+  type SupportedBankGetPayload<S extends boolean | null | undefined | SupportedBankDefaultArgs> = $Result.GetResult<Prisma.$SupportedBankPayload, S>
+
+  type SupportedBankCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<SupportedBankFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: SupportedBankCountAggregateInputType | true
+    }
+
+  export interface SupportedBankDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SupportedBank'], meta: { name: 'SupportedBank' } }
+    /**
+     * Find zero or one SupportedBank that matches the filter.
+     * @param {SupportedBankFindUniqueArgs} args - Arguments to find a SupportedBank
+     * @example
+     * // Get one SupportedBank
+     * const supportedBank = await prisma.supportedBank.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SupportedBankFindUniqueArgs>(args: SelectSubset<T, SupportedBankFindUniqueArgs<ExtArgs>>): Prisma__SupportedBankClient<$Result.GetResult<Prisma.$SupportedBankPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one SupportedBank that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {SupportedBankFindUniqueOrThrowArgs} args - Arguments to find a SupportedBank
+     * @example
+     * // Get one SupportedBank
+     * const supportedBank = await prisma.supportedBank.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SupportedBankFindUniqueOrThrowArgs>(args: SelectSubset<T, SupportedBankFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SupportedBankClient<$Result.GetResult<Prisma.$SupportedBankPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SupportedBank that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SupportedBankFindFirstArgs} args - Arguments to find a SupportedBank
+     * @example
+     * // Get one SupportedBank
+     * const supportedBank = await prisma.supportedBank.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SupportedBankFindFirstArgs>(args?: SelectSubset<T, SupportedBankFindFirstArgs<ExtArgs>>): Prisma__SupportedBankClient<$Result.GetResult<Prisma.$SupportedBankPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SupportedBank that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SupportedBankFindFirstOrThrowArgs} args - Arguments to find a SupportedBank
+     * @example
+     * // Get one SupportedBank
+     * const supportedBank = await prisma.supportedBank.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SupportedBankFindFirstOrThrowArgs>(args?: SelectSubset<T, SupportedBankFindFirstOrThrowArgs<ExtArgs>>): Prisma__SupportedBankClient<$Result.GetResult<Prisma.$SupportedBankPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more SupportedBanks that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SupportedBankFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SupportedBanks
+     * const supportedBanks = await prisma.supportedBank.findMany()
+     * 
+     * // Get first 10 SupportedBanks
+     * const supportedBanks = await prisma.supportedBank.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const supportedBankWithIdOnly = await prisma.supportedBank.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SupportedBankFindManyArgs>(args?: SelectSubset<T, SupportedBankFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SupportedBankPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a SupportedBank.
+     * @param {SupportedBankCreateArgs} args - Arguments to create a SupportedBank.
+     * @example
+     * // Create one SupportedBank
+     * const SupportedBank = await prisma.supportedBank.create({
+     *   data: {
+     *     // ... data to create a SupportedBank
+     *   }
+     * })
+     * 
+     */
+    create<T extends SupportedBankCreateArgs>(args: SelectSubset<T, SupportedBankCreateArgs<ExtArgs>>): Prisma__SupportedBankClient<$Result.GetResult<Prisma.$SupportedBankPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many SupportedBanks.
+     * @param {SupportedBankCreateManyArgs} args - Arguments to create many SupportedBanks.
+     * @example
+     * // Create many SupportedBanks
+     * const supportedBank = await prisma.supportedBank.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SupportedBankCreateManyArgs>(args?: SelectSubset<T, SupportedBankCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SupportedBanks and returns the data saved in the database.
+     * @param {SupportedBankCreateManyAndReturnArgs} args - Arguments to create many SupportedBanks.
+     * @example
+     * // Create many SupportedBanks
+     * const supportedBank = await prisma.supportedBank.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SupportedBanks and only return the `id`
+     * const supportedBankWithIdOnly = await prisma.supportedBank.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SupportedBankCreateManyAndReturnArgs>(args?: SelectSubset<T, SupportedBankCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SupportedBankPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a SupportedBank.
+     * @param {SupportedBankDeleteArgs} args - Arguments to delete one SupportedBank.
+     * @example
+     * // Delete one SupportedBank
+     * const SupportedBank = await prisma.supportedBank.delete({
+     *   where: {
+     *     // ... filter to delete one SupportedBank
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SupportedBankDeleteArgs>(args: SelectSubset<T, SupportedBankDeleteArgs<ExtArgs>>): Prisma__SupportedBankClient<$Result.GetResult<Prisma.$SupportedBankPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one SupportedBank.
+     * @param {SupportedBankUpdateArgs} args - Arguments to update one SupportedBank.
+     * @example
+     * // Update one SupportedBank
+     * const supportedBank = await prisma.supportedBank.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SupportedBankUpdateArgs>(args: SelectSubset<T, SupportedBankUpdateArgs<ExtArgs>>): Prisma__SupportedBankClient<$Result.GetResult<Prisma.$SupportedBankPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more SupportedBanks.
+     * @param {SupportedBankDeleteManyArgs} args - Arguments to filter SupportedBanks to delete.
+     * @example
+     * // Delete a few SupportedBanks
+     * const { count } = await prisma.supportedBank.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SupportedBankDeleteManyArgs>(args?: SelectSubset<T, SupportedBankDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SupportedBanks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SupportedBankUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SupportedBanks
+     * const supportedBank = await prisma.supportedBank.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SupportedBankUpdateManyArgs>(args: SelectSubset<T, SupportedBankUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SupportedBanks and returns the data updated in the database.
+     * @param {SupportedBankUpdateManyAndReturnArgs} args - Arguments to update many SupportedBanks.
+     * @example
+     * // Update many SupportedBanks
+     * const supportedBank = await prisma.supportedBank.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more SupportedBanks and only return the `id`
+     * const supportedBankWithIdOnly = await prisma.supportedBank.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends SupportedBankUpdateManyAndReturnArgs>(args: SelectSubset<T, SupportedBankUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SupportedBankPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one SupportedBank.
+     * @param {SupportedBankUpsertArgs} args - Arguments to update or create a SupportedBank.
+     * @example
+     * // Update or create a SupportedBank
+     * const supportedBank = await prisma.supportedBank.upsert({
+     *   create: {
+     *     // ... data to create a SupportedBank
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SupportedBank we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SupportedBankUpsertArgs>(args: SelectSubset<T, SupportedBankUpsertArgs<ExtArgs>>): Prisma__SupportedBankClient<$Result.GetResult<Prisma.$SupportedBankPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of SupportedBanks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SupportedBankCountArgs} args - Arguments to filter SupportedBanks to count.
+     * @example
+     * // Count the number of SupportedBanks
+     * const count = await prisma.supportedBank.count({
+     *   where: {
+     *     // ... the filter for the SupportedBanks we want to count
+     *   }
+     * })
+    **/
+    count<T extends SupportedBankCountArgs>(
+      args?: Subset<T, SupportedBankCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SupportedBankCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SupportedBank.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SupportedBankAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SupportedBankAggregateArgs>(args: Subset<T, SupportedBankAggregateArgs>): Prisma.PrismaPromise<GetSupportedBankAggregateType<T>>
+
+    /**
+     * Group by SupportedBank.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SupportedBankGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SupportedBankGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SupportedBankGroupByArgs['orderBy'] }
+        : { orderBy?: SupportedBankGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SupportedBankGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSupportedBankGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SupportedBank model
+   */
+  readonly fields: SupportedBankFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SupportedBank.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SupportedBankClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SupportedBank model
+   */
+  interface SupportedBankFieldRefs {
+    readonly id: FieldRef<"SupportedBank", 'String'>
+    readonly name: FieldRef<"SupportedBank", 'String'>
+    readonly isActive: FieldRef<"SupportedBank", 'Boolean'>
+    readonly createdAt: FieldRef<"SupportedBank", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SupportedBank findUnique
+   */
+  export type SupportedBankFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SupportedBank
+     */
+    select?: SupportedBankSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SupportedBank
+     */
+    omit?: SupportedBankOmit<ExtArgs> | null
+    /**
+     * Filter, which SupportedBank to fetch.
+     */
+    where: SupportedBankWhereUniqueInput
+  }
+
+  /**
+   * SupportedBank findUniqueOrThrow
+   */
+  export type SupportedBankFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SupportedBank
+     */
+    select?: SupportedBankSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SupportedBank
+     */
+    omit?: SupportedBankOmit<ExtArgs> | null
+    /**
+     * Filter, which SupportedBank to fetch.
+     */
+    where: SupportedBankWhereUniqueInput
+  }
+
+  /**
+   * SupportedBank findFirst
+   */
+  export type SupportedBankFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SupportedBank
+     */
+    select?: SupportedBankSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SupportedBank
+     */
+    omit?: SupportedBankOmit<ExtArgs> | null
+    /**
+     * Filter, which SupportedBank to fetch.
+     */
+    where?: SupportedBankWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SupportedBanks to fetch.
+     */
+    orderBy?: SupportedBankOrderByWithRelationInput | SupportedBankOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SupportedBanks.
+     */
+    cursor?: SupportedBankWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SupportedBanks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SupportedBanks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SupportedBanks.
+     */
+    distinct?: SupportedBankScalarFieldEnum | SupportedBankScalarFieldEnum[]
+  }
+
+  /**
+   * SupportedBank findFirstOrThrow
+   */
+  export type SupportedBankFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SupportedBank
+     */
+    select?: SupportedBankSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SupportedBank
+     */
+    omit?: SupportedBankOmit<ExtArgs> | null
+    /**
+     * Filter, which SupportedBank to fetch.
+     */
+    where?: SupportedBankWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SupportedBanks to fetch.
+     */
+    orderBy?: SupportedBankOrderByWithRelationInput | SupportedBankOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SupportedBanks.
+     */
+    cursor?: SupportedBankWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SupportedBanks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SupportedBanks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SupportedBanks.
+     */
+    distinct?: SupportedBankScalarFieldEnum | SupportedBankScalarFieldEnum[]
+  }
+
+  /**
+   * SupportedBank findMany
+   */
+  export type SupportedBankFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SupportedBank
+     */
+    select?: SupportedBankSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SupportedBank
+     */
+    omit?: SupportedBankOmit<ExtArgs> | null
+    /**
+     * Filter, which SupportedBanks to fetch.
+     */
+    where?: SupportedBankWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SupportedBanks to fetch.
+     */
+    orderBy?: SupportedBankOrderByWithRelationInput | SupportedBankOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SupportedBanks.
+     */
+    cursor?: SupportedBankWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SupportedBanks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SupportedBanks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SupportedBanks.
+     */
+    distinct?: SupportedBankScalarFieldEnum | SupportedBankScalarFieldEnum[]
+  }
+
+  /**
+   * SupportedBank create
+   */
+  export type SupportedBankCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SupportedBank
+     */
+    select?: SupportedBankSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SupportedBank
+     */
+    omit?: SupportedBankOmit<ExtArgs> | null
+    /**
+     * The data needed to create a SupportedBank.
+     */
+    data: XOR<SupportedBankCreateInput, SupportedBankUncheckedCreateInput>
+  }
+
+  /**
+   * SupportedBank createMany
+   */
+  export type SupportedBankCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SupportedBanks.
+     */
+    data: SupportedBankCreateManyInput | SupportedBankCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SupportedBank createManyAndReturn
+   */
+  export type SupportedBankCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SupportedBank
+     */
+    select?: SupportedBankSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SupportedBank
+     */
+    omit?: SupportedBankOmit<ExtArgs> | null
+    /**
+     * The data used to create many SupportedBanks.
+     */
+    data: SupportedBankCreateManyInput | SupportedBankCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SupportedBank update
+   */
+  export type SupportedBankUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SupportedBank
+     */
+    select?: SupportedBankSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SupportedBank
+     */
+    omit?: SupportedBankOmit<ExtArgs> | null
+    /**
+     * The data needed to update a SupportedBank.
+     */
+    data: XOR<SupportedBankUpdateInput, SupportedBankUncheckedUpdateInput>
+    /**
+     * Choose, which SupportedBank to update.
+     */
+    where: SupportedBankWhereUniqueInput
+  }
+
+  /**
+   * SupportedBank updateMany
+   */
+  export type SupportedBankUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SupportedBanks.
+     */
+    data: XOR<SupportedBankUpdateManyMutationInput, SupportedBankUncheckedUpdateManyInput>
+    /**
+     * Filter which SupportedBanks to update
+     */
+    where?: SupportedBankWhereInput
+    /**
+     * Limit how many SupportedBanks to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SupportedBank updateManyAndReturn
+   */
+  export type SupportedBankUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SupportedBank
+     */
+    select?: SupportedBankSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SupportedBank
+     */
+    omit?: SupportedBankOmit<ExtArgs> | null
+    /**
+     * The data used to update SupportedBanks.
+     */
+    data: XOR<SupportedBankUpdateManyMutationInput, SupportedBankUncheckedUpdateManyInput>
+    /**
+     * Filter which SupportedBanks to update
+     */
+    where?: SupportedBankWhereInput
+    /**
+     * Limit how many SupportedBanks to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SupportedBank upsert
+   */
+  export type SupportedBankUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SupportedBank
+     */
+    select?: SupportedBankSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SupportedBank
+     */
+    omit?: SupportedBankOmit<ExtArgs> | null
+    /**
+     * The filter to search for the SupportedBank to update in case it exists.
+     */
+    where: SupportedBankWhereUniqueInput
+    /**
+     * In case the SupportedBank found by the `where` argument doesn't exist, create a new SupportedBank with this data.
+     */
+    create: XOR<SupportedBankCreateInput, SupportedBankUncheckedCreateInput>
+    /**
+     * In case the SupportedBank was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SupportedBankUpdateInput, SupportedBankUncheckedUpdateInput>
+  }
+
+  /**
+   * SupportedBank delete
+   */
+  export type SupportedBankDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SupportedBank
+     */
+    select?: SupportedBankSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SupportedBank
+     */
+    omit?: SupportedBankOmit<ExtArgs> | null
+    /**
+     * Filter which SupportedBank to delete.
+     */
+    where: SupportedBankWhereUniqueInput
+  }
+
+  /**
+   * SupportedBank deleteMany
+   */
+  export type SupportedBankDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SupportedBanks to delete
+     */
+    where?: SupportedBankWhereInput
+    /**
+     * Limit how many SupportedBanks to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * SupportedBank without action
+   */
+  export type SupportedBankDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SupportedBank
+     */
+    select?: SupportedBankSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SupportedBank
+     */
+    omit?: SupportedBankOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Model InventoryBatch
    */
 
@@ -11180,6 +12258,7 @@ export namespace Prisma {
     transactionRedId: string | null
     sha256Hash: string | null
     amount: Decimal | null
+    bankName: string | null
     senderName: string | null
     reasonRemark: string | null
     receipeImageUrl: string | null
@@ -11195,6 +12274,7 @@ export namespace Prisma {
     transactionRedId: string | null
     sha256Hash: string | null
     amount: Decimal | null
+    bankName: string | null
     senderName: string | null
     reasonRemark: string | null
     receipeImageUrl: string | null
@@ -11210,6 +12290,7 @@ export namespace Prisma {
     transactionRedId: number
     sha256Hash: number
     amount: number
+    bankName: number
     senderName: number
     reasonRemark: number
     receipeImageUrl: number
@@ -11235,6 +12316,7 @@ export namespace Prisma {
     transactionRedId?: true
     sha256Hash?: true
     amount?: true
+    bankName?: true
     senderName?: true
     reasonRemark?: true
     receipeImageUrl?: true
@@ -11250,6 +12332,7 @@ export namespace Prisma {
     transactionRedId?: true
     sha256Hash?: true
     amount?: true
+    bankName?: true
     senderName?: true
     reasonRemark?: true
     receipeImageUrl?: true
@@ -11265,6 +12348,7 @@ export namespace Prisma {
     transactionRedId?: true
     sha256Hash?: true
     amount?: true
+    bankName?: true
     senderName?: true
     reasonRemark?: true
     receipeImageUrl?: true
@@ -11367,6 +12451,7 @@ export namespace Prisma {
     transactionRedId: string
     sha256Hash: string
     amount: Decimal
+    bankName: string
     senderName: string | null
     reasonRemark: string | null
     receipeImageUrl: string | null
@@ -11401,6 +12486,7 @@ export namespace Prisma {
     transactionRedId?: boolean
     sha256Hash?: boolean
     amount?: boolean
+    bankName?: boolean
     senderName?: boolean
     reasonRemark?: boolean
     receipeImageUrl?: boolean
@@ -11417,6 +12503,7 @@ export namespace Prisma {
     transactionRedId?: boolean
     sha256Hash?: boolean
     amount?: boolean
+    bankName?: boolean
     senderName?: boolean
     reasonRemark?: boolean
     receipeImageUrl?: boolean
@@ -11433,6 +12520,7 @@ export namespace Prisma {
     transactionRedId?: boolean
     sha256Hash?: boolean
     amount?: boolean
+    bankName?: boolean
     senderName?: boolean
     reasonRemark?: boolean
     receipeImageUrl?: boolean
@@ -11449,6 +12537,7 @@ export namespace Prisma {
     transactionRedId?: boolean
     sha256Hash?: boolean
     amount?: boolean
+    bankName?: boolean
     senderName?: boolean
     reasonRemark?: boolean
     receipeImageUrl?: boolean
@@ -11458,7 +12547,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type PaymentProofOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "transactionRedId" | "sha256Hash" | "amount" | "senderName" | "reasonRemark" | "receipeImageUrl" | "status" | "adminRemark" | "createdAt" | "updatedAt", ExtArgs["result"]["paymentProof"]>
+  export type PaymentProofOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "transactionRedId" | "sha256Hash" | "amount" | "bankName" | "senderName" | "reasonRemark" | "receipeImageUrl" | "status" | "adminRemark" | "createdAt" | "updatedAt", ExtArgs["result"]["paymentProof"]>
   export type PaymentProofInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
   }
@@ -11480,6 +12569,7 @@ export namespace Prisma {
       transactionRedId: string
       sha256Hash: string
       amount: Prisma.Decimal
+      bankName: string
       senderName: string | null
       reasonRemark: string | null
       receipeImageUrl: string | null
@@ -11916,6 +13006,7 @@ export namespace Prisma {
     readonly transactionRedId: FieldRef<"PaymentProof", 'String'>
     readonly sha256Hash: FieldRef<"PaymentProof", 'String'>
     readonly amount: FieldRef<"PaymentProof", 'Decimal'>
+    readonly bankName: FieldRef<"PaymentProof", 'String'>
     readonly senderName: FieldRef<"PaymentProof", 'String'>
     readonly reasonRemark: FieldRef<"PaymentProof", 'String'>
     readonly receipeImageUrl: FieldRef<"PaymentProof", 'String'>
@@ -13534,6 +14625,16 @@ export namespace Prisma {
   export type RetailerScalarFieldEnum = (typeof RetailerScalarFieldEnum)[keyof typeof RetailerScalarFieldEnum]
 
 
+  export const SupportedBankScalarFieldEnum: {
+    id: 'id',
+    name: 'name',
+    isActive: 'isActive',
+    createdAt: 'createdAt'
+  };
+
+  export type SupportedBankScalarFieldEnum = (typeof SupportedBankScalarFieldEnum)[keyof typeof SupportedBankScalarFieldEnum]
+
+
   export const InventoryBatchScalarFieldEnum: {
     id: 'id',
     batchCode: 'batchCode',
@@ -13594,6 +14695,7 @@ export namespace Prisma {
     transactionRedId: 'transactionRedId',
     sha256Hash: 'sha256Hash',
     amount: 'amount',
+    bankName: 'bankName',
     senderName: 'senderName',
     reasonRemark: 'reasonRemark',
     receipeImageUrl: 'receipeImageUrl',
@@ -14069,6 +15171,53 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"Retailer"> | Date | string
   }
 
+  export type SupportedBankWhereInput = {
+    AND?: SupportedBankWhereInput | SupportedBankWhereInput[]
+    OR?: SupportedBankWhereInput[]
+    NOT?: SupportedBankWhereInput | SupportedBankWhereInput[]
+    id?: StringFilter<"SupportedBank"> | string
+    name?: StringFilter<"SupportedBank"> | string
+    isActive?: BoolFilter<"SupportedBank"> | boolean
+    createdAt?: DateTimeFilter<"SupportedBank"> | Date | string
+  }
+
+  export type SupportedBankOrderByWithRelationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type SupportedBankWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    name?: string
+    AND?: SupportedBankWhereInput | SupportedBankWhereInput[]
+    OR?: SupportedBankWhereInput[]
+    NOT?: SupportedBankWhereInput | SupportedBankWhereInput[]
+    isActive?: BoolFilter<"SupportedBank"> | boolean
+    createdAt?: DateTimeFilter<"SupportedBank"> | Date | string
+  }, "id" | "name">
+
+  export type SupportedBankOrderByWithAggregationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+    _count?: SupportedBankCountOrderByAggregateInput
+    _max?: SupportedBankMaxOrderByAggregateInput
+    _min?: SupportedBankMinOrderByAggregateInput
+  }
+
+  export type SupportedBankScalarWhereWithAggregatesInput = {
+    AND?: SupportedBankScalarWhereWithAggregatesInput | SupportedBankScalarWhereWithAggregatesInput[]
+    OR?: SupportedBankScalarWhereWithAggregatesInput[]
+    NOT?: SupportedBankScalarWhereWithAggregatesInput | SupportedBankScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"SupportedBank"> | string
+    name?: StringWithAggregatesFilter<"SupportedBank"> | string
+    isActive?: BoolWithAggregatesFilter<"SupportedBank"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"SupportedBank"> | Date | string
+  }
+
   export type InventoryBatchWhereInput = {
     AND?: InventoryBatchWhereInput | InventoryBatchWhereInput[]
     OR?: InventoryBatchWhereInput[]
@@ -14368,6 +15517,7 @@ export namespace Prisma {
     transactionRedId?: StringFilter<"PaymentProof"> | string
     sha256Hash?: StringFilter<"PaymentProof"> | string
     amount?: DecimalFilter<"PaymentProof"> | Decimal | DecimalJsLike | number | string
+    bankName?: StringFilter<"PaymentProof"> | string
     senderName?: StringNullableFilter<"PaymentProof"> | string | null
     reasonRemark?: StringNullableFilter<"PaymentProof"> | string | null
     receipeImageUrl?: StringNullableFilter<"PaymentProof"> | string | null
@@ -14384,6 +15534,7 @@ export namespace Prisma {
     transactionRedId?: SortOrder
     sha256Hash?: SortOrder
     amount?: SortOrder
+    bankName?: SortOrder
     senderName?: SortOrderInput | SortOrder
     reasonRemark?: SortOrderInput | SortOrder
     receipeImageUrl?: SortOrderInput | SortOrder
@@ -14403,6 +15554,7 @@ export namespace Prisma {
     NOT?: PaymentProofWhereInput | PaymentProofWhereInput[]
     userId?: StringFilter<"PaymentProof"> | string
     amount?: DecimalFilter<"PaymentProof"> | Decimal | DecimalJsLike | number | string
+    bankName?: StringFilter<"PaymentProof"> | string
     senderName?: StringNullableFilter<"PaymentProof"> | string | null
     reasonRemark?: StringNullableFilter<"PaymentProof"> | string | null
     receipeImageUrl?: StringNullableFilter<"PaymentProof"> | string | null
@@ -14419,6 +15571,7 @@ export namespace Prisma {
     transactionRedId?: SortOrder
     sha256Hash?: SortOrder
     amount?: SortOrder
+    bankName?: SortOrder
     senderName?: SortOrderInput | SortOrder
     reasonRemark?: SortOrderInput | SortOrder
     receipeImageUrl?: SortOrderInput | SortOrder
@@ -14442,6 +15595,7 @@ export namespace Prisma {
     transactionRedId?: StringWithAggregatesFilter<"PaymentProof"> | string
     sha256Hash?: StringWithAggregatesFilter<"PaymentProof"> | string
     amount?: DecimalWithAggregatesFilter<"PaymentProof"> | Decimal | DecimalJsLike | number | string
+    bankName?: StringWithAggregatesFilter<"PaymentProof"> | string
     senderName?: StringNullableWithAggregatesFilter<"PaymentProof"> | string | null
     reasonRemark?: StringNullableWithAggregatesFilter<"PaymentProof"> | string | null
     receipeImageUrl?: StringNullableWithAggregatesFilter<"PaymentProof"> | string | null
@@ -14855,6 +16009,55 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type SupportedBankCreateInput = {
+    id?: string
+    name: string
+    isActive?: boolean
+    createdAt?: Date | string
+  }
+
+  export type SupportedBankUncheckedCreateInput = {
+    id?: string
+    name: string
+    isActive?: boolean
+    createdAt?: Date | string
+  }
+
+  export type SupportedBankUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SupportedBankUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SupportedBankCreateManyInput = {
+    id?: string
+    name: string
+    isActive?: boolean
+    createdAt?: Date | string
+  }
+
+  export type SupportedBankUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SupportedBankUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type InventoryBatchCreateInput = {
     id?: string
     batchCode: string
@@ -15151,6 +16354,7 @@ export namespace Prisma {
     transactionRedId: string
     sha256Hash: string
     amount: Decimal | DecimalJsLike | number | string
+    bankName: string
     senderName?: string | null
     reasonRemark?: string | null
     receipeImageUrl?: string | null
@@ -15167,6 +16371,7 @@ export namespace Prisma {
     transactionRedId: string
     sha256Hash: string
     amount: Decimal | DecimalJsLike | number | string
+    bankName: string
     senderName?: string | null
     reasonRemark?: string | null
     receipeImageUrl?: string | null
@@ -15181,6 +16386,7 @@ export namespace Prisma {
     transactionRedId?: StringFieldUpdateOperationsInput | string
     sha256Hash?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    bankName?: StringFieldUpdateOperationsInput | string
     senderName?: NullableStringFieldUpdateOperationsInput | string | null
     reasonRemark?: NullableStringFieldUpdateOperationsInput | string | null
     receipeImageUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15197,6 +16403,7 @@ export namespace Prisma {
     transactionRedId?: StringFieldUpdateOperationsInput | string
     sha256Hash?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    bankName?: StringFieldUpdateOperationsInput | string
     senderName?: NullableStringFieldUpdateOperationsInput | string | null
     reasonRemark?: NullableStringFieldUpdateOperationsInput | string | null
     receipeImageUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15212,6 +16419,7 @@ export namespace Prisma {
     transactionRedId: string
     sha256Hash: string
     amount: Decimal | DecimalJsLike | number | string
+    bankName: string
     senderName?: string | null
     reasonRemark?: string | null
     receipeImageUrl?: string | null
@@ -15226,6 +16434,7 @@ export namespace Prisma {
     transactionRedId?: StringFieldUpdateOperationsInput | string
     sha256Hash?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    bankName?: StringFieldUpdateOperationsInput | string
     senderName?: NullableStringFieldUpdateOperationsInput | string | null
     reasonRemark?: NullableStringFieldUpdateOperationsInput | string | null
     receipeImageUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15241,6 +16450,7 @@ export namespace Prisma {
     transactionRedId?: StringFieldUpdateOperationsInput | string
     sha256Hash?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    bankName?: StringFieldUpdateOperationsInput | string
     senderName?: NullableStringFieldUpdateOperationsInput | string | null
     reasonRemark?: NullableStringFieldUpdateOperationsInput | string | null
     receipeImageUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15697,6 +16907,27 @@ export namespace Prisma {
     updatedAt?: SortOrder
   }
 
+  export type SupportedBankCountOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type SupportedBankMaxOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type SupportedBankMinOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+  }
+
   export type IntFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
     in?: number[] | ListIntFieldRefInput<$PrismaModel>
@@ -15959,6 +17190,7 @@ export namespace Prisma {
     transactionRedId?: SortOrder
     sha256Hash?: SortOrder
     amount?: SortOrder
+    bankName?: SortOrder
     senderName?: SortOrder
     reasonRemark?: SortOrder
     receipeImageUrl?: SortOrder
@@ -15978,6 +17210,7 @@ export namespace Prisma {
     transactionRedId?: SortOrder
     sha256Hash?: SortOrder
     amount?: SortOrder
+    bankName?: SortOrder
     senderName?: SortOrder
     reasonRemark?: SortOrder
     receipeImageUrl?: SortOrder
@@ -15993,6 +17226,7 @@ export namespace Prisma {
     transactionRedId?: SortOrder
     sha256Hash?: SortOrder
     amount?: SortOrder
+    bankName?: SortOrder
     senderName?: SortOrder
     reasonRemark?: SortOrder
     receipeImageUrl?: SortOrder
@@ -16859,6 +18093,7 @@ export namespace Prisma {
     transactionRedId: string
     sha256Hash: string
     amount: Decimal | DecimalJsLike | number | string
+    bankName: string
     senderName?: string | null
     reasonRemark?: string | null
     receipeImageUrl?: string | null
@@ -16873,6 +18108,7 @@ export namespace Prisma {
     transactionRedId: string
     sha256Hash: string
     amount: Decimal | DecimalJsLike | number | string
+    bankName: string
     senderName?: string | null
     reasonRemark?: string | null
     receipeImageUrl?: string | null
@@ -16975,6 +18211,7 @@ export namespace Prisma {
     transactionRedId?: StringFilter<"PaymentProof"> | string
     sha256Hash?: StringFilter<"PaymentProof"> | string
     amount?: DecimalFilter<"PaymentProof"> | Decimal | DecimalJsLike | number | string
+    bankName?: StringFilter<"PaymentProof"> | string
     senderName?: StringNullableFilter<"PaymentProof"> | string | null
     reasonRemark?: StringNullableFilter<"PaymentProof"> | string | null
     receipeImageUrl?: StringNullableFilter<"PaymentProof"> | string | null
@@ -17795,6 +19032,7 @@ export namespace Prisma {
     transactionRedId: string
     sha256Hash: string
     amount: Decimal | DecimalJsLike | number | string
+    bankName: string
     senderName?: string | null
     reasonRemark?: string | null
     receipeImageUrl?: string | null
@@ -17845,6 +19083,7 @@ export namespace Prisma {
     transactionRedId?: StringFieldUpdateOperationsInput | string
     sha256Hash?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    bankName?: StringFieldUpdateOperationsInput | string
     senderName?: NullableStringFieldUpdateOperationsInput | string | null
     reasonRemark?: NullableStringFieldUpdateOperationsInput | string | null
     receipeImageUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -17859,6 +19098,7 @@ export namespace Prisma {
     transactionRedId?: StringFieldUpdateOperationsInput | string
     sha256Hash?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    bankName?: StringFieldUpdateOperationsInput | string
     senderName?: NullableStringFieldUpdateOperationsInput | string | null
     reasonRemark?: NullableStringFieldUpdateOperationsInput | string | null
     receipeImageUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -17873,6 +19113,7 @@ export namespace Prisma {
     transactionRedId?: StringFieldUpdateOperationsInput | string
     sha256Hash?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    bankName?: StringFieldUpdateOperationsInput | string
     senderName?: NullableStringFieldUpdateOperationsInput | string | null
     reasonRemark?: NullableStringFieldUpdateOperationsInput | string | null
     receipeImageUrl?: NullableStringFieldUpdateOperationsInput | string | null
