@@ -125,6 +125,7 @@ exports.Prisma.UserScalarFieldEnum = {
   fullName: 'fullName',
   username: 'username',
   passwordHash: 'passwordHash',
+  profilePic: 'profilePic',
   role: 'role',
   requiresPasswordChange: 'requiresPasswordChange',
   isActive: 'isActive',
@@ -147,6 +148,8 @@ exports.Prisma.ProductScalarFieldEnum = {
   id: 'id',
   name: 'name',
   description: 'description',
+  category: 'category',
+  imageUrl: 'imageUrl',
   price: 'price',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
