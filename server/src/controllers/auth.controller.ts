@@ -113,6 +113,7 @@ export const loginUser = async (
           requiresPasswordChange: user.requiresPasswordChange,
           creditLimit: formatETB(user.creditLimit),
           creditBalance: formatETB(user.creditBalance),
+          profilePic: user.profilePic,
         },
       },
     });
@@ -183,6 +184,7 @@ export const getMe = async (
           creditLimit: formatETB(req.user.creditLimit),
           creditBalance: formatETB(req.user.creditBalance),
           createdAt: req.user.createdAt,
+          profilePic: user.profilePic,
         },
       },
     });
@@ -190,3 +192,29 @@ export const getMe = async (
     next(err);
   }
 };
+
+export const updateAvatar = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ status: 'fail', message: 'No image file provided.' });
+      return;
+    }
+
+    // Generate the public URL path
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+
+    // Update the database for the authenticated user
+    const updatedUser = await db.user.update({
+      where: { id: req.user?.id },
+      data: { profilePic: avatarUrl }
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: { profilePic: updatedUser.profilePic }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+

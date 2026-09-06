@@ -15,6 +15,7 @@ export const getSalesReps = async (_req: Request, res: Response, next: NextFunct
         creditLimit: true,
         creditBalance: true,
         createdAt: true,
+        profilePic: true,
         paymentProofs: {
           where: { status: 'APPROVED' },
           orderBy: { createdAt: 'desc' },

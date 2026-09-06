@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../store/authStore';
-
+import { apiClient } from '../api/client';
 export default function SharedProfile() {
   const router = useRouter();
   
@@ -72,21 +72,41 @@ export default function SharedProfile() {
     }
   };
 
-  const handleSaveProfile = () => {
-  setIsSavingProfile(true);
-  
-  setTimeout(() => {
-    setIsSavingProfile(false);
-    setIsAvatarChanged(false);
+  const handleSaveProfile = async () => {
+    if (!avatarUri) return;
+    setIsSavingProfile(true);
     
-    // Save the local image to Zustand so the Home page sees it immediately!
-    if (avatarUri) {
-      updateProfilePic(avatarUri);
+    try {
+      // 1. Prepare the image for multipart/form-data upload
+      const filename = avatarUri.split('/').pop() || 'avatar.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+      const formData = new FormData();
+      formData.append('avatar', {
+        uri: avatarUri,
+        name: filename,
+        type,
+      } as any);
+
+      // 2. Send to backend
+      const response = await apiClient.patch('/auth/profile/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      // 3. Save the new database URL locally
+      const savedImageUrl = response.data.data.profilePic;
+      updateProfilePic(savedImageUrl);
+      
+      setIsAvatarChanged(false);
+      Alert.alert('Success', 'Your profile picture is safely stored in the database!');
+    } catch (error: any) {
+      console.error("Avatar upload failed", error);
+      Alert.alert('Upload Failed', error.response?.data?.message || 'Could not connect to server.');
+    } finally {
+      setIsSavingProfile(false);
     }
-    
-    Alert.alert('Success', 'Your profile picture has been updated locally.');
-  }, 800);
-};
+  };
 
   const handleUpdatePassword = () => {
     if (newPassword.length < 6) {
