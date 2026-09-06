@@ -2,6 +2,8 @@ import { Router } from "express";
 import {
   createStockBatch,
   issueStock,
+  getInventory,
+  updateSellingPrice,
   getMyStock // <-- 1. Import the new function
 } from "../controllers/inventory.controller.js";
 import { authenticate } from "../middlewares/authenticate.js";
@@ -12,6 +14,8 @@ const router = Router();
 
 // 2. REP ENDPOINT: Only requires basic authentication so Sales Reps can see their own items
 router.get("/my-stock", authenticate, getMyStock);
+router.get("/products", getInventory);
+router.patch("/products/:id/price", updateSellingPrice);
 
 // 3. ADMIN ENDPOINTS: Explicitly protect the admin-only routes
 router.post("/batches", authenticate, authorize(Role.ADMIN), createStockBatch);

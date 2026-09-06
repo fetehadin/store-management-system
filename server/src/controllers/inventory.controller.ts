@@ -12,6 +12,91 @@ import { toDecimal, formatETB } from "../utils/decimal.js";
 import { Role, IssuanceStatus, AuditEntity } from "../generated/client/index.js";
 
 /**
+ * @route   GET /api/v1/inventory/products
+ * @desc    Fetch live inventory with dynamic FIFO cost calculation and categories
+ * @access  Protected (ADMIN)
+ */
+export const getInventory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const products = await db.product.findMany({
+      include: {
+        // Fetch all batches to calculate strict FIFO logic
+        batches: {
+          orderBy: { createdAt: "asc" }, // Oldest first
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const mappedInventory = products.map((product) => {
+      // 1. Calculate total available physical stock across all active batches
+      const totalStock = product.batches.reduce(
+        (sum, batch) => sum + batch.remainingQty,
+        0
+      );
+
+      // 2. Identify the active FIFO batch (the oldest batch that still has sellable units)
+      const activeBatch = product.batches.find((b) => b.remainingQty > 0);
+      const currentCostPrice = activeBatch ? activeBatch.unitCostPrice : 0;
+
+      return {
+        id: product.id,
+        name: product.name,
+        // Type casting to support schema additions seamlessly
+        category: (product as any).category || "General",
+        imageUrl: (product as any).imageUrl || null,
+        stock: totalStock,
+        costPrice: Number(currentCostPrice),
+        sellingPrice: Number(product.price),
+      };
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: mappedInventory,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * @route   PATCH /api/v1/inventory/products/:id/price
+ * @desc    Update the live selling price of a product
+ * @access  Protected (ADMIN)
+ */
+export const updateSellingPrice = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { price } = req.body;
+
+    if (price === undefined || isNaN(Number(price))) {
+      throw new BadRequestError("A valid price is required.");
+    }
+
+    await db.product.update({
+      where: { id },
+      data: { price: toDecimal(price) },
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Selling price updated successfully",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * @route   POST /api/v1/inventory/batches
  * @desc    Legacy stub / wrapper for warehouse batch receiving (Admin only)
  * @access  Protected (ADMIN)
