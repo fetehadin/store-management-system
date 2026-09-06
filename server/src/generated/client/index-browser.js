@@ -241,6 +241,24 @@ exports.Prisma.LedgerEntryScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.StockReturnScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  totalValue: 'totalValue',
+  reason: 'reason',
+  status: 'status',
+  destination: 'destination',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ReturnItemScalarFieldEnum = {
+  id: 'id',
+  stockReturnId: 'stockReturnId',
+  itemId: 'itemId',
+  quantity: 'quantity'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -279,6 +297,17 @@ exports.AuditEntity = exports.$Enums.AuditEntity = {
   DIRECT_BUYER: 'DIRECT_BUYER'
 };
 
+exports.ReturnStatus = exports.$Enums.ReturnStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED'
+};
+
+exports.ReturnDestination = exports.$Enums.ReturnDestination = {
+  WAREHOUSE: 'WAREHOUSE',
+  SUPPLIER: 'SUPPLIER'
+};
+
 exports.Prisma.ModelName = {
   User: 'User',
   Supplier: 'Supplier',
@@ -290,7 +319,9 @@ exports.Prisma.ModelName = {
   IssuanceItem: 'IssuanceItem',
   Sale: 'Sale',
   PaymentProof: 'PaymentProof',
-  LedgerEntry: 'LedgerEntry'
+  LedgerEntry: 'LedgerEntry',
+  StockReturn: 'StockReturn',
+  ReturnItem: 'ReturnItem'
 };
 
 /**

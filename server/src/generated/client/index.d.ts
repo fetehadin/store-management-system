@@ -68,6 +68,16 @@ export type PaymentProof = $Result.DefaultSelection<Prisma.$PaymentProofPayload>
  * 
  */
 export type LedgerEntry = $Result.DefaultSelection<Prisma.$LedgerEntryPayload>
+/**
+ * Model StockReturn
+ * 
+ */
+export type StockReturn = $Result.DefaultSelection<Prisma.$StockReturnPayload>
+/**
+ * Model ReturnItem
+ * 
+ */
+export type ReturnItem = $Result.DefaultSelection<Prisma.$ReturnItemPayload>
 
 /**
  * Enums
@@ -108,6 +118,23 @@ export const IssuanceStatus: {
 
 export type IssuanceStatus = (typeof IssuanceStatus)[keyof typeof IssuanceStatus]
 
+
+export const ReturnStatus: {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED'
+};
+
+export type ReturnStatus = (typeof ReturnStatus)[keyof typeof ReturnStatus]
+
+
+export const ReturnDestination: {
+  WAREHOUSE: 'WAREHOUSE',
+  SUPPLIER: 'SUPPLIER'
+};
+
+export type ReturnDestination = (typeof ReturnDestination)[keyof typeof ReturnDestination]
+
 }
 
 export type Role = $Enums.Role
@@ -125,6 +152,14 @@ export const AuditEntity: typeof $Enums.AuditEntity
 export type IssuanceStatus = $Enums.IssuanceStatus
 
 export const IssuanceStatus: typeof $Enums.IssuanceStatus
+
+export type ReturnStatus = $Enums.ReturnStatus
+
+export const ReturnStatus: typeof $Enums.ReturnStatus
+
+export type ReturnDestination = $Enums.ReturnDestination
+
+export const ReturnDestination: typeof $Enums.ReturnDestination
 
 /**
  * ##  Prisma Client ʲˢ
@@ -356,6 +391,26 @@ export class PrismaClient<
     * ```
     */
   get ledgerEntry(): Prisma.LedgerEntryDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.stockReturn`: Exposes CRUD operations for the **StockReturn** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more StockReturns
+    * const stockReturns = await prisma.stockReturn.findMany()
+    * ```
+    */
+  get stockReturn(): Prisma.StockReturnDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.returnItem`: Exposes CRUD operations for the **ReturnItem** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ReturnItems
+    * const returnItems = await prisma.returnItem.findMany()
+    * ```
+    */
+  get returnItem(): Prisma.ReturnItemDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -813,7 +868,9 @@ export namespace Prisma {
     IssuanceItem: 'IssuanceItem',
     Sale: 'Sale',
     PaymentProof: 'PaymentProof',
-    LedgerEntry: 'LedgerEntry'
+    LedgerEntry: 'LedgerEntry',
+    StockReturn: 'StockReturn',
+    ReturnItem: 'ReturnItem'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -829,7 +886,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "supplier" | "product" | "retailer" | "supportedBank" | "inventoryBatch" | "stockIssuance" | "issuanceItem" | "sale" | "paymentProof" | "ledgerEntry"
+      modelProps: "user" | "supplier" | "product" | "retailer" | "supportedBank" | "inventoryBatch" | "stockIssuance" | "issuanceItem" | "sale" | "paymentProof" | "ledgerEntry" | "stockReturn" | "returnItem"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1647,6 +1704,154 @@ export namespace Prisma {
           }
         }
       }
+      StockReturn: {
+        payload: Prisma.$StockReturnPayload<ExtArgs>
+        fields: Prisma.StockReturnFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.StockReturnFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockReturnPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.StockReturnFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockReturnPayload>
+          }
+          findFirst: {
+            args: Prisma.StockReturnFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockReturnPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.StockReturnFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockReturnPayload>
+          }
+          findMany: {
+            args: Prisma.StockReturnFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockReturnPayload>[]
+          }
+          create: {
+            args: Prisma.StockReturnCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockReturnPayload>
+          }
+          createMany: {
+            args: Prisma.StockReturnCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.StockReturnCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockReturnPayload>[]
+          }
+          delete: {
+            args: Prisma.StockReturnDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockReturnPayload>
+          }
+          update: {
+            args: Prisma.StockReturnUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockReturnPayload>
+          }
+          deleteMany: {
+            args: Prisma.StockReturnDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.StockReturnUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.StockReturnUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockReturnPayload>[]
+          }
+          upsert: {
+            args: Prisma.StockReturnUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$StockReturnPayload>
+          }
+          aggregate: {
+            args: Prisma.StockReturnAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateStockReturn>
+          }
+          groupBy: {
+            args: Prisma.StockReturnGroupByArgs<ExtArgs>
+            result: $Utils.Optional<StockReturnGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.StockReturnCountArgs<ExtArgs>
+            result: $Utils.Optional<StockReturnCountAggregateOutputType> | number
+          }
+        }
+      }
+      ReturnItem: {
+        payload: Prisma.$ReturnItemPayload<ExtArgs>
+        fields: Prisma.ReturnItemFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ReturnItemFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnItemPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ReturnItemFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnItemPayload>
+          }
+          findFirst: {
+            args: Prisma.ReturnItemFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnItemPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ReturnItemFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnItemPayload>
+          }
+          findMany: {
+            args: Prisma.ReturnItemFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnItemPayload>[]
+          }
+          create: {
+            args: Prisma.ReturnItemCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnItemPayload>
+          }
+          createMany: {
+            args: Prisma.ReturnItemCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ReturnItemCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnItemPayload>[]
+          }
+          delete: {
+            args: Prisma.ReturnItemDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnItemPayload>
+          }
+          update: {
+            args: Prisma.ReturnItemUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnItemPayload>
+          }
+          deleteMany: {
+            args: Prisma.ReturnItemDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ReturnItemUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ReturnItemUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnItemPayload>[]
+          }
+          upsert: {
+            args: Prisma.ReturnItemUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnItemPayload>
+          }
+          aggregate: {
+            args: Prisma.ReturnItemAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateReturnItem>
+          }
+          groupBy: {
+            args: Prisma.ReturnItemGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ReturnItemGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ReturnItemCountArgs<ExtArgs>
+            result: $Utils.Optional<ReturnItemCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1781,6 +1986,8 @@ export namespace Prisma {
     sale?: SaleOmit
     paymentProof?: PaymentProofOmit
     ledgerEntry?: LedgerEntryOmit
+    stockReturn?: StockReturnOmit
+    returnItem?: ReturnItemOmit
   }
 
   /* Types for Logging */
@@ -1864,12 +2071,14 @@ export namespace Prisma {
     stockIssusances: number
     paymentProofs: number
     sales: number
+    returns: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     stockIssusances?: boolean | UserCountOutputTypeCountStockIssusancesArgs
     paymentProofs?: boolean | UserCountOutputTypeCountPaymentProofsArgs
     sales?: boolean | UserCountOutputTypeCountSalesArgs
+    returns?: boolean | UserCountOutputTypeCountReturnsArgs
   }
 
   // Custom InputTypes
@@ -1902,6 +2111,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountSalesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: SaleWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountReturnsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: StockReturnWhereInput
   }
 
 
@@ -2035,6 +2251,37 @@ export namespace Prisma {
    */
   export type StockIssuanceCountOutputTypeCountItemsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: IssuanceItemWhereInput
+  }
+
+
+  /**
+   * Count Type StockReturnCountOutputType
+   */
+
+  export type StockReturnCountOutputType = {
+    items: number
+  }
+
+  export type StockReturnCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    items?: boolean | StockReturnCountOutputTypeCountItemsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * StockReturnCountOutputType without action
+   */
+  export type StockReturnCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the StockReturnCountOutputType
+     */
+    select?: StockReturnCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * StockReturnCountOutputType without action
+   */
+  export type StockReturnCountOutputTypeCountItemsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ReturnItemWhereInput
   }
 
 
@@ -2295,6 +2542,7 @@ export namespace Prisma {
     stockIssusances?: boolean | User$stockIssusancesArgs<ExtArgs>
     paymentProofs?: boolean | User$paymentProofsArgs<ExtArgs>
     sales?: boolean | User$salesArgs<ExtArgs>
+    returns?: boolean | User$returnsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -2345,6 +2593,7 @@ export namespace Prisma {
     stockIssusances?: boolean | User$stockIssusancesArgs<ExtArgs>
     paymentProofs?: boolean | User$paymentProofsArgs<ExtArgs>
     sales?: boolean | User$salesArgs<ExtArgs>
+    returns?: boolean | User$returnsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -2356,6 +2605,7 @@ export namespace Prisma {
       stockIssusances: Prisma.$StockIssuancePayload<ExtArgs>[]
       paymentProofs: Prisma.$PaymentProofPayload<ExtArgs>[]
       sales: Prisma.$SalePayload<ExtArgs>[]
+      returns: Prisma.$StockReturnPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -2766,6 +3016,7 @@ export namespace Prisma {
     stockIssusances<T extends User$stockIssusancesArgs<ExtArgs> = {}>(args?: Subset<T, User$stockIssusancesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$StockIssuancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     paymentProofs<T extends User$paymentProofsArgs<ExtArgs> = {}>(args?: Subset<T, User$paymentProofsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PaymentProofPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     sales<T extends User$salesArgs<ExtArgs> = {}>(args?: Subset<T, User$salesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SalePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    returns<T extends User$returnsArgs<ExtArgs> = {}>(args?: Subset<T, User$returnsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$StockReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3268,6 +3519,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: SaleScalarFieldEnum | SaleScalarFieldEnum[]
+  }
+
+  /**
+   * User.returns
+   */
+  export type User$returnsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the StockReturn
+     */
+    select?: StockReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the StockReturn
+     */
+    omit?: StockReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockReturnInclude<ExtArgs> | null
+    where?: StockReturnWhereInput
+    orderBy?: StockReturnOrderByWithRelationInput | StockReturnOrderByWithRelationInput[]
+    cursor?: StockReturnWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: StockReturnScalarFieldEnum | StockReturnScalarFieldEnum[]
   }
 
   /**
@@ -14559,6 +14834,2256 @@ export namespace Prisma {
 
 
   /**
+   * Model StockReturn
+   */
+
+  export type AggregateStockReturn = {
+    _count: StockReturnCountAggregateOutputType | null
+    _avg: StockReturnAvgAggregateOutputType | null
+    _sum: StockReturnSumAggregateOutputType | null
+    _min: StockReturnMinAggregateOutputType | null
+    _max: StockReturnMaxAggregateOutputType | null
+  }
+
+  export type StockReturnAvgAggregateOutputType = {
+    totalValue: Decimal | null
+  }
+
+  export type StockReturnSumAggregateOutputType = {
+    totalValue: Decimal | null
+  }
+
+  export type StockReturnMinAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    totalValue: Decimal | null
+    reason: string | null
+    status: $Enums.ReturnStatus | null
+    destination: $Enums.ReturnDestination | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type StockReturnMaxAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    totalValue: Decimal | null
+    reason: string | null
+    status: $Enums.ReturnStatus | null
+    destination: $Enums.ReturnDestination | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type StockReturnCountAggregateOutputType = {
+    id: number
+    userId: number
+    totalValue: number
+    reason: number
+    status: number
+    destination: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type StockReturnAvgAggregateInputType = {
+    totalValue?: true
+  }
+
+  export type StockReturnSumAggregateInputType = {
+    totalValue?: true
+  }
+
+  export type StockReturnMinAggregateInputType = {
+    id?: true
+    userId?: true
+    totalValue?: true
+    reason?: true
+    status?: true
+    destination?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type StockReturnMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    totalValue?: true
+    reason?: true
+    status?: true
+    destination?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type StockReturnCountAggregateInputType = {
+    id?: true
+    userId?: true
+    totalValue?: true
+    reason?: true
+    status?: true
+    destination?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type StockReturnAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which StockReturn to aggregate.
+     */
+    where?: StockReturnWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of StockReturns to fetch.
+     */
+    orderBy?: StockReturnOrderByWithRelationInput | StockReturnOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: StockReturnWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` StockReturns from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` StockReturns.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned StockReturns
+    **/
+    _count?: true | StockReturnCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: StockReturnAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: StockReturnSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: StockReturnMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: StockReturnMaxAggregateInputType
+  }
+
+  export type GetStockReturnAggregateType<T extends StockReturnAggregateArgs> = {
+        [P in keyof T & keyof AggregateStockReturn]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateStockReturn[P]>
+      : GetScalarType<T[P], AggregateStockReturn[P]>
+  }
+
+
+
+
+  export type StockReturnGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: StockReturnWhereInput
+    orderBy?: StockReturnOrderByWithAggregationInput | StockReturnOrderByWithAggregationInput[]
+    by: StockReturnScalarFieldEnum[] | StockReturnScalarFieldEnum
+    having?: StockReturnScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: StockReturnCountAggregateInputType | true
+    _avg?: StockReturnAvgAggregateInputType
+    _sum?: StockReturnSumAggregateInputType
+    _min?: StockReturnMinAggregateInputType
+    _max?: StockReturnMaxAggregateInputType
+  }
+
+  export type StockReturnGroupByOutputType = {
+    id: string
+    userId: string
+    totalValue: Decimal
+    reason: string
+    status: $Enums.ReturnStatus
+    destination: $Enums.ReturnDestination | null
+    createdAt: Date
+    updatedAt: Date
+    _count: StockReturnCountAggregateOutputType | null
+    _avg: StockReturnAvgAggregateOutputType | null
+    _sum: StockReturnSumAggregateOutputType | null
+    _min: StockReturnMinAggregateOutputType | null
+    _max: StockReturnMaxAggregateOutputType | null
+  }
+
+  type GetStockReturnGroupByPayload<T extends StockReturnGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<StockReturnGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof StockReturnGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], StockReturnGroupByOutputType[P]>
+            : GetScalarType<T[P], StockReturnGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type StockReturnSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    totalValue?: boolean
+    reason?: boolean
+    status?: boolean
+    destination?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+    items?: boolean | StockReturn$itemsArgs<ExtArgs>
+    _count?: boolean | StockReturnCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["stockReturn"]>
+
+  export type StockReturnSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    totalValue?: boolean
+    reason?: boolean
+    status?: boolean
+    destination?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["stockReturn"]>
+
+  export type StockReturnSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    totalValue?: boolean
+    reason?: boolean
+    status?: boolean
+    destination?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["stockReturn"]>
+
+  export type StockReturnSelectScalar = {
+    id?: boolean
+    userId?: boolean
+    totalValue?: boolean
+    reason?: boolean
+    status?: boolean
+    destination?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type StockReturnOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "totalValue" | "reason" | "status" | "destination" | "createdAt" | "updatedAt", ExtArgs["result"]["stockReturn"]>
+  export type StockReturnInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+    items?: boolean | StockReturn$itemsArgs<ExtArgs>
+    _count?: boolean | StockReturnCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type StockReturnIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type StockReturnIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $StockReturnPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "StockReturn"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs>
+      items: Prisma.$ReturnItemPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      userId: string
+      totalValue: Prisma.Decimal
+      reason: string
+      status: $Enums.ReturnStatus
+      destination: $Enums.ReturnDestination | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["stockReturn"]>
+    composites: {}
+  }
+
+  type StockReturnGetPayload<S extends boolean | null | undefined | StockReturnDefaultArgs> = $Result.GetResult<Prisma.$StockReturnPayload, S>
+
+  type StockReturnCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<StockReturnFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: StockReturnCountAggregateInputType | true
+    }
+
+  export interface StockReturnDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['StockReturn'], meta: { name: 'StockReturn' } }
+    /**
+     * Find zero or one StockReturn that matches the filter.
+     * @param {StockReturnFindUniqueArgs} args - Arguments to find a StockReturn
+     * @example
+     * // Get one StockReturn
+     * const stockReturn = await prisma.stockReturn.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends StockReturnFindUniqueArgs>(args: SelectSubset<T, StockReturnFindUniqueArgs<ExtArgs>>): Prisma__StockReturnClient<$Result.GetResult<Prisma.$StockReturnPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one StockReturn that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {StockReturnFindUniqueOrThrowArgs} args - Arguments to find a StockReturn
+     * @example
+     * // Get one StockReturn
+     * const stockReturn = await prisma.stockReturn.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends StockReturnFindUniqueOrThrowArgs>(args: SelectSubset<T, StockReturnFindUniqueOrThrowArgs<ExtArgs>>): Prisma__StockReturnClient<$Result.GetResult<Prisma.$StockReturnPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first StockReturn that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {StockReturnFindFirstArgs} args - Arguments to find a StockReturn
+     * @example
+     * // Get one StockReturn
+     * const stockReturn = await prisma.stockReturn.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends StockReturnFindFirstArgs>(args?: SelectSubset<T, StockReturnFindFirstArgs<ExtArgs>>): Prisma__StockReturnClient<$Result.GetResult<Prisma.$StockReturnPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first StockReturn that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {StockReturnFindFirstOrThrowArgs} args - Arguments to find a StockReturn
+     * @example
+     * // Get one StockReturn
+     * const stockReturn = await prisma.stockReturn.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends StockReturnFindFirstOrThrowArgs>(args?: SelectSubset<T, StockReturnFindFirstOrThrowArgs<ExtArgs>>): Prisma__StockReturnClient<$Result.GetResult<Prisma.$StockReturnPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more StockReturns that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {StockReturnFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all StockReturns
+     * const stockReturns = await prisma.stockReturn.findMany()
+     * 
+     * // Get first 10 StockReturns
+     * const stockReturns = await prisma.stockReturn.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const stockReturnWithIdOnly = await prisma.stockReturn.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends StockReturnFindManyArgs>(args?: SelectSubset<T, StockReturnFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$StockReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a StockReturn.
+     * @param {StockReturnCreateArgs} args - Arguments to create a StockReturn.
+     * @example
+     * // Create one StockReturn
+     * const StockReturn = await prisma.stockReturn.create({
+     *   data: {
+     *     // ... data to create a StockReturn
+     *   }
+     * })
+     * 
+     */
+    create<T extends StockReturnCreateArgs>(args: SelectSubset<T, StockReturnCreateArgs<ExtArgs>>): Prisma__StockReturnClient<$Result.GetResult<Prisma.$StockReturnPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many StockReturns.
+     * @param {StockReturnCreateManyArgs} args - Arguments to create many StockReturns.
+     * @example
+     * // Create many StockReturns
+     * const stockReturn = await prisma.stockReturn.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends StockReturnCreateManyArgs>(args?: SelectSubset<T, StockReturnCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many StockReturns and returns the data saved in the database.
+     * @param {StockReturnCreateManyAndReturnArgs} args - Arguments to create many StockReturns.
+     * @example
+     * // Create many StockReturns
+     * const stockReturn = await prisma.stockReturn.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many StockReturns and only return the `id`
+     * const stockReturnWithIdOnly = await prisma.stockReturn.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends StockReturnCreateManyAndReturnArgs>(args?: SelectSubset<T, StockReturnCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$StockReturnPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a StockReturn.
+     * @param {StockReturnDeleteArgs} args - Arguments to delete one StockReturn.
+     * @example
+     * // Delete one StockReturn
+     * const StockReturn = await prisma.stockReturn.delete({
+     *   where: {
+     *     // ... filter to delete one StockReturn
+     *   }
+     * })
+     * 
+     */
+    delete<T extends StockReturnDeleteArgs>(args: SelectSubset<T, StockReturnDeleteArgs<ExtArgs>>): Prisma__StockReturnClient<$Result.GetResult<Prisma.$StockReturnPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one StockReturn.
+     * @param {StockReturnUpdateArgs} args - Arguments to update one StockReturn.
+     * @example
+     * // Update one StockReturn
+     * const stockReturn = await prisma.stockReturn.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends StockReturnUpdateArgs>(args: SelectSubset<T, StockReturnUpdateArgs<ExtArgs>>): Prisma__StockReturnClient<$Result.GetResult<Prisma.$StockReturnPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more StockReturns.
+     * @param {StockReturnDeleteManyArgs} args - Arguments to filter StockReturns to delete.
+     * @example
+     * // Delete a few StockReturns
+     * const { count } = await prisma.stockReturn.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends StockReturnDeleteManyArgs>(args?: SelectSubset<T, StockReturnDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more StockReturns.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {StockReturnUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many StockReturns
+     * const stockReturn = await prisma.stockReturn.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends StockReturnUpdateManyArgs>(args: SelectSubset<T, StockReturnUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more StockReturns and returns the data updated in the database.
+     * @param {StockReturnUpdateManyAndReturnArgs} args - Arguments to update many StockReturns.
+     * @example
+     * // Update many StockReturns
+     * const stockReturn = await prisma.stockReturn.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more StockReturns and only return the `id`
+     * const stockReturnWithIdOnly = await prisma.stockReturn.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends StockReturnUpdateManyAndReturnArgs>(args: SelectSubset<T, StockReturnUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$StockReturnPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one StockReturn.
+     * @param {StockReturnUpsertArgs} args - Arguments to update or create a StockReturn.
+     * @example
+     * // Update or create a StockReturn
+     * const stockReturn = await prisma.stockReturn.upsert({
+     *   create: {
+     *     // ... data to create a StockReturn
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the StockReturn we want to update
+     *   }
+     * })
+     */
+    upsert<T extends StockReturnUpsertArgs>(args: SelectSubset<T, StockReturnUpsertArgs<ExtArgs>>): Prisma__StockReturnClient<$Result.GetResult<Prisma.$StockReturnPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of StockReturns.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {StockReturnCountArgs} args - Arguments to filter StockReturns to count.
+     * @example
+     * // Count the number of StockReturns
+     * const count = await prisma.stockReturn.count({
+     *   where: {
+     *     // ... the filter for the StockReturns we want to count
+     *   }
+     * })
+    **/
+    count<T extends StockReturnCountArgs>(
+      args?: Subset<T, StockReturnCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], StockReturnCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a StockReturn.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {StockReturnAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends StockReturnAggregateArgs>(args: Subset<T, StockReturnAggregateArgs>): Prisma.PrismaPromise<GetStockReturnAggregateType<T>>
+
+    /**
+     * Group by StockReturn.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {StockReturnGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends StockReturnGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: StockReturnGroupByArgs['orderBy'] }
+        : { orderBy?: StockReturnGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, StockReturnGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetStockReturnGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the StockReturn model
+   */
+  readonly fields: StockReturnFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for StockReturn.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__StockReturnClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    items<T extends StockReturn$itemsArgs<ExtArgs> = {}>(args?: Subset<T, StockReturn$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the StockReturn model
+   */
+  interface StockReturnFieldRefs {
+    readonly id: FieldRef<"StockReturn", 'String'>
+    readonly userId: FieldRef<"StockReturn", 'String'>
+    readonly totalValue: FieldRef<"StockReturn", 'Decimal'>
+    readonly reason: FieldRef<"StockReturn", 'String'>
+    readonly status: FieldRef<"StockReturn", 'ReturnStatus'>
+    readonly destination: FieldRef<"StockReturn", 'ReturnDestination'>
+    readonly createdAt: FieldRef<"StockReturn", 'DateTime'>
+    readonly updatedAt: FieldRef<"StockReturn", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * StockReturn findUnique
+   */
+  export type StockReturnFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the StockReturn
+     */
+    select?: StockReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the StockReturn
+     */
+    omit?: StockReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockReturnInclude<ExtArgs> | null
+    /**
+     * Filter, which StockReturn to fetch.
+     */
+    where: StockReturnWhereUniqueInput
+  }
+
+  /**
+   * StockReturn findUniqueOrThrow
+   */
+  export type StockReturnFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the StockReturn
+     */
+    select?: StockReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the StockReturn
+     */
+    omit?: StockReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockReturnInclude<ExtArgs> | null
+    /**
+     * Filter, which StockReturn to fetch.
+     */
+    where: StockReturnWhereUniqueInput
+  }
+
+  /**
+   * StockReturn findFirst
+   */
+  export type StockReturnFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the StockReturn
+     */
+    select?: StockReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the StockReturn
+     */
+    omit?: StockReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockReturnInclude<ExtArgs> | null
+    /**
+     * Filter, which StockReturn to fetch.
+     */
+    where?: StockReturnWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of StockReturns to fetch.
+     */
+    orderBy?: StockReturnOrderByWithRelationInput | StockReturnOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for StockReturns.
+     */
+    cursor?: StockReturnWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` StockReturns from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` StockReturns.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of StockReturns.
+     */
+    distinct?: StockReturnScalarFieldEnum | StockReturnScalarFieldEnum[]
+  }
+
+  /**
+   * StockReturn findFirstOrThrow
+   */
+  export type StockReturnFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the StockReturn
+     */
+    select?: StockReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the StockReturn
+     */
+    omit?: StockReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockReturnInclude<ExtArgs> | null
+    /**
+     * Filter, which StockReturn to fetch.
+     */
+    where?: StockReturnWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of StockReturns to fetch.
+     */
+    orderBy?: StockReturnOrderByWithRelationInput | StockReturnOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for StockReturns.
+     */
+    cursor?: StockReturnWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` StockReturns from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` StockReturns.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of StockReturns.
+     */
+    distinct?: StockReturnScalarFieldEnum | StockReturnScalarFieldEnum[]
+  }
+
+  /**
+   * StockReturn findMany
+   */
+  export type StockReturnFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the StockReturn
+     */
+    select?: StockReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the StockReturn
+     */
+    omit?: StockReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockReturnInclude<ExtArgs> | null
+    /**
+     * Filter, which StockReturns to fetch.
+     */
+    where?: StockReturnWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of StockReturns to fetch.
+     */
+    orderBy?: StockReturnOrderByWithRelationInput | StockReturnOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing StockReturns.
+     */
+    cursor?: StockReturnWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` StockReturns from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` StockReturns.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of StockReturns.
+     */
+    distinct?: StockReturnScalarFieldEnum | StockReturnScalarFieldEnum[]
+  }
+
+  /**
+   * StockReturn create
+   */
+  export type StockReturnCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the StockReturn
+     */
+    select?: StockReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the StockReturn
+     */
+    omit?: StockReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockReturnInclude<ExtArgs> | null
+    /**
+     * The data needed to create a StockReturn.
+     */
+    data: XOR<StockReturnCreateInput, StockReturnUncheckedCreateInput>
+  }
+
+  /**
+   * StockReturn createMany
+   */
+  export type StockReturnCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many StockReturns.
+     */
+    data: StockReturnCreateManyInput | StockReturnCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * StockReturn createManyAndReturn
+   */
+  export type StockReturnCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the StockReturn
+     */
+    select?: StockReturnSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the StockReturn
+     */
+    omit?: StockReturnOmit<ExtArgs> | null
+    /**
+     * The data used to create many StockReturns.
+     */
+    data: StockReturnCreateManyInput | StockReturnCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockReturnIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * StockReturn update
+   */
+  export type StockReturnUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the StockReturn
+     */
+    select?: StockReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the StockReturn
+     */
+    omit?: StockReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockReturnInclude<ExtArgs> | null
+    /**
+     * The data needed to update a StockReturn.
+     */
+    data: XOR<StockReturnUpdateInput, StockReturnUncheckedUpdateInput>
+    /**
+     * Choose, which StockReturn to update.
+     */
+    where: StockReturnWhereUniqueInput
+  }
+
+  /**
+   * StockReturn updateMany
+   */
+  export type StockReturnUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update StockReturns.
+     */
+    data: XOR<StockReturnUpdateManyMutationInput, StockReturnUncheckedUpdateManyInput>
+    /**
+     * Filter which StockReturns to update
+     */
+    where?: StockReturnWhereInput
+    /**
+     * Limit how many StockReturns to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * StockReturn updateManyAndReturn
+   */
+  export type StockReturnUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the StockReturn
+     */
+    select?: StockReturnSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the StockReturn
+     */
+    omit?: StockReturnOmit<ExtArgs> | null
+    /**
+     * The data used to update StockReturns.
+     */
+    data: XOR<StockReturnUpdateManyMutationInput, StockReturnUncheckedUpdateManyInput>
+    /**
+     * Filter which StockReturns to update
+     */
+    where?: StockReturnWhereInput
+    /**
+     * Limit how many StockReturns to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockReturnIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * StockReturn upsert
+   */
+  export type StockReturnUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the StockReturn
+     */
+    select?: StockReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the StockReturn
+     */
+    omit?: StockReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockReturnInclude<ExtArgs> | null
+    /**
+     * The filter to search for the StockReturn to update in case it exists.
+     */
+    where: StockReturnWhereUniqueInput
+    /**
+     * In case the StockReturn found by the `where` argument doesn't exist, create a new StockReturn with this data.
+     */
+    create: XOR<StockReturnCreateInput, StockReturnUncheckedCreateInput>
+    /**
+     * In case the StockReturn was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<StockReturnUpdateInput, StockReturnUncheckedUpdateInput>
+  }
+
+  /**
+   * StockReturn delete
+   */
+  export type StockReturnDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the StockReturn
+     */
+    select?: StockReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the StockReturn
+     */
+    omit?: StockReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockReturnInclude<ExtArgs> | null
+    /**
+     * Filter which StockReturn to delete.
+     */
+    where: StockReturnWhereUniqueInput
+  }
+
+  /**
+   * StockReturn deleteMany
+   */
+  export type StockReturnDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which StockReturns to delete
+     */
+    where?: StockReturnWhereInput
+    /**
+     * Limit how many StockReturns to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * StockReturn.items
+   */
+  export type StockReturn$itemsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnItem
+     */
+    select?: ReturnItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnItem
+     */
+    omit?: ReturnItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnItemInclude<ExtArgs> | null
+    where?: ReturnItemWhereInput
+    orderBy?: ReturnItemOrderByWithRelationInput | ReturnItemOrderByWithRelationInput[]
+    cursor?: ReturnItemWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ReturnItemScalarFieldEnum | ReturnItemScalarFieldEnum[]
+  }
+
+  /**
+   * StockReturn without action
+   */
+  export type StockReturnDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the StockReturn
+     */
+    select?: StockReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the StockReturn
+     */
+    omit?: StockReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: StockReturnInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model ReturnItem
+   */
+
+  export type AggregateReturnItem = {
+    _count: ReturnItemCountAggregateOutputType | null
+    _avg: ReturnItemAvgAggregateOutputType | null
+    _sum: ReturnItemSumAggregateOutputType | null
+    _min: ReturnItemMinAggregateOutputType | null
+    _max: ReturnItemMaxAggregateOutputType | null
+  }
+
+  export type ReturnItemAvgAggregateOutputType = {
+    quantity: number | null
+  }
+
+  export type ReturnItemSumAggregateOutputType = {
+    quantity: number | null
+  }
+
+  export type ReturnItemMinAggregateOutputType = {
+    id: string | null
+    stockReturnId: string | null
+    itemId: string | null
+    quantity: number | null
+  }
+
+  export type ReturnItemMaxAggregateOutputType = {
+    id: string | null
+    stockReturnId: string | null
+    itemId: string | null
+    quantity: number | null
+  }
+
+  export type ReturnItemCountAggregateOutputType = {
+    id: number
+    stockReturnId: number
+    itemId: number
+    quantity: number
+    _all: number
+  }
+
+
+  export type ReturnItemAvgAggregateInputType = {
+    quantity?: true
+  }
+
+  export type ReturnItemSumAggregateInputType = {
+    quantity?: true
+  }
+
+  export type ReturnItemMinAggregateInputType = {
+    id?: true
+    stockReturnId?: true
+    itemId?: true
+    quantity?: true
+  }
+
+  export type ReturnItemMaxAggregateInputType = {
+    id?: true
+    stockReturnId?: true
+    itemId?: true
+    quantity?: true
+  }
+
+  export type ReturnItemCountAggregateInputType = {
+    id?: true
+    stockReturnId?: true
+    itemId?: true
+    quantity?: true
+    _all?: true
+  }
+
+  export type ReturnItemAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ReturnItem to aggregate.
+     */
+    where?: ReturnItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ReturnItems to fetch.
+     */
+    orderBy?: ReturnItemOrderByWithRelationInput | ReturnItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ReturnItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ReturnItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ReturnItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ReturnItems
+    **/
+    _count?: true | ReturnItemCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: ReturnItemAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: ReturnItemSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ReturnItemMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ReturnItemMaxAggregateInputType
+  }
+
+  export type GetReturnItemAggregateType<T extends ReturnItemAggregateArgs> = {
+        [P in keyof T & keyof AggregateReturnItem]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateReturnItem[P]>
+      : GetScalarType<T[P], AggregateReturnItem[P]>
+  }
+
+
+
+
+  export type ReturnItemGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ReturnItemWhereInput
+    orderBy?: ReturnItemOrderByWithAggregationInput | ReturnItemOrderByWithAggregationInput[]
+    by: ReturnItemScalarFieldEnum[] | ReturnItemScalarFieldEnum
+    having?: ReturnItemScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ReturnItemCountAggregateInputType | true
+    _avg?: ReturnItemAvgAggregateInputType
+    _sum?: ReturnItemSumAggregateInputType
+    _min?: ReturnItemMinAggregateInputType
+    _max?: ReturnItemMaxAggregateInputType
+  }
+
+  export type ReturnItemGroupByOutputType = {
+    id: string
+    stockReturnId: string
+    itemId: string
+    quantity: number
+    _count: ReturnItemCountAggregateOutputType | null
+    _avg: ReturnItemAvgAggregateOutputType | null
+    _sum: ReturnItemSumAggregateOutputType | null
+    _min: ReturnItemMinAggregateOutputType | null
+    _max: ReturnItemMaxAggregateOutputType | null
+  }
+
+  type GetReturnItemGroupByPayload<T extends ReturnItemGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ReturnItemGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ReturnItemGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ReturnItemGroupByOutputType[P]>
+            : GetScalarType<T[P], ReturnItemGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ReturnItemSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    stockReturnId?: boolean
+    itemId?: boolean
+    quantity?: boolean
+    stockReturn?: boolean | StockReturnDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["returnItem"]>
+
+  export type ReturnItemSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    stockReturnId?: boolean
+    itemId?: boolean
+    quantity?: boolean
+    stockReturn?: boolean | StockReturnDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["returnItem"]>
+
+  export type ReturnItemSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    stockReturnId?: boolean
+    itemId?: boolean
+    quantity?: boolean
+    stockReturn?: boolean | StockReturnDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["returnItem"]>
+
+  export type ReturnItemSelectScalar = {
+    id?: boolean
+    stockReturnId?: boolean
+    itemId?: boolean
+    quantity?: boolean
+  }
+
+  export type ReturnItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "stockReturnId" | "itemId" | "quantity", ExtArgs["result"]["returnItem"]>
+  export type ReturnItemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    stockReturn?: boolean | StockReturnDefaultArgs<ExtArgs>
+  }
+  export type ReturnItemIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    stockReturn?: boolean | StockReturnDefaultArgs<ExtArgs>
+  }
+  export type ReturnItemIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    stockReturn?: boolean | StockReturnDefaultArgs<ExtArgs>
+  }
+
+  export type $ReturnItemPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ReturnItem"
+    objects: {
+      stockReturn: Prisma.$StockReturnPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      stockReturnId: string
+      itemId: string
+      quantity: number
+    }, ExtArgs["result"]["returnItem"]>
+    composites: {}
+  }
+
+  type ReturnItemGetPayload<S extends boolean | null | undefined | ReturnItemDefaultArgs> = $Result.GetResult<Prisma.$ReturnItemPayload, S>
+
+  type ReturnItemCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ReturnItemFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ReturnItemCountAggregateInputType | true
+    }
+
+  export interface ReturnItemDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ReturnItem'], meta: { name: 'ReturnItem' } }
+    /**
+     * Find zero or one ReturnItem that matches the filter.
+     * @param {ReturnItemFindUniqueArgs} args - Arguments to find a ReturnItem
+     * @example
+     * // Get one ReturnItem
+     * const returnItem = await prisma.returnItem.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ReturnItemFindUniqueArgs>(args: SelectSubset<T, ReturnItemFindUniqueArgs<ExtArgs>>): Prisma__ReturnItemClient<$Result.GetResult<Prisma.$ReturnItemPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ReturnItem that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ReturnItemFindUniqueOrThrowArgs} args - Arguments to find a ReturnItem
+     * @example
+     * // Get one ReturnItem
+     * const returnItem = await prisma.returnItem.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ReturnItemFindUniqueOrThrowArgs>(args: SelectSubset<T, ReturnItemFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ReturnItemClient<$Result.GetResult<Prisma.$ReturnItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ReturnItem that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnItemFindFirstArgs} args - Arguments to find a ReturnItem
+     * @example
+     * // Get one ReturnItem
+     * const returnItem = await prisma.returnItem.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ReturnItemFindFirstArgs>(args?: SelectSubset<T, ReturnItemFindFirstArgs<ExtArgs>>): Prisma__ReturnItemClient<$Result.GetResult<Prisma.$ReturnItemPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ReturnItem that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnItemFindFirstOrThrowArgs} args - Arguments to find a ReturnItem
+     * @example
+     * // Get one ReturnItem
+     * const returnItem = await prisma.returnItem.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ReturnItemFindFirstOrThrowArgs>(args?: SelectSubset<T, ReturnItemFindFirstOrThrowArgs<ExtArgs>>): Prisma__ReturnItemClient<$Result.GetResult<Prisma.$ReturnItemPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ReturnItems that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnItemFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ReturnItems
+     * const returnItems = await prisma.returnItem.findMany()
+     * 
+     * // Get first 10 ReturnItems
+     * const returnItems = await prisma.returnItem.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const returnItemWithIdOnly = await prisma.returnItem.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ReturnItemFindManyArgs>(args?: SelectSubset<T, ReturnItemFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ReturnItem.
+     * @param {ReturnItemCreateArgs} args - Arguments to create a ReturnItem.
+     * @example
+     * // Create one ReturnItem
+     * const ReturnItem = await prisma.returnItem.create({
+     *   data: {
+     *     // ... data to create a ReturnItem
+     *   }
+     * })
+     * 
+     */
+    create<T extends ReturnItemCreateArgs>(args: SelectSubset<T, ReturnItemCreateArgs<ExtArgs>>): Prisma__ReturnItemClient<$Result.GetResult<Prisma.$ReturnItemPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ReturnItems.
+     * @param {ReturnItemCreateManyArgs} args - Arguments to create many ReturnItems.
+     * @example
+     * // Create many ReturnItems
+     * const returnItem = await prisma.returnItem.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ReturnItemCreateManyArgs>(args?: SelectSubset<T, ReturnItemCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ReturnItems and returns the data saved in the database.
+     * @param {ReturnItemCreateManyAndReturnArgs} args - Arguments to create many ReturnItems.
+     * @example
+     * // Create many ReturnItems
+     * const returnItem = await prisma.returnItem.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ReturnItems and only return the `id`
+     * const returnItemWithIdOnly = await prisma.returnItem.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ReturnItemCreateManyAndReturnArgs>(args?: SelectSubset<T, ReturnItemCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnItemPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ReturnItem.
+     * @param {ReturnItemDeleteArgs} args - Arguments to delete one ReturnItem.
+     * @example
+     * // Delete one ReturnItem
+     * const ReturnItem = await prisma.returnItem.delete({
+     *   where: {
+     *     // ... filter to delete one ReturnItem
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ReturnItemDeleteArgs>(args: SelectSubset<T, ReturnItemDeleteArgs<ExtArgs>>): Prisma__ReturnItemClient<$Result.GetResult<Prisma.$ReturnItemPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ReturnItem.
+     * @param {ReturnItemUpdateArgs} args - Arguments to update one ReturnItem.
+     * @example
+     * // Update one ReturnItem
+     * const returnItem = await prisma.returnItem.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ReturnItemUpdateArgs>(args: SelectSubset<T, ReturnItemUpdateArgs<ExtArgs>>): Prisma__ReturnItemClient<$Result.GetResult<Prisma.$ReturnItemPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ReturnItems.
+     * @param {ReturnItemDeleteManyArgs} args - Arguments to filter ReturnItems to delete.
+     * @example
+     * // Delete a few ReturnItems
+     * const { count } = await prisma.returnItem.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ReturnItemDeleteManyArgs>(args?: SelectSubset<T, ReturnItemDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ReturnItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnItemUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ReturnItems
+     * const returnItem = await prisma.returnItem.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ReturnItemUpdateManyArgs>(args: SelectSubset<T, ReturnItemUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ReturnItems and returns the data updated in the database.
+     * @param {ReturnItemUpdateManyAndReturnArgs} args - Arguments to update many ReturnItems.
+     * @example
+     * // Update many ReturnItems
+     * const returnItem = await prisma.returnItem.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ReturnItems and only return the `id`
+     * const returnItemWithIdOnly = await prisma.returnItem.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ReturnItemUpdateManyAndReturnArgs>(args: SelectSubset<T, ReturnItemUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnItemPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ReturnItem.
+     * @param {ReturnItemUpsertArgs} args - Arguments to update or create a ReturnItem.
+     * @example
+     * // Update or create a ReturnItem
+     * const returnItem = await prisma.returnItem.upsert({
+     *   create: {
+     *     // ... data to create a ReturnItem
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ReturnItem we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ReturnItemUpsertArgs>(args: SelectSubset<T, ReturnItemUpsertArgs<ExtArgs>>): Prisma__ReturnItemClient<$Result.GetResult<Prisma.$ReturnItemPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ReturnItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnItemCountArgs} args - Arguments to filter ReturnItems to count.
+     * @example
+     * // Count the number of ReturnItems
+     * const count = await prisma.returnItem.count({
+     *   where: {
+     *     // ... the filter for the ReturnItems we want to count
+     *   }
+     * })
+    **/
+    count<T extends ReturnItemCountArgs>(
+      args?: Subset<T, ReturnItemCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ReturnItemCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ReturnItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnItemAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ReturnItemAggregateArgs>(args: Subset<T, ReturnItemAggregateArgs>): Prisma.PrismaPromise<GetReturnItemAggregateType<T>>
+
+    /**
+     * Group by ReturnItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnItemGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ReturnItemGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ReturnItemGroupByArgs['orderBy'] }
+        : { orderBy?: ReturnItemGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ReturnItemGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetReturnItemGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ReturnItem model
+   */
+  readonly fields: ReturnItemFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ReturnItem.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ReturnItemClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    stockReturn<T extends StockReturnDefaultArgs<ExtArgs> = {}>(args?: Subset<T, StockReturnDefaultArgs<ExtArgs>>): Prisma__StockReturnClient<$Result.GetResult<Prisma.$StockReturnPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ReturnItem model
+   */
+  interface ReturnItemFieldRefs {
+    readonly id: FieldRef<"ReturnItem", 'String'>
+    readonly stockReturnId: FieldRef<"ReturnItem", 'String'>
+    readonly itemId: FieldRef<"ReturnItem", 'String'>
+    readonly quantity: FieldRef<"ReturnItem", 'Int'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ReturnItem findUnique
+   */
+  export type ReturnItemFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnItem
+     */
+    select?: ReturnItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnItem
+     */
+    omit?: ReturnItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnItemInclude<ExtArgs> | null
+    /**
+     * Filter, which ReturnItem to fetch.
+     */
+    where: ReturnItemWhereUniqueInput
+  }
+
+  /**
+   * ReturnItem findUniqueOrThrow
+   */
+  export type ReturnItemFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnItem
+     */
+    select?: ReturnItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnItem
+     */
+    omit?: ReturnItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnItemInclude<ExtArgs> | null
+    /**
+     * Filter, which ReturnItem to fetch.
+     */
+    where: ReturnItemWhereUniqueInput
+  }
+
+  /**
+   * ReturnItem findFirst
+   */
+  export type ReturnItemFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnItem
+     */
+    select?: ReturnItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnItem
+     */
+    omit?: ReturnItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnItemInclude<ExtArgs> | null
+    /**
+     * Filter, which ReturnItem to fetch.
+     */
+    where?: ReturnItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ReturnItems to fetch.
+     */
+    orderBy?: ReturnItemOrderByWithRelationInput | ReturnItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ReturnItems.
+     */
+    cursor?: ReturnItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ReturnItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ReturnItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ReturnItems.
+     */
+    distinct?: ReturnItemScalarFieldEnum | ReturnItemScalarFieldEnum[]
+  }
+
+  /**
+   * ReturnItem findFirstOrThrow
+   */
+  export type ReturnItemFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnItem
+     */
+    select?: ReturnItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnItem
+     */
+    omit?: ReturnItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnItemInclude<ExtArgs> | null
+    /**
+     * Filter, which ReturnItem to fetch.
+     */
+    where?: ReturnItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ReturnItems to fetch.
+     */
+    orderBy?: ReturnItemOrderByWithRelationInput | ReturnItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ReturnItems.
+     */
+    cursor?: ReturnItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ReturnItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ReturnItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ReturnItems.
+     */
+    distinct?: ReturnItemScalarFieldEnum | ReturnItemScalarFieldEnum[]
+  }
+
+  /**
+   * ReturnItem findMany
+   */
+  export type ReturnItemFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnItem
+     */
+    select?: ReturnItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnItem
+     */
+    omit?: ReturnItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnItemInclude<ExtArgs> | null
+    /**
+     * Filter, which ReturnItems to fetch.
+     */
+    where?: ReturnItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ReturnItems to fetch.
+     */
+    orderBy?: ReturnItemOrderByWithRelationInput | ReturnItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ReturnItems.
+     */
+    cursor?: ReturnItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ReturnItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ReturnItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ReturnItems.
+     */
+    distinct?: ReturnItemScalarFieldEnum | ReturnItemScalarFieldEnum[]
+  }
+
+  /**
+   * ReturnItem create
+   */
+  export type ReturnItemCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnItem
+     */
+    select?: ReturnItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnItem
+     */
+    omit?: ReturnItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnItemInclude<ExtArgs> | null
+    /**
+     * The data needed to create a ReturnItem.
+     */
+    data: XOR<ReturnItemCreateInput, ReturnItemUncheckedCreateInput>
+  }
+
+  /**
+   * ReturnItem createMany
+   */
+  export type ReturnItemCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ReturnItems.
+     */
+    data: ReturnItemCreateManyInput | ReturnItemCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ReturnItem createManyAndReturn
+   */
+  export type ReturnItemCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnItem
+     */
+    select?: ReturnItemSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnItem
+     */
+    omit?: ReturnItemOmit<ExtArgs> | null
+    /**
+     * The data used to create many ReturnItems.
+     */
+    data: ReturnItemCreateManyInput | ReturnItemCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnItemIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ReturnItem update
+   */
+  export type ReturnItemUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnItem
+     */
+    select?: ReturnItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnItem
+     */
+    omit?: ReturnItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnItemInclude<ExtArgs> | null
+    /**
+     * The data needed to update a ReturnItem.
+     */
+    data: XOR<ReturnItemUpdateInput, ReturnItemUncheckedUpdateInput>
+    /**
+     * Choose, which ReturnItem to update.
+     */
+    where: ReturnItemWhereUniqueInput
+  }
+
+  /**
+   * ReturnItem updateMany
+   */
+  export type ReturnItemUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ReturnItems.
+     */
+    data: XOR<ReturnItemUpdateManyMutationInput, ReturnItemUncheckedUpdateManyInput>
+    /**
+     * Filter which ReturnItems to update
+     */
+    where?: ReturnItemWhereInput
+    /**
+     * Limit how many ReturnItems to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ReturnItem updateManyAndReturn
+   */
+  export type ReturnItemUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnItem
+     */
+    select?: ReturnItemSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnItem
+     */
+    omit?: ReturnItemOmit<ExtArgs> | null
+    /**
+     * The data used to update ReturnItems.
+     */
+    data: XOR<ReturnItemUpdateManyMutationInput, ReturnItemUncheckedUpdateManyInput>
+    /**
+     * Filter which ReturnItems to update
+     */
+    where?: ReturnItemWhereInput
+    /**
+     * Limit how many ReturnItems to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnItemIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ReturnItem upsert
+   */
+  export type ReturnItemUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnItem
+     */
+    select?: ReturnItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnItem
+     */
+    omit?: ReturnItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnItemInclude<ExtArgs> | null
+    /**
+     * The filter to search for the ReturnItem to update in case it exists.
+     */
+    where: ReturnItemWhereUniqueInput
+    /**
+     * In case the ReturnItem found by the `where` argument doesn't exist, create a new ReturnItem with this data.
+     */
+    create: XOR<ReturnItemCreateInput, ReturnItemUncheckedCreateInput>
+    /**
+     * In case the ReturnItem was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ReturnItemUpdateInput, ReturnItemUncheckedUpdateInput>
+  }
+
+  /**
+   * ReturnItem delete
+   */
+  export type ReturnItemDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnItem
+     */
+    select?: ReturnItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnItem
+     */
+    omit?: ReturnItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnItemInclude<ExtArgs> | null
+    /**
+     * Filter which ReturnItem to delete.
+     */
+    where: ReturnItemWhereUniqueInput
+  }
+
+  /**
+   * ReturnItem deleteMany
+   */
+  export type ReturnItemDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ReturnItems to delete
+     */
+    where?: ReturnItemWhereInput
+    /**
+     * Limit how many ReturnItems to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ReturnItem without action
+   */
+  export type ReturnItemDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnItem
+     */
+    select?: ReturnItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnItem
+     */
+    omit?: ReturnItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnItemInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -14726,6 +17251,30 @@ export namespace Prisma {
   export type LedgerEntryScalarFieldEnum = (typeof LedgerEntryScalarFieldEnum)[keyof typeof LedgerEntryScalarFieldEnum]
 
 
+  export const StockReturnScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    totalValue: 'totalValue',
+    reason: 'reason',
+    status: 'status',
+    destination: 'destination',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type StockReturnScalarFieldEnum = (typeof StockReturnScalarFieldEnum)[keyof typeof StockReturnScalarFieldEnum]
+
+
+  export const ReturnItemScalarFieldEnum: {
+    id: 'id',
+    stockReturnId: 'stockReturnId',
+    itemId: 'itemId',
+    quantity: 'quantity'
+  };
+
+  export type ReturnItemScalarFieldEnum = (typeof ReturnItemScalarFieldEnum)[keyof typeof ReturnItemScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
@@ -14875,6 +17424,34 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'ReturnStatus'
+   */
+  export type EnumReturnStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ReturnStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'ReturnStatus[]'
+   */
+  export type ListEnumReturnStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ReturnStatus[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'ReturnDestination'
+   */
+  export type EnumReturnDestinationFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ReturnDestination'>
+    
+
+
+  /**
+   * Reference to a field of type 'ReturnDestination[]'
+   */
+  export type ListEnumReturnDestinationFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ReturnDestination[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Float'
    */
   export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -14909,6 +17486,7 @@ export namespace Prisma {
     stockIssusances?: StockIssuanceListRelationFilter
     paymentProofs?: PaymentProofListRelationFilter
     sales?: SaleListRelationFilter
+    returns?: StockReturnListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -14926,6 +17504,7 @@ export namespace Prisma {
     stockIssusances?: StockIssuanceOrderByRelationAggregateInput
     paymentProofs?: PaymentProofOrderByRelationAggregateInput
     sales?: SaleOrderByRelationAggregateInput
+    returns?: StockReturnOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -14946,6 +17525,7 @@ export namespace Prisma {
     stockIssusances?: StockIssuanceListRelationFilter
     paymentProofs?: PaymentProofListRelationFilter
     sales?: SaleListRelationFilter
+    returns?: StockReturnListRelationFilter
   }, "id" | "username">
 
   export type UserOrderByWithAggregationInput = {
@@ -15694,6 +18274,133 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"LedgerEntry"> | Date | string
   }
 
+  export type StockReturnWhereInput = {
+    AND?: StockReturnWhereInput | StockReturnWhereInput[]
+    OR?: StockReturnWhereInput[]
+    NOT?: StockReturnWhereInput | StockReturnWhereInput[]
+    id?: StringFilter<"StockReturn"> | string
+    userId?: StringFilter<"StockReturn"> | string
+    totalValue?: DecimalFilter<"StockReturn"> | Decimal | DecimalJsLike | number | string
+    reason?: StringFilter<"StockReturn"> | string
+    status?: EnumReturnStatusFilter<"StockReturn"> | $Enums.ReturnStatus
+    destination?: EnumReturnDestinationNullableFilter<"StockReturn"> | $Enums.ReturnDestination | null
+    createdAt?: DateTimeFilter<"StockReturn"> | Date | string
+    updatedAt?: DateTimeFilter<"StockReturn"> | Date | string
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+    items?: ReturnItemListRelationFilter
+  }
+
+  export type StockReturnOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    totalValue?: SortOrder
+    reason?: SortOrder
+    status?: SortOrder
+    destination?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    user?: UserOrderByWithRelationInput
+    items?: ReturnItemOrderByRelationAggregateInput
+  }
+
+  export type StockReturnWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: StockReturnWhereInput | StockReturnWhereInput[]
+    OR?: StockReturnWhereInput[]
+    NOT?: StockReturnWhereInput | StockReturnWhereInput[]
+    userId?: StringFilter<"StockReturn"> | string
+    totalValue?: DecimalFilter<"StockReturn"> | Decimal | DecimalJsLike | number | string
+    reason?: StringFilter<"StockReturn"> | string
+    status?: EnumReturnStatusFilter<"StockReturn"> | $Enums.ReturnStatus
+    destination?: EnumReturnDestinationNullableFilter<"StockReturn"> | $Enums.ReturnDestination | null
+    createdAt?: DateTimeFilter<"StockReturn"> | Date | string
+    updatedAt?: DateTimeFilter<"StockReturn"> | Date | string
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+    items?: ReturnItemListRelationFilter
+  }, "id">
+
+  export type StockReturnOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    totalValue?: SortOrder
+    reason?: SortOrder
+    status?: SortOrder
+    destination?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: StockReturnCountOrderByAggregateInput
+    _avg?: StockReturnAvgOrderByAggregateInput
+    _max?: StockReturnMaxOrderByAggregateInput
+    _min?: StockReturnMinOrderByAggregateInput
+    _sum?: StockReturnSumOrderByAggregateInput
+  }
+
+  export type StockReturnScalarWhereWithAggregatesInput = {
+    AND?: StockReturnScalarWhereWithAggregatesInput | StockReturnScalarWhereWithAggregatesInput[]
+    OR?: StockReturnScalarWhereWithAggregatesInput[]
+    NOT?: StockReturnScalarWhereWithAggregatesInput | StockReturnScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"StockReturn"> | string
+    userId?: StringWithAggregatesFilter<"StockReturn"> | string
+    totalValue?: DecimalWithAggregatesFilter<"StockReturn"> | Decimal | DecimalJsLike | number | string
+    reason?: StringWithAggregatesFilter<"StockReturn"> | string
+    status?: EnumReturnStatusWithAggregatesFilter<"StockReturn"> | $Enums.ReturnStatus
+    destination?: EnumReturnDestinationNullableWithAggregatesFilter<"StockReturn"> | $Enums.ReturnDestination | null
+    createdAt?: DateTimeWithAggregatesFilter<"StockReturn"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"StockReturn"> | Date | string
+  }
+
+  export type ReturnItemWhereInput = {
+    AND?: ReturnItemWhereInput | ReturnItemWhereInput[]
+    OR?: ReturnItemWhereInput[]
+    NOT?: ReturnItemWhereInput | ReturnItemWhereInput[]
+    id?: StringFilter<"ReturnItem"> | string
+    stockReturnId?: StringFilter<"ReturnItem"> | string
+    itemId?: StringFilter<"ReturnItem"> | string
+    quantity?: IntFilter<"ReturnItem"> | number
+    stockReturn?: XOR<StockReturnScalarRelationFilter, StockReturnWhereInput>
+  }
+
+  export type ReturnItemOrderByWithRelationInput = {
+    id?: SortOrder
+    stockReturnId?: SortOrder
+    itemId?: SortOrder
+    quantity?: SortOrder
+    stockReturn?: StockReturnOrderByWithRelationInput
+  }
+
+  export type ReturnItemWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: ReturnItemWhereInput | ReturnItemWhereInput[]
+    OR?: ReturnItemWhereInput[]
+    NOT?: ReturnItemWhereInput | ReturnItemWhereInput[]
+    stockReturnId?: StringFilter<"ReturnItem"> | string
+    itemId?: StringFilter<"ReturnItem"> | string
+    quantity?: IntFilter<"ReturnItem"> | number
+    stockReturn?: XOR<StockReturnScalarRelationFilter, StockReturnWhereInput>
+  }, "id">
+
+  export type ReturnItemOrderByWithAggregationInput = {
+    id?: SortOrder
+    stockReturnId?: SortOrder
+    itemId?: SortOrder
+    quantity?: SortOrder
+    _count?: ReturnItemCountOrderByAggregateInput
+    _avg?: ReturnItemAvgOrderByAggregateInput
+    _max?: ReturnItemMaxOrderByAggregateInput
+    _min?: ReturnItemMinOrderByAggregateInput
+    _sum?: ReturnItemSumOrderByAggregateInput
+  }
+
+  export type ReturnItemScalarWhereWithAggregatesInput = {
+    AND?: ReturnItemScalarWhereWithAggregatesInput | ReturnItemScalarWhereWithAggregatesInput[]
+    OR?: ReturnItemScalarWhereWithAggregatesInput[]
+    NOT?: ReturnItemScalarWhereWithAggregatesInput | ReturnItemScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ReturnItem"> | string
+    stockReturnId?: StringWithAggregatesFilter<"ReturnItem"> | string
+    itemId?: StringWithAggregatesFilter<"ReturnItem"> | string
+    quantity?: IntWithAggregatesFilter<"ReturnItem"> | number
+  }
+
   export type UserCreateInput = {
     id?: string
     fullName: string
@@ -15709,6 +18416,7 @@ export namespace Prisma {
     stockIssusances?: StockIssuanceCreateNestedManyWithoutUserInput
     paymentProofs?: PaymentProofCreateNestedManyWithoutUserInput
     sales?: SaleCreateNestedManyWithoutSalesRepInput
+    returns?: StockReturnCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -15726,6 +18434,7 @@ export namespace Prisma {
     stockIssusances?: StockIssuanceUncheckedCreateNestedManyWithoutUserInput
     paymentProofs?: PaymentProofUncheckedCreateNestedManyWithoutUserInput
     sales?: SaleUncheckedCreateNestedManyWithoutSalesRepInput
+    returns?: StockReturnUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
@@ -15743,6 +18452,7 @@ export namespace Prisma {
     stockIssusances?: StockIssuanceUpdateManyWithoutUserNestedInput
     paymentProofs?: PaymentProofUpdateManyWithoutUserNestedInput
     sales?: SaleUpdateManyWithoutSalesRepNestedInput
+    returns?: StockReturnUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -15760,6 +18470,7 @@ export namespace Prisma {
     stockIssusances?: StockIssuanceUncheckedUpdateManyWithoutUserNestedInput
     paymentProofs?: PaymentProofUncheckedUpdateManyWithoutUserNestedInput
     sales?: SaleUncheckedUpdateManyWithoutSalesRepNestedInput
+    returns?: StockReturnUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -16565,6 +19276,134 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type StockReturnCreateInput = {
+    id?: string
+    totalValue: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.ReturnStatus
+    destination?: $Enums.ReturnDestination | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user: UserCreateNestedOneWithoutReturnsInput
+    items?: ReturnItemCreateNestedManyWithoutStockReturnInput
+  }
+
+  export type StockReturnUncheckedCreateInput = {
+    id?: string
+    userId: string
+    totalValue: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.ReturnStatus
+    destination?: $Enums.ReturnDestination | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    items?: ReturnItemUncheckedCreateNestedManyWithoutStockReturnInput
+  }
+
+  export type StockReturnUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    totalValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumReturnStatusFieldUpdateOperationsInput | $Enums.ReturnStatus
+    destination?: NullableEnumReturnDestinationFieldUpdateOperationsInput | $Enums.ReturnDestination | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutReturnsNestedInput
+    items?: ReturnItemUpdateManyWithoutStockReturnNestedInput
+  }
+
+  export type StockReturnUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    totalValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumReturnStatusFieldUpdateOperationsInput | $Enums.ReturnStatus
+    destination?: NullableEnumReturnDestinationFieldUpdateOperationsInput | $Enums.ReturnDestination | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    items?: ReturnItemUncheckedUpdateManyWithoutStockReturnNestedInput
+  }
+
+  export type StockReturnCreateManyInput = {
+    id?: string
+    userId: string
+    totalValue: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.ReturnStatus
+    destination?: $Enums.ReturnDestination | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type StockReturnUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    totalValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumReturnStatusFieldUpdateOperationsInput | $Enums.ReturnStatus
+    destination?: NullableEnumReturnDestinationFieldUpdateOperationsInput | $Enums.ReturnDestination | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type StockReturnUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    totalValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumReturnStatusFieldUpdateOperationsInput | $Enums.ReturnStatus
+    destination?: NullableEnumReturnDestinationFieldUpdateOperationsInput | $Enums.ReturnDestination | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ReturnItemCreateInput = {
+    id?: string
+    itemId: string
+    quantity: number
+    stockReturn: StockReturnCreateNestedOneWithoutItemsInput
+  }
+
+  export type ReturnItemUncheckedCreateInput = {
+    id?: string
+    stockReturnId: string
+    itemId: string
+    quantity: number
+  }
+
+  export type ReturnItemUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    itemId?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+    stockReturn?: StockReturnUpdateOneRequiredWithoutItemsNestedInput
+  }
+
+  export type ReturnItemUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    stockReturnId?: StringFieldUpdateOperationsInput | string
+    itemId?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type ReturnItemCreateManyInput = {
+    id?: string
+    stockReturnId: string
+    itemId: string
+    quantity: number
+  }
+
+  export type ReturnItemUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    itemId?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type ReturnItemUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    stockReturnId?: StringFieldUpdateOperationsInput | string
+    itemId?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -16632,6 +19471,12 @@ export namespace Prisma {
     none?: SaleWhereInput
   }
 
+  export type StockReturnListRelationFilter = {
+    every?: StockReturnWhereInput
+    some?: StockReturnWhereInput
+    none?: StockReturnWhereInput
+  }
+
   export type StockIssuanceOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -16641,6 +19486,10 @@ export namespace Prisma {
   }
 
   export type SaleOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type StockReturnOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -17320,6 +20169,125 @@ export namespace Prisma {
     _max?: NestedEnumAuditEntityFilter<$PrismaModel>
   }
 
+  export type EnumReturnStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.ReturnStatus | EnumReturnStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ReturnStatus[] | ListEnumReturnStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ReturnStatus[] | ListEnumReturnStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumReturnStatusFilter<$PrismaModel> | $Enums.ReturnStatus
+  }
+
+  export type EnumReturnDestinationNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.ReturnDestination | EnumReturnDestinationFieldRefInput<$PrismaModel> | null
+    in?: $Enums.ReturnDestination[] | ListEnumReturnDestinationFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.ReturnDestination[] | ListEnumReturnDestinationFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumReturnDestinationNullableFilter<$PrismaModel> | $Enums.ReturnDestination | null
+  }
+
+  export type ReturnItemListRelationFilter = {
+    every?: ReturnItemWhereInput
+    some?: ReturnItemWhereInput
+    none?: ReturnItemWhereInput
+  }
+
+  export type ReturnItemOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type StockReturnCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    totalValue?: SortOrder
+    reason?: SortOrder
+    status?: SortOrder
+    destination?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type StockReturnAvgOrderByAggregateInput = {
+    totalValue?: SortOrder
+  }
+
+  export type StockReturnMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    totalValue?: SortOrder
+    reason?: SortOrder
+    status?: SortOrder
+    destination?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type StockReturnMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    totalValue?: SortOrder
+    reason?: SortOrder
+    status?: SortOrder
+    destination?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type StockReturnSumOrderByAggregateInput = {
+    totalValue?: SortOrder
+  }
+
+  export type EnumReturnStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ReturnStatus | EnumReturnStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ReturnStatus[] | ListEnumReturnStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ReturnStatus[] | ListEnumReturnStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumReturnStatusWithAggregatesFilter<$PrismaModel> | $Enums.ReturnStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumReturnStatusFilter<$PrismaModel>
+    _max?: NestedEnumReturnStatusFilter<$PrismaModel>
+  }
+
+  export type EnumReturnDestinationNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ReturnDestination | EnumReturnDestinationFieldRefInput<$PrismaModel> | null
+    in?: $Enums.ReturnDestination[] | ListEnumReturnDestinationFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.ReturnDestination[] | ListEnumReturnDestinationFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumReturnDestinationNullableWithAggregatesFilter<$PrismaModel> | $Enums.ReturnDestination | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumReturnDestinationNullableFilter<$PrismaModel>
+    _max?: NestedEnumReturnDestinationNullableFilter<$PrismaModel>
+  }
+
+  export type StockReturnScalarRelationFilter = {
+    is?: StockReturnWhereInput
+    isNot?: StockReturnWhereInput
+  }
+
+  export type ReturnItemCountOrderByAggregateInput = {
+    id?: SortOrder
+    stockReturnId?: SortOrder
+    itemId?: SortOrder
+    quantity?: SortOrder
+  }
+
+  export type ReturnItemAvgOrderByAggregateInput = {
+    quantity?: SortOrder
+  }
+
+  export type ReturnItemMaxOrderByAggregateInput = {
+    id?: SortOrder
+    stockReturnId?: SortOrder
+    itemId?: SortOrder
+    quantity?: SortOrder
+  }
+
+  export type ReturnItemMinOrderByAggregateInput = {
+    id?: SortOrder
+    stockReturnId?: SortOrder
+    itemId?: SortOrder
+    quantity?: SortOrder
+  }
+
+  export type ReturnItemSumOrderByAggregateInput = {
+    quantity?: SortOrder
+  }
+
   export type StockIssuanceCreateNestedManyWithoutUserInput = {
     create?: XOR<StockIssuanceCreateWithoutUserInput, StockIssuanceUncheckedCreateWithoutUserInput> | StockIssuanceCreateWithoutUserInput[] | StockIssuanceUncheckedCreateWithoutUserInput[]
     connectOrCreate?: StockIssuanceCreateOrConnectWithoutUserInput | StockIssuanceCreateOrConnectWithoutUserInput[]
@@ -17341,6 +20309,13 @@ export namespace Prisma {
     connect?: SaleWhereUniqueInput | SaleWhereUniqueInput[]
   }
 
+  export type StockReturnCreateNestedManyWithoutUserInput = {
+    create?: XOR<StockReturnCreateWithoutUserInput, StockReturnUncheckedCreateWithoutUserInput> | StockReturnCreateWithoutUserInput[] | StockReturnUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: StockReturnCreateOrConnectWithoutUserInput | StockReturnCreateOrConnectWithoutUserInput[]
+    createMany?: StockReturnCreateManyUserInputEnvelope
+    connect?: StockReturnWhereUniqueInput | StockReturnWhereUniqueInput[]
+  }
+
   export type StockIssuanceUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<StockIssuanceCreateWithoutUserInput, StockIssuanceUncheckedCreateWithoutUserInput> | StockIssuanceCreateWithoutUserInput[] | StockIssuanceUncheckedCreateWithoutUserInput[]
     connectOrCreate?: StockIssuanceCreateOrConnectWithoutUserInput | StockIssuanceCreateOrConnectWithoutUserInput[]
@@ -17360,6 +20335,13 @@ export namespace Prisma {
     connectOrCreate?: SaleCreateOrConnectWithoutSalesRepInput | SaleCreateOrConnectWithoutSalesRepInput[]
     createMany?: SaleCreateManySalesRepInputEnvelope
     connect?: SaleWhereUniqueInput | SaleWhereUniqueInput[]
+  }
+
+  export type StockReturnUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<StockReturnCreateWithoutUserInput, StockReturnUncheckedCreateWithoutUserInput> | StockReturnCreateWithoutUserInput[] | StockReturnUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: StockReturnCreateOrConnectWithoutUserInput | StockReturnCreateOrConnectWithoutUserInput[]
+    createMany?: StockReturnCreateManyUserInputEnvelope
+    connect?: StockReturnWhereUniqueInput | StockReturnWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -17428,6 +20410,20 @@ export namespace Prisma {
     deleteMany?: SaleScalarWhereInput | SaleScalarWhereInput[]
   }
 
+  export type StockReturnUpdateManyWithoutUserNestedInput = {
+    create?: XOR<StockReturnCreateWithoutUserInput, StockReturnUncheckedCreateWithoutUserInput> | StockReturnCreateWithoutUserInput[] | StockReturnUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: StockReturnCreateOrConnectWithoutUserInput | StockReturnCreateOrConnectWithoutUserInput[]
+    upsert?: StockReturnUpsertWithWhereUniqueWithoutUserInput | StockReturnUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: StockReturnCreateManyUserInputEnvelope
+    set?: StockReturnWhereUniqueInput | StockReturnWhereUniqueInput[]
+    disconnect?: StockReturnWhereUniqueInput | StockReturnWhereUniqueInput[]
+    delete?: StockReturnWhereUniqueInput | StockReturnWhereUniqueInput[]
+    connect?: StockReturnWhereUniqueInput | StockReturnWhereUniqueInput[]
+    update?: StockReturnUpdateWithWhereUniqueWithoutUserInput | StockReturnUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: StockReturnUpdateManyWithWhereWithoutUserInput | StockReturnUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: StockReturnScalarWhereInput | StockReturnScalarWhereInput[]
+  }
+
   export type StockIssuanceUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<StockIssuanceCreateWithoutUserInput, StockIssuanceUncheckedCreateWithoutUserInput> | StockIssuanceCreateWithoutUserInput[] | StockIssuanceUncheckedCreateWithoutUserInput[]
     connectOrCreate?: StockIssuanceCreateOrConnectWithoutUserInput | StockIssuanceCreateOrConnectWithoutUserInput[]
@@ -17468,6 +20464,20 @@ export namespace Prisma {
     update?: SaleUpdateWithWhereUniqueWithoutSalesRepInput | SaleUpdateWithWhereUniqueWithoutSalesRepInput[]
     updateMany?: SaleUpdateManyWithWhereWithoutSalesRepInput | SaleUpdateManyWithWhereWithoutSalesRepInput[]
     deleteMany?: SaleScalarWhereInput | SaleScalarWhereInput[]
+  }
+
+  export type StockReturnUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<StockReturnCreateWithoutUserInput, StockReturnUncheckedCreateWithoutUserInput> | StockReturnCreateWithoutUserInput[] | StockReturnUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: StockReturnCreateOrConnectWithoutUserInput | StockReturnCreateOrConnectWithoutUserInput[]
+    upsert?: StockReturnUpsertWithWhereUniqueWithoutUserInput | StockReturnUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: StockReturnCreateManyUserInputEnvelope
+    set?: StockReturnWhereUniqueInput | StockReturnWhereUniqueInput[]
+    disconnect?: StockReturnWhereUniqueInput | StockReturnWhereUniqueInput[]
+    delete?: StockReturnWhereUniqueInput | StockReturnWhereUniqueInput[]
+    connect?: StockReturnWhereUniqueInput | StockReturnWhereUniqueInput[]
+    update?: StockReturnUpdateWithWhereUniqueWithoutUserInput | StockReturnUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: StockReturnUpdateManyWithWhereWithoutUserInput | StockReturnUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: StockReturnScalarWhereInput | StockReturnScalarWhereInput[]
   }
 
   export type InventoryBatchCreateNestedManyWithoutSupplierInput = {
@@ -17816,6 +20826,84 @@ export namespace Prisma {
     set?: $Enums.AuditEntity
   }
 
+  export type UserCreateNestedOneWithoutReturnsInput = {
+    create?: XOR<UserCreateWithoutReturnsInput, UserUncheckedCreateWithoutReturnsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutReturnsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type ReturnItemCreateNestedManyWithoutStockReturnInput = {
+    create?: XOR<ReturnItemCreateWithoutStockReturnInput, ReturnItemUncheckedCreateWithoutStockReturnInput> | ReturnItemCreateWithoutStockReturnInput[] | ReturnItemUncheckedCreateWithoutStockReturnInput[]
+    connectOrCreate?: ReturnItemCreateOrConnectWithoutStockReturnInput | ReturnItemCreateOrConnectWithoutStockReturnInput[]
+    createMany?: ReturnItemCreateManyStockReturnInputEnvelope
+    connect?: ReturnItemWhereUniqueInput | ReturnItemWhereUniqueInput[]
+  }
+
+  export type ReturnItemUncheckedCreateNestedManyWithoutStockReturnInput = {
+    create?: XOR<ReturnItemCreateWithoutStockReturnInput, ReturnItemUncheckedCreateWithoutStockReturnInput> | ReturnItemCreateWithoutStockReturnInput[] | ReturnItemUncheckedCreateWithoutStockReturnInput[]
+    connectOrCreate?: ReturnItemCreateOrConnectWithoutStockReturnInput | ReturnItemCreateOrConnectWithoutStockReturnInput[]
+    createMany?: ReturnItemCreateManyStockReturnInputEnvelope
+    connect?: ReturnItemWhereUniqueInput | ReturnItemWhereUniqueInput[]
+  }
+
+  export type EnumReturnStatusFieldUpdateOperationsInput = {
+    set?: $Enums.ReturnStatus
+  }
+
+  export type NullableEnumReturnDestinationFieldUpdateOperationsInput = {
+    set?: $Enums.ReturnDestination | null
+  }
+
+  export type UserUpdateOneRequiredWithoutReturnsNestedInput = {
+    create?: XOR<UserCreateWithoutReturnsInput, UserUncheckedCreateWithoutReturnsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutReturnsInput
+    upsert?: UserUpsertWithoutReturnsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutReturnsInput, UserUpdateWithoutReturnsInput>, UserUncheckedUpdateWithoutReturnsInput>
+  }
+
+  export type ReturnItemUpdateManyWithoutStockReturnNestedInput = {
+    create?: XOR<ReturnItemCreateWithoutStockReturnInput, ReturnItemUncheckedCreateWithoutStockReturnInput> | ReturnItemCreateWithoutStockReturnInput[] | ReturnItemUncheckedCreateWithoutStockReturnInput[]
+    connectOrCreate?: ReturnItemCreateOrConnectWithoutStockReturnInput | ReturnItemCreateOrConnectWithoutStockReturnInput[]
+    upsert?: ReturnItemUpsertWithWhereUniqueWithoutStockReturnInput | ReturnItemUpsertWithWhereUniqueWithoutStockReturnInput[]
+    createMany?: ReturnItemCreateManyStockReturnInputEnvelope
+    set?: ReturnItemWhereUniqueInput | ReturnItemWhereUniqueInput[]
+    disconnect?: ReturnItemWhereUniqueInput | ReturnItemWhereUniqueInput[]
+    delete?: ReturnItemWhereUniqueInput | ReturnItemWhereUniqueInput[]
+    connect?: ReturnItemWhereUniqueInput | ReturnItemWhereUniqueInput[]
+    update?: ReturnItemUpdateWithWhereUniqueWithoutStockReturnInput | ReturnItemUpdateWithWhereUniqueWithoutStockReturnInput[]
+    updateMany?: ReturnItemUpdateManyWithWhereWithoutStockReturnInput | ReturnItemUpdateManyWithWhereWithoutStockReturnInput[]
+    deleteMany?: ReturnItemScalarWhereInput | ReturnItemScalarWhereInput[]
+  }
+
+  export type ReturnItemUncheckedUpdateManyWithoutStockReturnNestedInput = {
+    create?: XOR<ReturnItemCreateWithoutStockReturnInput, ReturnItemUncheckedCreateWithoutStockReturnInput> | ReturnItemCreateWithoutStockReturnInput[] | ReturnItemUncheckedCreateWithoutStockReturnInput[]
+    connectOrCreate?: ReturnItemCreateOrConnectWithoutStockReturnInput | ReturnItemCreateOrConnectWithoutStockReturnInput[]
+    upsert?: ReturnItemUpsertWithWhereUniqueWithoutStockReturnInput | ReturnItemUpsertWithWhereUniqueWithoutStockReturnInput[]
+    createMany?: ReturnItemCreateManyStockReturnInputEnvelope
+    set?: ReturnItemWhereUniqueInput | ReturnItemWhereUniqueInput[]
+    disconnect?: ReturnItemWhereUniqueInput | ReturnItemWhereUniqueInput[]
+    delete?: ReturnItemWhereUniqueInput | ReturnItemWhereUniqueInput[]
+    connect?: ReturnItemWhereUniqueInput | ReturnItemWhereUniqueInput[]
+    update?: ReturnItemUpdateWithWhereUniqueWithoutStockReturnInput | ReturnItemUpdateWithWhereUniqueWithoutStockReturnInput[]
+    updateMany?: ReturnItemUpdateManyWithWhereWithoutStockReturnInput | ReturnItemUpdateManyWithWhereWithoutStockReturnInput[]
+    deleteMany?: ReturnItemScalarWhereInput | ReturnItemScalarWhereInput[]
+  }
+
+  export type StockReturnCreateNestedOneWithoutItemsInput = {
+    create?: XOR<StockReturnCreateWithoutItemsInput, StockReturnUncheckedCreateWithoutItemsInput>
+    connectOrCreate?: StockReturnCreateOrConnectWithoutItemsInput
+    connect?: StockReturnWhereUniqueInput
+  }
+
+  export type StockReturnUpdateOneRequiredWithoutItemsNestedInput = {
+    create?: XOR<StockReturnCreateWithoutItemsInput, StockReturnUncheckedCreateWithoutItemsInput>
+    connectOrCreate?: StockReturnCreateOrConnectWithoutItemsInput
+    upsert?: StockReturnUpsertWithoutItemsInput
+    connect?: StockReturnWhereUniqueInput
+    update?: XOR<XOR<StockReturnUpdateToOneWithWhereWithoutItemsInput, StockReturnUpdateWithoutItemsInput>, StockReturnUncheckedUpdateWithoutItemsInput>
+  }
+
   export type NestedStringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -18060,6 +21148,40 @@ export namespace Prisma {
     _max?: NestedEnumAuditEntityFilter<$PrismaModel>
   }
 
+  export type NestedEnumReturnStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.ReturnStatus | EnumReturnStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ReturnStatus[] | ListEnumReturnStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ReturnStatus[] | ListEnumReturnStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumReturnStatusFilter<$PrismaModel> | $Enums.ReturnStatus
+  }
+
+  export type NestedEnumReturnDestinationNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.ReturnDestination | EnumReturnDestinationFieldRefInput<$PrismaModel> | null
+    in?: $Enums.ReturnDestination[] | ListEnumReturnDestinationFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.ReturnDestination[] | ListEnumReturnDestinationFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumReturnDestinationNullableFilter<$PrismaModel> | $Enums.ReturnDestination | null
+  }
+
+  export type NestedEnumReturnStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ReturnStatus | EnumReturnStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ReturnStatus[] | ListEnumReturnStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ReturnStatus[] | ListEnumReturnStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumReturnStatusWithAggregatesFilter<$PrismaModel> | $Enums.ReturnStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumReturnStatusFilter<$PrismaModel>
+    _max?: NestedEnumReturnStatusFilter<$PrismaModel>
+  }
+
+  export type NestedEnumReturnDestinationNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ReturnDestination | EnumReturnDestinationFieldRefInput<$PrismaModel> | null
+    in?: $Enums.ReturnDestination[] | ListEnumReturnDestinationFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.ReturnDestination[] | ListEnumReturnDestinationFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumReturnDestinationNullableWithAggregatesFilter<$PrismaModel> | $Enums.ReturnDestination | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumReturnDestinationNullableFilter<$PrismaModel>
+    _max?: NestedEnumReturnDestinationNullableFilter<$PrismaModel>
+  }
+
   export type StockIssuanceCreateWithoutUserInput = {
     id?: string
     status?: $Enums.IssuanceStatus
@@ -18158,6 +21280,38 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type StockReturnCreateWithoutUserInput = {
+    id?: string
+    totalValue: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.ReturnStatus
+    destination?: $Enums.ReturnDestination | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    items?: ReturnItemCreateNestedManyWithoutStockReturnInput
+  }
+
+  export type StockReturnUncheckedCreateWithoutUserInput = {
+    id?: string
+    totalValue: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.ReturnStatus
+    destination?: $Enums.ReturnDestination | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    items?: ReturnItemUncheckedCreateNestedManyWithoutStockReturnInput
+  }
+
+  export type StockReturnCreateOrConnectWithoutUserInput = {
+    where: StockReturnWhereUniqueInput
+    create: XOR<StockReturnCreateWithoutUserInput, StockReturnUncheckedCreateWithoutUserInput>
+  }
+
+  export type StockReturnCreateManyUserInputEnvelope = {
+    data: StockReturnCreateManyUserInput | StockReturnCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
   export type StockIssuanceUpsertWithWhereUniqueWithoutUserInput = {
     where: StockIssuanceWhereUniqueInput
     update: XOR<StockIssuanceUpdateWithoutUserInput, StockIssuanceUncheckedUpdateWithoutUserInput>
@@ -18249,6 +21403,36 @@ export namespace Prisma {
     totalAmount?: DecimalFilter<"Sale"> | Decimal | DecimalJsLike | number | string
     paymentMethod?: StringFilter<"Sale"> | string
     createdAt?: DateTimeFilter<"Sale"> | Date | string
+  }
+
+  export type StockReturnUpsertWithWhereUniqueWithoutUserInput = {
+    where: StockReturnWhereUniqueInput
+    update: XOR<StockReturnUpdateWithoutUserInput, StockReturnUncheckedUpdateWithoutUserInput>
+    create: XOR<StockReturnCreateWithoutUserInput, StockReturnUncheckedCreateWithoutUserInput>
+  }
+
+  export type StockReturnUpdateWithWhereUniqueWithoutUserInput = {
+    where: StockReturnWhereUniqueInput
+    data: XOR<StockReturnUpdateWithoutUserInput, StockReturnUncheckedUpdateWithoutUserInput>
+  }
+
+  export type StockReturnUpdateManyWithWhereWithoutUserInput = {
+    where: StockReturnScalarWhereInput
+    data: XOR<StockReturnUpdateManyMutationInput, StockReturnUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type StockReturnScalarWhereInput = {
+    AND?: StockReturnScalarWhereInput | StockReturnScalarWhereInput[]
+    OR?: StockReturnScalarWhereInput[]
+    NOT?: StockReturnScalarWhereInput | StockReturnScalarWhereInput[]
+    id?: StringFilter<"StockReturn"> | string
+    userId?: StringFilter<"StockReturn"> | string
+    totalValue?: DecimalFilter<"StockReturn"> | Decimal | DecimalJsLike | number | string
+    reason?: StringFilter<"StockReturn"> | string
+    status?: EnumReturnStatusFilter<"StockReturn"> | $Enums.ReturnStatus
+    destination?: EnumReturnDestinationNullableFilter<"StockReturn"> | $Enums.ReturnDestination | null
+    createdAt?: DateTimeFilter<"StockReturn"> | Date | string
+    updatedAt?: DateTimeFilter<"StockReturn"> | Date | string
   }
 
   export type InventoryBatchCreateWithoutSupplierInput = {
@@ -18576,6 +21760,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     paymentProofs?: PaymentProofCreateNestedManyWithoutUserInput
     sales?: SaleCreateNestedManyWithoutSalesRepInput
+    returns?: StockReturnCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutStockIssusancesInput = {
@@ -18592,6 +21777,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     paymentProofs?: PaymentProofUncheckedCreateNestedManyWithoutUserInput
     sales?: SaleUncheckedCreateNestedManyWithoutSalesRepInput
+    returns?: StockReturnUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutStockIssusancesInput = {
@@ -18652,6 +21838,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     paymentProofs?: PaymentProofUpdateManyWithoutUserNestedInput
     sales?: SaleUpdateManyWithoutSalesRepNestedInput
+    returns?: StockReturnUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutStockIssusancesInput = {
@@ -18668,6 +21855,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     paymentProofs?: PaymentProofUncheckedUpdateManyWithoutUserNestedInput
     sales?: SaleUncheckedUpdateManyWithoutSalesRepNestedInput
+    returns?: StockReturnUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type IssuanceItemUpsertWithWhereUniqueWithoutIssuanceInput = {
@@ -18765,6 +21953,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     stockIssusances?: StockIssuanceCreateNestedManyWithoutUserInput
     paymentProofs?: PaymentProofCreateNestedManyWithoutUserInput
+    returns?: StockReturnCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutSalesInput = {
@@ -18781,6 +21970,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     stockIssusances?: StockIssuanceUncheckedCreateNestedManyWithoutUserInput
     paymentProofs?: PaymentProofUncheckedCreateNestedManyWithoutUserInput
+    returns?: StockReturnUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutSalesInput = {
@@ -18861,6 +22051,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     stockIssusances?: StockIssuanceUpdateManyWithoutUserNestedInput
     paymentProofs?: PaymentProofUpdateManyWithoutUserNestedInput
+    returns?: StockReturnUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSalesInput = {
@@ -18877,6 +22068,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     stockIssusances?: StockIssuanceUncheckedUpdateManyWithoutUserNestedInput
     paymentProofs?: PaymentProofUncheckedUpdateManyWithoutUserNestedInput
+    returns?: StockReturnUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type RetailerUpsertWithoutSalesInput = {
@@ -18953,6 +22145,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     stockIssusances?: StockIssuanceCreateNestedManyWithoutUserInput
     sales?: SaleCreateNestedManyWithoutSalesRepInput
+    returns?: StockReturnCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutPaymentProofsInput = {
@@ -18969,6 +22162,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     stockIssusances?: StockIssuanceUncheckedCreateNestedManyWithoutUserInput
     sales?: SaleUncheckedCreateNestedManyWithoutSalesRepInput
+    returns?: StockReturnUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutPaymentProofsInput = {
@@ -19001,6 +22195,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     stockIssusances?: StockIssuanceUpdateManyWithoutUserNestedInput
     sales?: SaleUpdateManyWithoutSalesRepNestedInput
+    returns?: StockReturnUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPaymentProofsInput = {
@@ -19017,6 +22212,199 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     stockIssusances?: StockIssuanceUncheckedUpdateManyWithoutUserNestedInput
     sales?: SaleUncheckedUpdateManyWithoutSalesRepNestedInput
+    returns?: StockReturnUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserCreateWithoutReturnsInput = {
+    id?: string
+    fullName: string
+    username: string
+    passwordHash: string
+    role?: $Enums.Role
+    requiresPasswordChange?: boolean
+    isActive?: boolean
+    creditLimit?: Decimal | DecimalJsLike | number | string
+    creditBalance?: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    stockIssusances?: StockIssuanceCreateNestedManyWithoutUserInput
+    paymentProofs?: PaymentProofCreateNestedManyWithoutUserInput
+    sales?: SaleCreateNestedManyWithoutSalesRepInput
+  }
+
+  export type UserUncheckedCreateWithoutReturnsInput = {
+    id?: string
+    fullName: string
+    username: string
+    passwordHash: string
+    role?: $Enums.Role
+    requiresPasswordChange?: boolean
+    isActive?: boolean
+    creditLimit?: Decimal | DecimalJsLike | number | string
+    creditBalance?: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    stockIssusances?: StockIssuanceUncheckedCreateNestedManyWithoutUserInput
+    paymentProofs?: PaymentProofUncheckedCreateNestedManyWithoutUserInput
+    sales?: SaleUncheckedCreateNestedManyWithoutSalesRepInput
+  }
+
+  export type UserCreateOrConnectWithoutReturnsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutReturnsInput, UserUncheckedCreateWithoutReturnsInput>
+  }
+
+  export type ReturnItemCreateWithoutStockReturnInput = {
+    id?: string
+    itemId: string
+    quantity: number
+  }
+
+  export type ReturnItemUncheckedCreateWithoutStockReturnInput = {
+    id?: string
+    itemId: string
+    quantity: number
+  }
+
+  export type ReturnItemCreateOrConnectWithoutStockReturnInput = {
+    where: ReturnItemWhereUniqueInput
+    create: XOR<ReturnItemCreateWithoutStockReturnInput, ReturnItemUncheckedCreateWithoutStockReturnInput>
+  }
+
+  export type ReturnItemCreateManyStockReturnInputEnvelope = {
+    data: ReturnItemCreateManyStockReturnInput | ReturnItemCreateManyStockReturnInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type UserUpsertWithoutReturnsInput = {
+    update: XOR<UserUpdateWithoutReturnsInput, UserUncheckedUpdateWithoutReturnsInput>
+    create: XOR<UserCreateWithoutReturnsInput, UserUncheckedCreateWithoutReturnsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutReturnsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutReturnsInput, UserUncheckedUpdateWithoutReturnsInput>
+  }
+
+  export type UserUpdateWithoutReturnsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fullName?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    requiresPasswordChange?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    stockIssusances?: StockIssuanceUpdateManyWithoutUserNestedInput
+    paymentProofs?: PaymentProofUpdateManyWithoutUserNestedInput
+    sales?: SaleUpdateManyWithoutSalesRepNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutReturnsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fullName?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
+    passwordHash?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    requiresPasswordChange?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    creditLimit?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    stockIssusances?: StockIssuanceUncheckedUpdateManyWithoutUserNestedInput
+    paymentProofs?: PaymentProofUncheckedUpdateManyWithoutUserNestedInput
+    sales?: SaleUncheckedUpdateManyWithoutSalesRepNestedInput
+  }
+
+  export type ReturnItemUpsertWithWhereUniqueWithoutStockReturnInput = {
+    where: ReturnItemWhereUniqueInput
+    update: XOR<ReturnItemUpdateWithoutStockReturnInput, ReturnItemUncheckedUpdateWithoutStockReturnInput>
+    create: XOR<ReturnItemCreateWithoutStockReturnInput, ReturnItemUncheckedCreateWithoutStockReturnInput>
+  }
+
+  export type ReturnItemUpdateWithWhereUniqueWithoutStockReturnInput = {
+    where: ReturnItemWhereUniqueInput
+    data: XOR<ReturnItemUpdateWithoutStockReturnInput, ReturnItemUncheckedUpdateWithoutStockReturnInput>
+  }
+
+  export type ReturnItemUpdateManyWithWhereWithoutStockReturnInput = {
+    where: ReturnItemScalarWhereInput
+    data: XOR<ReturnItemUpdateManyMutationInput, ReturnItemUncheckedUpdateManyWithoutStockReturnInput>
+  }
+
+  export type ReturnItemScalarWhereInput = {
+    AND?: ReturnItemScalarWhereInput | ReturnItemScalarWhereInput[]
+    OR?: ReturnItemScalarWhereInput[]
+    NOT?: ReturnItemScalarWhereInput | ReturnItemScalarWhereInput[]
+    id?: StringFilter<"ReturnItem"> | string
+    stockReturnId?: StringFilter<"ReturnItem"> | string
+    itemId?: StringFilter<"ReturnItem"> | string
+    quantity?: IntFilter<"ReturnItem"> | number
+  }
+
+  export type StockReturnCreateWithoutItemsInput = {
+    id?: string
+    totalValue: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.ReturnStatus
+    destination?: $Enums.ReturnDestination | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user: UserCreateNestedOneWithoutReturnsInput
+  }
+
+  export type StockReturnUncheckedCreateWithoutItemsInput = {
+    id?: string
+    userId: string
+    totalValue: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.ReturnStatus
+    destination?: $Enums.ReturnDestination | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type StockReturnCreateOrConnectWithoutItemsInput = {
+    where: StockReturnWhereUniqueInput
+    create: XOR<StockReturnCreateWithoutItemsInput, StockReturnUncheckedCreateWithoutItemsInput>
+  }
+
+  export type StockReturnUpsertWithoutItemsInput = {
+    update: XOR<StockReturnUpdateWithoutItemsInput, StockReturnUncheckedUpdateWithoutItemsInput>
+    create: XOR<StockReturnCreateWithoutItemsInput, StockReturnUncheckedCreateWithoutItemsInput>
+    where?: StockReturnWhereInput
+  }
+
+  export type StockReturnUpdateToOneWithWhereWithoutItemsInput = {
+    where?: StockReturnWhereInput
+    data: XOR<StockReturnUpdateWithoutItemsInput, StockReturnUncheckedUpdateWithoutItemsInput>
+  }
+
+  export type StockReturnUpdateWithoutItemsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    totalValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumReturnStatusFieldUpdateOperationsInput | $Enums.ReturnStatus
+    destination?: NullableEnumReturnDestinationFieldUpdateOperationsInput | $Enums.ReturnDestination | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutReturnsNestedInput
+  }
+
+  export type StockReturnUncheckedUpdateWithoutItemsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    totalValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumReturnStatusFieldUpdateOperationsInput | $Enums.ReturnStatus
+    destination?: NullableEnumReturnDestinationFieldUpdateOperationsInput | $Enums.ReturnDestination | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type StockIssuanceCreateManyUserInput = {
@@ -19050,6 +22438,16 @@ export namespace Prisma {
     totalAmount: Decimal | DecimalJsLike | number | string
     paymentMethod: string
     createdAt?: Date | string
+  }
+
+  export type StockReturnCreateManyUserInput = {
+    id?: string
+    totalValue: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.ReturnStatus
+    destination?: $Enums.ReturnDestination | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
   }
 
   export type StockIssuanceUpdateWithoutUserInput = {
@@ -19151,6 +22549,38 @@ export namespace Prisma {
     totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     paymentMethod?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type StockReturnUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    totalValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumReturnStatusFieldUpdateOperationsInput | $Enums.ReturnStatus
+    destination?: NullableEnumReturnDestinationFieldUpdateOperationsInput | $Enums.ReturnDestination | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    items?: ReturnItemUpdateManyWithoutStockReturnNestedInput
+  }
+
+  export type StockReturnUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    totalValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumReturnStatusFieldUpdateOperationsInput | $Enums.ReturnStatus
+    destination?: NullableEnumReturnDestinationFieldUpdateOperationsInput | $Enums.ReturnDestination | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    items?: ReturnItemUncheckedUpdateManyWithoutStockReturnNestedInput
+  }
+
+  export type StockReturnUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    totalValue?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumReturnStatusFieldUpdateOperationsInput | $Enums.ReturnStatus
+    destination?: NullableEnumReturnDestinationFieldUpdateOperationsInput | $Enums.ReturnDestination | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type InventoryBatchCreateManySupplierInput = {
@@ -19355,6 +22785,30 @@ export namespace Prisma {
     qtyIssued?: IntFieldUpdateOperationsInput | number
     qtyRemaining?: IntFieldUpdateOperationsInput | number
     cogsCalculated?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type ReturnItemCreateManyStockReturnInput = {
+    id?: string
+    itemId: string
+    quantity: number
+  }
+
+  export type ReturnItemUpdateWithoutStockReturnInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    itemId?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type ReturnItemUncheckedUpdateWithoutStockReturnInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    itemId?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type ReturnItemUncheckedUpdateManyWithoutStockReturnInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    itemId?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
   }
 
 
