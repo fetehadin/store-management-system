@@ -3,7 +3,8 @@ import { db } from "../config/db.js";
 import bcrypt from "bcrypt";
 
 // GET /api/v1/admin/reps
-export const getSalesReps = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+// GET /api/v1/admin/reps
+export const getSalesReps = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const reps = await db.user.findMany({
       where: { role: 'SALES_REP' },
@@ -13,16 +14,51 @@ export const getSalesReps = async (req: Request, res: Response, next: NextFuncti
         username: true,
         creditLimit: true,
         creditBalance: true,
-        // Removed profilePic as it is not in your Prisma schema
         createdAt: true,
+        paymentProofs: {
+          where: { status: 'APPROVED' },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          select: { id: true, amount: true, createdAt: true }
+        },
+        stockIssusances: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          select: { id: true, totalWholesaleValue: true, createdAt: true }
+        }
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    const repsWithLedger = reps.map(rep => ({
-      ...rep,
-      transactions: [] 
-    }));
+    const repsWithLedger = reps.map(rep => {
+      const payments = rep.paymentProofs.map(p => ({
+        id: p.id,
+        type: 'PAYMENT',
+        amount: p.amount,
+        createdAt: p.createdAt
+      }));
+      
+      const charges = rep.stockIssusances.map(i => ({
+        id: i.id,
+        type: 'CHARGE', 
+        amount: i.totalWholesaleValue,
+        createdAt: i.createdAt
+      }));
+
+      const mergedTransactions = [...payments, ...charges]
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(0, 5);
+
+      return {
+        id: rep.id,
+        fullName: rep.fullName,
+        username: rep.username,
+        creditLimit: rep.creditLimit,
+        creditBalance: rep.creditBalance,
+        createdAt: rep.createdAt,
+        transactions: mergedTransactions
+      };
+    });
 
     res.status(200).json({
       status: 'success',
@@ -69,7 +105,8 @@ export const enrollSalesRep = async (req: Request, res: Response, next: NextFunc
 // DELETE /api/v1/admin/reps/:id
 export const removeSalesRep = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { id } = req.params;
+    // Fix: Explicitly cast to string to satisfy Prisma's strict type requirements
+    const id = req.params.id as string;
     
     await db.user.delete({
       where: { id }
