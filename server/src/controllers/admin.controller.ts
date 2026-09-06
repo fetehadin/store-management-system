@@ -56,6 +56,7 @@ export const getSalesReps = async (_req: Request, res: Response, next: NextFunct
         username: rep.username,
         creditLimit: rep.creditLimit,
         creditBalance: rep.creditBalance,
+        profilePic: rep.profilePic,
         createdAt: rep.createdAt,
         transactions: mergedTransactions
       };
