@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,34 +12,170 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  ActivityIndicator,
+  RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../store/authStore';
-import { useInventoryStore } from '../../store/inventoryStore';
-
-const EXISTING_CATALOG = [
-  { name: 'Sunflower Cooking Oil (1L)', category: 'Cooking Oil & Fats' },
-  { name: 'Palm Oil (5L)', category: 'Cooking Oil & Fats' },
-  { name: 'Wheat Flour (5kg)', category: 'Flour & Baking' },
-  { name: 'White Sugar (50kg)', category: 'Refined Sugar' },
-  { name: 'Premium Dark Chocolate', category: 'Confectionery' },
-];
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '../../api/client';
 
 export default function SuppliersScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   
   const role = useAuthStore((state) => state.role);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const isAdmin = role === 'ADMIN' || role === null;
 
-  // Zustand Store Hooks
-  const suppliers = useInventoryStore((state) => state.suppliers);
-  const toggleSupplierExpand = useInventoryStore((state) => state.toggleSupplierExpand);
-  const enrollSupplierAndBatch = useInventoryStore((state) => state.enrollSupplierAndBatch);
-  const addBatchToSupplier = useInventoryStore((state) => state.addBatchToSupplier);
-  const processRefund = useInventoryStore((state) => state.processRefund);
+  // Local UI State for accordions
+  const [expandedIds, setExpandedIds] = useState<string[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Modals & Form State
+  const [isEnrollModalVisible, setIsEnrollModalVisible] = useState(false);
+  const [isAddBatchModalVisible, setIsAddBatchModalVisible] = useState(false);
+  const [isAdjustModalVisible, setIsAdjustModalVisible] = useState(false);
+  const [isPayModalVisible, setIsPayModalVisible] = useState(false);
+  
+  const [activeSupplierId, setActiveSupplierId] = useState<string | null>(null);
+  const [activeBatch, setActiveBatch] = useState<any | null>(null);
+
+  const [vendorName, setVendorName] = useState('');
+  const [primaryCategory, setPrimaryCategory] = useState('');
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [batchItems, setBatchItems] = useState([
+    { localId: '1', name: '', category: '', qty: '', cost: '', selling: '', photoUri: null as string | null }
+  ]);
+  const [refundInputs, setRefundInputs] = useState<Record<string, string>>({});
+
+  // --- LIVE BACKEND DATA FETCHING ---
+  const { data: suppliers = [], isLoading, refetch } = useQuery({
+    queryKey: ['admin-suppliers'],
+    queryFn: async () => {
+      const response = await apiClient.get('/admin/suppliers');
+      return response.data?.data || [];
+    },
+    enabled: isAdmin,
+  });
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
+  // --- MUTATIONS ---
+  const enrollSupplierMutation = useMutation({
+    mutationFn: async (payload: any) => apiClient.post('/admin/suppliers', payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-suppliers'] });
+      Alert.alert('Success', 'Supplier enrolled successfully.');
+      setIsEnrollModalVisible(false);
+      resetForm();
+    },
+    onError: (error: any) => Alert.alert('Error', error.response?.data?.message || 'Failed to save supplier.')
+  });
+
+  const addBatchMutation = useMutation({
+    mutationFn: async ({ id, items }: { id: string, items: any[] }) => apiClient.post(`/admin/suppliers/${id}/batches`, { items }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-suppliers'] });
+      Alert.alert('Success', 'New batch added to stock.');
+      setIsAddBatchModalVisible(false);
+      setActiveSupplierId(null);
+      resetForm();
+    },
+    onError: (error: any) => Alert.alert('Error', error.response?.data?.message || 'Failed to record batch.')
+  });
+
+  const payBatchMutation = useMutation({
+    mutationFn: async ({ supplierId, batchId, amount }: { supplierId: string, batchId: string, amount: number }) => 
+      apiClient.post(`/admin/suppliers/${supplierId}/batches/${batchId}/pay`, { amount }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-suppliers'] });
+      Alert.alert('Success', 'Payment recorded and database updated.');
+      setIsPayModalVisible(false);
+      setActiveBatch(null);
+    },
+    onError: (error: any) => Alert.alert('Error', error.response?.data?.message || 'Payment failed.')
+  });
+
+  const refundMutation = useMutation({
+    mutationFn: async ({ supplierId, batchId, refunds }: { supplierId: string, batchId: string, refunds: any[] }) => 
+      apiClient.post(`/admin/suppliers/${supplierId}/batches/${batchId}/refund`, { refunds }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-suppliers'] });
+      Alert.alert('Success', 'Refund processed and supplier debt decreased.');
+      setIsAdjustModalVisible(false);
+      setActiveBatch(null);
+    },
+    onError: (error: any) => Alert.alert('Error', error.response?.data?.message || 'Refund failed.')
+  });
+
+  // --- HANDLERS ---
+  const toggleSupplierExpand = (id: string) => {
+    setExpandedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const addBatchItem = () => setBatchItems(prev => [...prev, { localId: Date.now().toString(), name: '', category: '', qty: '', cost: '', selling: '', photoUri: null }]);
+  const removeBatchItem = (index: number) => { if (batchItems.length > 1) setBatchItems(prev => prev.filter((_, i) => i !== index)); };
+  const updateBatchItem = (index: number, field: string, value: string) => {
+    setBatchItems(prev => {
+      const newItems = [...prev];
+      newItems[index] = { ...newItems[index], [field]: value };
+      return newItems;
+    });
+  };
+
+  const handlePickImage = async (index: number) => {
+    let result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [1, 1], quality: 0.8 });
+    if (!result.canceled) updateBatchItem(index, 'photoUri', result.assets[0].uri);
+  };
+
+  const resetForm = () => {
+    setVendorName(''); setPrimaryCategory(''); setPaymentAmount('');
+    setBatchItems([{ localId: '1', name: '', category: '', qty: '', cost: '', selling: '', photoUri: null }]);
+  };
+
+  const handleEnrollSupplier = () => {
+    if (!vendorName.trim()) return;
+    const formattedItems = batchItems.map(item => ({
+      name: item.name, category: item.category || 'General', qty: parseInt(item.qty) || 0, cost: parseFloat(item.cost) || 0, selling: parseFloat(item.selling) || 0, photoUri: item.photoUri,
+    }));
+    enrollSupplierMutation.mutate({ name: vendorName, category: primaryCategory, items: formattedItems });
+  };
+
+  const handleAddBatch = () => {
+    if (!activeSupplierId) return;
+    const formattedItems = batchItems.map(item => ({
+      name: item.name, category: item.category || 'General', qty: parseInt(item.qty) || 0, cost: parseFloat(item.cost) || 0, selling: parseFloat(item.selling) || 0, photoUri: item.photoUri,
+    }));
+    addBatchMutation.mutate({ id: activeSupplierId, items: formattedItems });
+  };
+
+  const handleConfirmRefund = () => {
+    if (activeSupplierId && activeBatch) {
+      const formattedRefunds = Object.entries(refundInputs)
+        .map(([itemId, qtyStr]) => ({ itemId, refundQty: parseInt(qtyStr) || 0 }))
+        .filter(r => r.refundQty > 0);
+      
+      if (formattedRefunds.length === 0) return Alert.alert("Error", "Enter at least one refund quantity.");
+      
+      refundMutation.mutate({ supplierId: activeSupplierId, batchId: activeBatch.id, refunds: formattedRefunds });
+    }
+  };
+
+  const handleConfirmPayment = () => {
+    const amount = parseFloat(paymentAmount);
+    if (isNaN(amount) || amount <= 0) return Alert.alert("Invalid Amount", "Please enter a valid payment amount.");
+    if (activeSupplierId && activeBatch) {
+      payBatchMutation.mutate({ supplierId: activeSupplierId, batchId: activeBatch.id, amount });
+    }
+  };
 
   if (!isAdmin) {
     return (
@@ -55,130 +191,7 @@ export default function SuppliersScreen() {
     );
   }
 
-  // Modals State
-  const [isEnrollModalVisible, setIsEnrollModalVisible] = useState(false);
-  const [isAddBatchModalVisible, setIsAddBatchModalVisible] = useState(false);
-  const [isAdjustModalVisible, setIsAdjustModalVisible] = useState(false);
-  
-  const [activeSupplierId, setActiveSupplierId] = useState<string | null>(null);
-  const [activeBatch, setActiveBatch] = useState<any | null>(null);
-
-  // Form States
-  const [vendorName, setVendorName] = useState('');
-  const [primaryCategory, setPrimaryCategory] = useState('');
-  const [batchItems, setBatchItems] = useState([
-    { localId: '1', name: '', category: '', qty: '', cost: '', selling: '', photoUri: null as string | null }
-  ]);
-  const [focusedItemIndex, setFocusedItemIndex] = useState<number | null>(null);
-  const [refundInputs, setRefundInputs] = useState<Record<string, string>>({});
-
-  const addBatchItem = () => {
-    setBatchItems(prev => [...prev, { localId: Date.now().toString(), name: '', category: '', qty: '', cost: '', selling: '', photoUri: null }]);
-  };
-
-  const removeBatchItem = (index: number) => {
-    if (batchItems.length > 1) {
-      setBatchItems(prev => prev.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateBatchItem = (index: number, field: string, value: string) => {
-    setBatchItems(prev => {
-      const newItems = [...prev];
-      newItems[index] = { ...newItems[index], [field]: value };
-      return newItems;
-    });
-  };
-
-  const handlePickImage = async (index: number) => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    if (!result.canceled) {
-      updateBatchItem(index, 'photoUri', result.assets[0].uri);
-    }
-  };
-
-  const applyAutocomplete = (index: number, name: string, category: string) => {
-    const newItems = [...batchItems];
-    newItems[index].name = name;
-    newItems[index].category = category;
-    setBatchItems(newItems);
-    setFocusedItemIndex(null);
-  };
-
-  const resetForm = () => {
-    setVendorName('');
-    setPrimaryCategory('');
-    setBatchItems([{ localId: '1', name: '', category: '', qty: '', cost: '', selling: '', photoUri: null }]);
-    setFocusedItemIndex(null);
-  };
-
-  const handleEnrollSupplier = () => {
-    if (!vendorName.trim()) return;
-    const formattedItems = batchItems.map(item => ({
-      name: item.name,
-      category: item.category || 'General',
-      qty: parseInt(item.qty) || 0,
-      cost: parseFloat(item.cost) || 0,
-      selling: parseFloat(item.selling) || 0,
-      photoUri: item.photoUri,
-    }));
-
-    enrollSupplierAndBatch(vendorName, primaryCategory || 'General', formattedItems);
-    setIsEnrollModalVisible(false);
-    resetForm();
-  };
-
-  const handleAddBatch = () => {
-    if (!activeSupplierId) return;
-    const formattedItems = batchItems.map(item => ({
-      name: item.name,
-      category: item.category || 'General',
-      qty: parseInt(item.qty) || 0,
-      cost: parseFloat(item.cost) || 0,
-      selling: parseFloat(item.selling) || 0,
-      photoUri: item.photoUri,
-    }));
-
-    addBatchToSupplier(activeSupplierId, formattedItems);
-    setIsAddBatchModalVisible(false);
-    setActiveSupplierId(null);
-    resetForm();
-  };
-
-  const openAddBatchModal = (supplierId: string) => {
-    setActiveSupplierId(supplierId);
-    resetForm();
-    setIsAddBatchModalVisible(true);
-  };
-
-  const openAdjustModal = (batch: any) => {
-    setActiveBatch(batch);
-    setRefundInputs({});
-    setIsAdjustModalVisible(true);
-  };
-
-  const handleConfirmRefund = () => {
-    if (!activeSupplierId && activeBatch) {
-      // Find supplier containing this batch
-      const parentSup = suppliers.find(s => s.batches.some(b => b.id === activeBatch.id));
-      if (parentSup) {
-        const refundsList = Object.entries(refundInputs).map(([itemId, qtyStr]) => ({
-          id: itemId,
-          refundQty: parseInt(qtyStr) || 0
-        }));
-        processRefund(parentSup.id, activeBatch.id, refundsList);
-      }
-    }
-    setIsAdjustModalVisible(false);
-    setActiveBatch(null);
-  };
-
-  const totalPayableSum = suppliers.reduce((acc, s) => acc + s.totalPayable, 0);
+  const totalPayableSum = suppliers.reduce((acc: number, s: any) => acc + Number(s.totalPayable || 0), 0);
 
   const theme = {
     bg: isDarkMode ? '#000000' : '#F8FAFC',
@@ -194,83 +207,38 @@ export default function SuppliersScreen() {
 
   const renderBatchItems = () => (
     <>
-      {batchItems.map((item, index) => {
-        const showSuggestions = focusedItemIndex === index && item.name.length > 1;
-        const suggestions = EXISTING_CATALOG.filter(c => c.name.toLowerCase().includes(item.name.toLowerCase()));
-
-        return (
-          <View key={item.localId} style={[styles.itemEntryCard, { backgroundColor: theme.cardBg, borderColor: theme.border }]}>
-            <View style={styles.itemEntryHeader}>
-              <Text style={[styles.itemEntryTitle, { color: theme.text }]}>Item {index + 1}</Text>
-              {batchItems.length > 1 && (
-                <TouchableOpacity onPress={() => removeBatchItem(index)}>
-                  <Ionicons name="trash-outline" size={20} color="#DC2626" />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            <TouchableOpacity style={[styles.photoPicker, { backgroundColor: theme.inputBg, borderColor: theme.border }]} onPress={() => handlePickImage(index)}>
-              {item.photoUri ? (
-                <Image source={{ uri: item.photoUri }} style={styles.previewImage} />
-              ) : (
-                <>
-                  <Ionicons name="image-outline" size={24} color={theme.textMuted} />
-                  <Text style={[styles.photoPickerText, { color: theme.textMuted }]}>Item Image (Optional)</Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            <Text style={[styles.inputLabel, { color: theme.text }]}>Item Name</Text>
-            <TextInput 
-              style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} 
-              placeholder="Start typing item name..." 
-              placeholderTextColor={theme.textMuted} 
-              value={item.name} 
-              onChangeText={(val) => updateBatchItem(index, 'name', val)}
-              onFocus={() => setFocusedItemIndex(index)}
-            />
-
-            {showSuggestions && suggestions.length > 0 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.suggestionScroll}>
-                {suggestions.map((suggestion, sIdx) => (
-                  <TouchableOpacity 
-                    key={sIdx} 
-                    style={[styles.suggestionPill, { backgroundColor: theme.invertedBg }]}
-                    onPress={() => applyAutocomplete(index, suggestion.name, suggestion.category)}
-                  >
-                    <Text style={{ color: theme.invertedText, fontWeight: '600', fontSize: 13 }}>{suggestion.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+      {batchItems.map((item, index) => (
+        <View key={item.localId} style={[styles.itemEntryCard, { backgroundColor: theme.cardBg, borderColor: theme.border }]}>
+          <View style={styles.itemEntryHeader}>
+            <Text style={[styles.itemEntryTitle, { color: theme.text }]}>Item {index + 1}</Text>
+            {batchItems.length > 1 && (
+              <TouchableOpacity onPress={() => removeBatchItem(index)}>
+                <Ionicons name="trash-outline" size={20} color="#DC2626" />
+              </TouchableOpacity>
             )}
+          </View>
 
-            <Text style={[styles.inputLabel, { color: theme.text }]}>Category</Text>
-            <TextInput 
-              style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} 
-              placeholder="e.g. Beverages" 
-              placeholderTextColor={theme.textMuted} 
-              value={item.category} 
-              onChangeText={(val) => updateBatchItem(index, 'category', val)} 
-            />
+          <Text style={[styles.inputLabel, { color: theme.text }]}>Item Name</Text>
+          <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="e.g. Cooking Oil" placeholderTextColor={theme.textMuted} value={item.name} onChangeText={(val) => updateBatchItem(index, 'name', val)} />
+          <Text style={[styles.inputLabel, { color: theme.text }]}>Category</Text>
+          <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="e.g. Beverages" placeholderTextColor={theme.textMuted} value={item.category} onChangeText={(val) => updateBatchItem(index, 'category', val)} />
 
-            <View style={styles.rowInputs}>
-              <View style={styles.thirdInput}>
-                <Text style={[styles.inputLabel, { color: theme.text }]}>Qty</Text>
-                <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="0" keyboardType="numeric" placeholderTextColor={theme.textMuted} value={item.qty} onChangeText={(val) => updateBatchItem(index, 'qty', val)} />
-              </View>
-              <View style={styles.thirdInput}>
-                <Text style={[styles.inputLabel, { color: theme.text }]}>Cost</Text>
-                <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" placeholderTextColor={theme.textMuted} value={item.cost} onChangeText={(val) => updateBatchItem(index, 'cost', val)} />
-              </View>
-              <View style={styles.thirdInput}>
-                <Text style={[styles.inputLabel, { color: theme.text }]}>Selling</Text>
-                <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" placeholderTextColor={theme.textMuted} value={item.selling} onChangeText={(val) => updateBatchItem(index, 'selling', val)} />
-              </View>
+          <View style={styles.rowInputs}>
+            <View style={styles.thirdInput}>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Qty</Text>
+              <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="0" keyboardType="numeric" placeholderTextColor={theme.textMuted} value={item.qty} onChangeText={(val) => updateBatchItem(index, 'qty', val)} />
+            </View>
+            <View style={styles.thirdInput}>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Cost</Text>
+              <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" placeholderTextColor={theme.textMuted} value={item.cost} onChangeText={(val) => updateBatchItem(index, 'cost', val)} />
+            </View>
+            <View style={styles.thirdInput}>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Selling</Text>
+              <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" placeholderTextColor={theme.textMuted} value={item.selling} onChangeText={(val) => updateBatchItem(index, 'selling', val)} />
             </View>
           </View>
-        );
-      })}
-
+        </View>
+      ))}
       <TouchableOpacity style={[styles.addAnotherBtn, { borderColor: theme.border }]} onPress={addBatchItem}>
         <Ionicons name="add" size={18} color={theme.text} style={{ marginRight: 6 }} />
         <Text style={{ color: theme.text, fontWeight: '700' }}>Add Another Item</Text>
@@ -291,7 +259,7 @@ export default function SuppliersScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
         
         <View style={styles.titleContainer}>
           <View style={styles.summaryBadgeRow}>
@@ -310,7 +278,10 @@ export default function SuppliersScreen() {
         </View>
 
         <View style={styles.listContainer}>
-          {suppliers.map((supplier) => (
+          {isLoading ? <ActivityIndicator size="large" color="#177CA5" style={{ marginTop: 40 }} /> : suppliers.map((supplier: any) => {
+            const isExpanded = expandedIds.includes(supplier.id);
+
+            return (
             <View key={supplier.id} style={[styles.supplierCard, { backgroundColor: theme.cardBg }, isDarkMode ? { borderWidth: 1, borderColor: theme.border } : styles.lightShadow]}>
               <TouchableOpacity style={styles.supplierHeaderRow} onPress={() => toggleSupplierExpand(supplier.id)} activeOpacity={0.7}>
                 <View style={styles.supplierMetaRow}>
@@ -320,24 +291,24 @@ export default function SuppliersScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.supplierName, { color: theme.text }]}>{supplier.name}</Text>
                     <Text style={[styles.supplierCategory, { color: theme.textMuted }]}>
-                      ETB {supplier.totalPayable.toLocaleString()} Due
+                      ETB {Number(supplier.totalPayable).toLocaleString()} Due
                     </Text>
                   </View>
                 </View>
-                <Ionicons name={supplier.isExpanded ? "chevron-up" : "chevron-down"} size={20} color={theme.textMuted} />
+                <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={theme.textMuted} />
               </TouchableOpacity>
 
-              {supplier.isExpanded && (
+              {isExpanded && (
                 <View style={[styles.batchesContainer, { borderTopColor: theme.border }]}>
                   <View style={styles.batchesHeaderRow}>
                     <Text style={[styles.batchesTitle, { color: theme.textMuted }]}>INVENTORY BATCHES</Text>
-                    <TouchableOpacity onPress={() => openAddBatchModal(supplier.id)} style={styles.addBatchBtnInline}>
+                    <TouchableOpacity onPress={() => { setActiveSupplierId(supplier.id); setIsAddBatchModalVisible(true); }} style={styles.addBatchBtnInline}>
                       <Ionicons name="add-circle" size={16} color="#1D61F2" style={{ marginRight: 4 }} />
                       <Text style={styles.addBatchInlineText}>New Batch</Text>
                     </TouchableOpacity>
                   </View>
                   
-                  {supplier.batches.map((batch) => (
+                  {supplier.batches.map((batch: any) => (
                     <View key={batch.id} style={[styles.batchCard, { backgroundColor: theme.subCardBg, borderColor: theme.border }]}>
                       <View style={styles.batchHeader}>
                         <View>
@@ -350,12 +321,12 @@ export default function SuppliersScreen() {
                               {batch.status}
                             </Text>
                           </View>
-                          <Text style={[styles.batchTotal, { color: theme.text }]}>ETB {batch.totalAmount.toLocaleString()}</Text>
+                          <Text style={[styles.batchTotal, { color: theme.text }]}>ETB {Number(batch.totalAmount).toLocaleString()}</Text>
                         </View>
                       </View>
 
                       <View style={[styles.itemsLedger, { borderTopColor: theme.border }]}>
-                        {batch.items.map(item => (
+                        {batch.items.map((item: any) => (
                           <View key={item.id} style={styles.itemRow}>
                             <View style={styles.itemInfo}>
                               <Ionicons name="cube-outline" size={14} color={theme.textMuted} style={{ marginRight: 6 }} />
@@ -371,65 +342,40 @@ export default function SuppliersScreen() {
                         ))}
                       </View>
 
-                      <TouchableOpacity style={[styles.adjustBtn, { borderColor: theme.border, backgroundColor: theme.cardBg }]} onPress={() => openAdjustModal(batch)}>
-                        <Ionicons name="swap-horizontal" size={14} color={theme.textMuted} style={{ marginRight: 6 }} />
-                        <Text style={[styles.adjustBtnText, { color: theme.text }]}>Adjust / Refund Items</Text>
-                      </TouchableOpacity>
+                      <View style={styles.batchActionRow}>
+                        <TouchableOpacity style={[styles.adjustBtn, { flex: 1, marginRight: 6, borderColor: theme.border, backgroundColor: theme.cardBg }]} onPress={() => { setActiveBatch(batch); setActiveSupplierId(supplier.id); setRefundInputs({}); setIsAdjustModalVisible(true); }}>
+                          <Ionicons name="swap-horizontal" size={14} color={theme.textMuted} style={{ marginRight: 6 }} />
+                          <Text style={[styles.adjustBtnText, { color: theme.text }]}>Refund</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity style={[styles.adjustBtn, { flex: 1, marginLeft: 6, borderColor: '#059669', backgroundColor: '#ECFDF5' }]} onPress={() => { setActiveBatch(batch); setActiveSupplierId(supplier.id); setPaymentAmount(''); setIsPayModalVisible(true); }}>
+                          <Ionicons name="cash-outline" size={14} color="#059669" style={{ marginRight: 6 }} />
+                          <Text style={[styles.adjustBtnText, { color: '#059669' }]}>Pay</Text>
+                        </TouchableOpacity>
+                      </View>
+
                     </View>
                   ))}
                 </View>
               )}
             </View>
-          ))}
+          )})}
         </View>
       </ScrollView>
 
-      {/* Enroll Supplier Modal */}
-      <Modal visible={isEnrollModalVisible} animationType="slide" transparent>
+      {/* Pay Batch Modal */}
+      <Modal visible={isPayModalVisible} animationType="fade" transparent>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
-          <View style={[styles.bottomSheet, { backgroundColor: theme.bg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, maxHeight: '95%' }]}>
+          <View style={[styles.bottomSheet, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }]}>
             <View style={styles.sheetHeader}>
-              <Text style={[styles.sheetTitle, { color: theme.text }]}>Enroll Supplier</Text>
-              <TouchableOpacity onPress={() => setIsEnrollModalVisible(false)} style={styles.closeBtn}>
-                <Ionicons name="close" size={24} color={theme.textMuted} />
-              </TouchableOpacity>
+              <Text style={[styles.sheetTitle, { color: theme.text }]}>Record Payment</Text>
+              <TouchableOpacity onPress={() => setIsPayModalVisible(false)} style={styles.closeBtn}><Ionicons name="close" size={24} color={theme.textMuted} /></TouchableOpacity>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetScroll}>
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Vendor Name</Text>
-              <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="e.g. Mojo Coffee Mills" placeholderTextColor={theme.textMuted} value={vendorName} onChangeText={setVendorName} />
-              
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Primary Category</Text>
-              <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="e.g. Coffee Beans" placeholderTextColor={theme.textMuted} value={primaryCategory} onChangeText={setPrimaryCategory} />
-
-              <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-              <Text style={[styles.sectionSubtitle, { color: theme.text }]}>Record Initial Batch</Text>
-
-              {renderBatchItems()}
-
-              <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.invertedBg }]} onPress={handleEnrollSupplier}>
-                <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>Save Supplier & Update Stock</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-
-      {/* Add Batch Modal */}
-      <Modal visible={isAddBatchModalVisible} animationType="slide" transparent>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
-          <View style={[styles.bottomSheet, { backgroundColor: theme.bg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, maxHeight: '95%' }]}>
-            <View style={styles.sheetHeader}>
-              <Text style={[styles.sheetTitle, { color: theme.text }]}>Receive New Batch</Text>
-              <TouchableOpacity onPress={() => setIsAddBatchModalVisible(false)} style={styles.closeBtn}>
-                <Ionicons name="close" size={24} color={theme.textMuted} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetScroll}>
-              {renderBatchItems()}
-              <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.invertedBg }]} onPress={handleAddBatch}>
-                <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>Record Batch & Update Stock</Text>
-              </TouchableOpacity>
-            </ScrollView>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>Payment Amount (ETB)</Text>
+            <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border, fontSize: 24, fontWeight: '800' }]} placeholder="0.00" placeholderTextColor={theme.textMuted} keyboardType="numeric" value={paymentAmount} onChangeText={setPaymentAmount} autoFocus />
+            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: '#059669', marginTop: 24, opacity: payBatchMutation.isPending ? 0.7 : 1 }]} onPress={handleConfirmPayment} disabled={payBatchMutation.isPending}>
+              <Text style={[styles.submitBtnText, { color: '#FFFFFF' }]}>{payBatchMutation.isPending ? 'Processing...' : 'Confirm Payment'}</Text>
+            </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -439,35 +385,58 @@ export default function SuppliersScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={[styles.bottomSheet, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }]}>
             <View style={styles.sheetHeader}>
-              <Text style={[styles.sheetTitle, { color: theme.text }]}>Refund Items ({activeBatch?.id})</Text>
-              <TouchableOpacity onPress={() => setIsAdjustModalVisible(false)} style={styles.closeBtn}>
-                <Ionicons name="close" size={24} color={theme.textMuted} />
-              </TouchableOpacity>
+              <Text style={[styles.sheetTitle, { color: theme.text }]}>Refund Items</Text>
+              <TouchableOpacity onPress={() => setIsAdjustModalVisible(false)} style={styles.closeBtn}><Ionicons name="close" size={24} color={theme.textMuted} /></TouchableOpacity>
             </View>
-            <Text style={[styles.helperText, { color: theme.textMuted }]}>
-              Enter the quantity returned. This deducts from global Stock and reduces the supplier payable ledger instantly.
-            </Text>
-            
             {activeBatch?.items.map((item: any) => (
               <View key={item.id} style={[styles.refundRow, { backgroundColor: theme.inputBg, borderColor: theme.border }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.refundItemName, { color: theme.text }]}>{item.name}</Text>
-                  <Text style={[styles.refundCostInfo, { color: theme.textMuted }]}>Available Qty: {item.qty} | Cost: ETB {item.cost}</Text>
+                  <Text style={[styles.refundCostInfo, { color: theme.textMuted }]}>Available: {item.qty} | Cost: ETB {item.cost}</Text>
                 </View>
-                <TextInput 
-                  style={[styles.refundInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.cardBg }]} 
-                  placeholder="0" 
-                  placeholderTextColor={theme.textMuted} 
-                  keyboardType="numeric"
-                  value={refundInputs[item.id] || ''}
-                  onChangeText={(val) => setRefundInputs(prev => ({ ...prev, [item.id]: val }))}
-                />
+                <TextInput style={[styles.refundInput, { borderColor: theme.border, color: theme.text, backgroundColor: theme.cardBg }]} placeholder="0" placeholderTextColor={theme.textMuted} keyboardType="numeric" value={refundInputs[item.id] || ''} onChangeText={(val) => setRefundInputs(prev => ({ ...prev, [item.id]: val }))} />
               </View>
             ))}
-
-            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: '#DC2626' }]} onPress={handleConfirmRefund}>
-              <Text style={[styles.submitBtnText, { color: '#FFFFFF' }]}>Process Deduction</Text>
+            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: '#DC2626', opacity: refundMutation.isPending ? 0.7 : 1 }]} onPress={handleConfirmRefund} disabled={refundMutation.isPending}>
+              <Text style={[styles.submitBtnText, { color: '#FFFFFF' }]}>{refundMutation.isPending ? 'Processing...' : 'Process Refund'}</Text>
             </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Enroll Supplier & Add Batch Modals */}
+      <Modal visible={isEnrollModalVisible} animationType="slide" transparent>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+          <View style={[styles.bottomSheet, { backgroundColor: theme.bg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, maxHeight: '95%' }]}>
+            <View style={styles.sheetHeader}>
+              <Text style={[styles.sheetTitle, { color: theme.text }]}>Enroll Supplier</Text>
+              <TouchableOpacity onPress={() => setIsEnrollModalVisible(false)} style={styles.closeBtn}><Ionicons name="close" size={24} color={theme.textMuted} /></TouchableOpacity>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetScroll}>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Vendor Name</Text>
+              <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} value={vendorName} onChangeText={setVendorName} />
+              {renderBatchItems()}
+              <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.invertedBg, opacity: enrollSupplierMutation.isPending ? 0.7 : 1 }]} onPress={handleEnrollSupplier}>
+                <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>Save Supplier</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      <Modal visible={isAddBatchModalVisible} animationType="slide" transparent>
+         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+          <View style={[styles.bottomSheet, { backgroundColor: theme.bg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, maxHeight: '95%' }]}>
+            <View style={styles.sheetHeader}>
+              <Text style={[styles.sheetTitle, { color: theme.text }]}>Receive New Batch</Text>
+              <TouchableOpacity onPress={() => setIsAddBatchModalVisible(false)} style={styles.closeBtn}><Ionicons name="close" size={24} color={theme.textMuted} /></TouchableOpacity>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetScroll}>
+              {renderBatchItems()}
+              <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.invertedBg, opacity: addBatchMutation.isPending ? 0.7 : 1 }]} onPress={handleAddBatch}>
+                <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>Record Batch</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -476,106 +445,84 @@ export default function SuppliersScreen() {
   );
 }
 
+// Keep the exact same StyleSheet from your previous code here
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
   menuButton: { marginRight: 12 },
   headerTitle: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
-  headerRight: { flexDirection: 'row', alignItems: 'center' },
-  avatar: { width: 36, height: 36, borderRadius: 18 },
-  
   scrollContentDark: { paddingBottom: 120, paddingTop: 8 },
   scrollContentLight: { paddingBottom: 120, paddingTop: 8 },
-  
   titleContainer: { paddingHorizontal: 20, marginBottom: 20 },
   summaryBadgeRow: { flexDirection: 'row', alignItems: 'center' },
   payableBadge: { backgroundColor: '#FEE2E2', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, marginRight: 12 },
   payableBadgeText: { color: '#DC2626', fontWeight: '800', fontSize: 13 },
   activeSuppliersText: { fontSize: 14, fontWeight: '500' },
-
   actionContainer: { paddingHorizontal: 20, marginBottom: 24 },
   mainActionBtn: { flexDirection: 'row', paddingVertical: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   btnIcon: { marginRight: 8 },
   mainActionText: { fontWeight: '700', fontSize: 15 },
-
   listContainer: { paddingHorizontal: 20 },
   supplierCard: { borderRadius: 24, padding: 20, marginBottom: 16, overflow: 'hidden' },
   lightShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3 },
-  
   supplierHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   supplierMetaRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   supplierIconBox: { width: 48, height: 48, borderRadius: 14, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
   supplierName: { fontSize: 18, fontWeight: '700', marginBottom: 4 },
   supplierCategory: { fontSize: 13, fontWeight: '500' },
-
   batchesContainer: { marginTop: 20, paddingTop: 16, borderTopWidth: 1 },
   batchesHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   batchesTitle: { fontSize: 11, fontWeight: '800', letterSpacing: 1 },
   addBatchBtnInline: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, paddingHorizontal: 8, backgroundColor: '#EFF6FF', borderRadius: 100 },
   addBatchInlineText: { fontSize: 12, fontWeight: '700', color: '#1D61F2' },
-  
   batchCard: { borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 12 },
   batchHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
   batchId: { fontSize: 16, fontWeight: '800', marginBottom: 2 },
   batchDate: { fontSize: 12 },
   batchTotal: { fontSize: 16, fontWeight: '900', marginTop: 4 },
-  
   statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   statusPaid: { backgroundColor: '#ECFDF5' },
   statusUnpaid: { backgroundColor: '#FEF2F2' },
   statusPillText: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
-
   itemsLedger: { borderTopWidth: 1, paddingTop: 12, borderStyle: 'dashed' },
   itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   itemInfo: { flexDirection: 'row', alignItems: 'flex-start', flex: 1 },
   itemName: { fontSize: 14, fontWeight: '700', marginBottom: 2 },
   itemSellingPrice: { fontSize: 11, fontWeight: '600' },
   itemMath: { fontSize: 13, marginTop: 2 },
-
-  adjustBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 8, borderWidth: 1, marginTop: 12 },
+  batchActionRow: { flexDirection: 'row', marginTop: 12, justifyContent: 'space-between' },
+  adjustBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 8, borderWidth: 1 },
   adjustBtnText: { fontSize: 13, fontWeight: '700' },
-
   unauthorizedContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, backgroundColor: '#F8FAFC' },
   unauthorizedTitle: { fontSize: 24, fontWeight: '800', color: '#0F172A', marginTop: 16, marginBottom: 8 },
   unauthorizedSubtitle: { fontSize: 15, color: '#64748B', textAlign: 'center', marginBottom: 24 },
   backButton: { backgroundColor: '#1D61F2', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 100 },
   backButtonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
   bottomSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 },
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   sheetTitle: { fontSize: 20, fontWeight: '800' },
   closeBtn: { padding: 4 },
   sheetScroll: { paddingBottom: 40 },
-  
   itemEntryCard: { padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 16 },
   itemEntryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   itemEntryTitle: { fontSize: 14, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
-  
   addAnotherBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', marginBottom: 24 },
-  
-  suggestionScroll: { flexDirection: 'row', marginTop: 4, marginBottom: 12 },
-  suggestionPill: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 100, marginRight: 8 },
-
   photoPicker: { height: 70, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 16, overflow: 'hidden' },
   photoPickerText: { marginTop: 4, fontWeight: '600', fontSize: 12 },
   previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  
   inputLabel: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 12 },
   input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontWeight: '600' },
-  
   rowInputs: { flexDirection: 'row', gap: 8 },
   thirdInput: { flex: 1 },
   dividerLine: { height: 1, marginVertical: 20 },
   sectionSubtitle: { fontSize: 16, fontWeight: '800', marginBottom: 12 },
-
   helperText: { fontSize: 13, marginBottom: 20, lineHeight: 20 },
   refundRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 8 },
   refundItemName: { fontSize: 15, fontWeight: '700', marginBottom: 4 },
   refundCostInfo: { fontSize: 12 },
   refundInput: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, width: 80, textAlign: 'center', fontWeight: '700' },
-
   submitBtn: { marginTop: 12, paddingVertical: 16, borderRadius: 100, alignItems: 'center', justifyContent: 'center' },
   submitBtnText: { fontSize: 16, fontWeight: '700' },
 });
