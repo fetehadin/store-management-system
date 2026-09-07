@@ -261,6 +261,15 @@ exports.Prisma.ReturnItemScalarFieldEnum = {
   quantity: 'quantity'
 };
 
+exports.Prisma.NoteScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  dateKey: 'dateKey',
+  content: 'content',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -323,7 +332,8 @@ exports.Prisma.ModelName = {
   PaymentProof: 'PaymentProof',
   LedgerEntry: 'LedgerEntry',
   StockReturn: 'StockReturn',
-  ReturnItem: 'ReturnItem'
+  ReturnItem: 'ReturnItem',
+  Note: 'Note'
 };
 
 /**

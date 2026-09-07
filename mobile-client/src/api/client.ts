@@ -1,8 +1,12 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
+// Expo injects variables prefixed with EXPO_PUBLIC_ automatically
 const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://localhost:5000';
 const BASE_URL = `${BASE_IP}/api/v1`;
+
+// THIS IS THE SMOKING GUN: Check your mobile terminal when the app starts!
+console.log("🚀 Axios API Client Initialized. Target URL:", BASE_URL);
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
