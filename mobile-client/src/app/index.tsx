@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { apiClient } from '../api/client';
@@ -32,22 +33,26 @@ export default function LoginScreen() {
         username: payload.username.trim().toLowerCase(),
         password: payload.pin,
       });
-      return response.data;
+      return { data: response.data, rawPin: payload.pin, username: payload.username.trim().toLowerCase() };
     },
-    onSuccess: async (responsePayload) => {
+    onSuccess: async ({ data: responsePayload, rawPin, username: savedUser }) => {
       const user = responsePayload.data.user;
       const token = responsePayload.token;
+
+      // Securely save credentials for biometric sign-in
+      if (rawPin) {
+        await SecureStore.setItemAsync('bio_username', savedUser);
+        await SecureStore.setItemAsync('bio_pin', rawPin);
+      }
 
       const frontendRole = user.role === 'SALES_REP' ? 'REP' : user.role;
       
       if (user.requiresPasswordChange) {
-        // Updated to pass profilePic
         await setAuth(token, frontendRole, user.fullName, user.profilePic);
         router.replace('/(auth)/force-reset' as any);
         return;
       }
 
-      // Updated to pass profilePic
       await setAuth(token, frontendRole, user.fullName, user.profilePic);
       
       if (frontendRole === 'ADMIN') {
@@ -72,7 +77,16 @@ export default function LoginScreen() {
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
       if (!hasHardware || !isEnrolled) {
-        Alert.alert('Biometrics Unavailable', 'Please sign in using your credentials.');
+        Alert.alert('Biometrics Unavailable', 'Please sign in using your PIN credentials first.');
+        setAuthMode('PIN');
+        return;
+      }
+
+      const savedUsername = await SecureStore.getItemAsync('bio_username');
+      const savedPin = await SecureStore.getItemAsync('bio_pin');
+
+      if (!savedUsername || !savedPin) {
+        Alert.alert('No Biometric Profile', 'Please sign in with your username and PIN once using the PIN tab to enable biometrics.');
         setAuthMode('PIN');
         return;
       }
@@ -83,7 +97,7 @@ export default function LoginScreen() {
       });
 
       if (result.success) {
-        Alert.alert('Biometrics Scanned', 'Biometric token exchange needs backend integration.');
+        loginMutation.mutate({ username: savedUsername, pin: savedPin });
       }
     } catch (err) {
       console.error(err);
