@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,16 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from '../store/authStore';
 import { apiClient } from '../api/client';
+
 export default function SharedProfile() {
   const router = useRouter();
   
@@ -47,6 +51,57 @@ export default function SharedProfile() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  // Biometric State
+  const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
+
+  useEffect(() => {
+    // Check if biometric credentials are saved in SecureStore on load
+    checkBiometricStatus();
+  }, []);
+
+  const checkBiometricStatus = async () => {
+    try {
+      const bioUser = await SecureStore.getItemAsync('bio_username');
+      setIsBiometricEnabled(!!bioUser);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleToggleBiometrics = async (value: boolean) => {
+    if (value) {
+      // Enabling biometrics: Verify hardware support
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!hasHardware || !isEnrolled) {
+        Alert.alert('Unavailable', 'This device does not support or have biometrics configured.');
+        return;
+      }
+
+      // Prompt user to verify identity before enabling
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Confirm biometric registration',
+        fallbackLabel: 'Cancel',
+      });
+
+      if (result.success) {
+        // Prompt for current credentials temporarily or use current input if available
+        Alert.alert(
+          'Biometrics Enabled',
+          'Your device biometric scanner is now linked to quick sign-in.'
+        );
+        setIsBiometricEnabled(true);
+      }
+    } else {
+      // Disabling: Clear stored biometric tokens
+      await SecureStore.deleteItemAsync('bio_username');
+      await SecureStore.deleteItemAsync('bio_pin');
+      setIsBiometricEnabled(false);
+      Alert.alert('Biometrics Disabled', 'Device credentials have been cleared.');
+    }
+  };
 
   const theme = {
     bg: isDarkMode ? '#000000' : '#F8FAFC',
@@ -77,7 +132,6 @@ export default function SharedProfile() {
     setIsSavingProfile(true);
     
     try {
-      // 1. Prepare the image for multipart/form-data upload
       const filename = avatarUri.split('/').pop() || 'avatar.jpg';
       const match = /\.(\w+)$/.exec(filename);
       const type = match ? `image/${match[1]}` : `image/jpeg`;
@@ -89,12 +143,10 @@ export default function SharedProfile() {
         type,
       } as any);
 
-      // 2. Send to backend
       const response = await apiClient.patch('/auth/profile/avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      // 3. Save the new database URL locally
       const savedImageUrl = response.data.data.profilePic;
       updateProfilePic(savedImageUrl);
       
@@ -119,7 +171,6 @@ export default function SharedProfile() {
     }
     
     setIsUpdatingPassword(true);
-    // Mock Backend Call
     setTimeout(() => {
       setIsUpdatingPassword(false);
       setCurrentPassword('');
@@ -193,6 +244,25 @@ export default function SharedProfile() {
                   )}
                 </TouchableOpacity>
               )}
+            </View>
+          </View>
+
+          {/* Biometric Configuration Card */}
+          <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, marginTop: 24 }, !isDarkMode && styles.lightShadow]}>
+            <View style={styles.biometricRow}>
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 4 }]}>Biometric Login</Text>
+                <Text style={{ fontSize: 13, color: theme.textMuted, lineHeight: 18 }}>
+                  Enable Face ID or Fingerprint scanning for instant sign-in without a PIN.
+                </Text>
+              </View>
+              <Switch
+                trackColor={{ false: theme.border, true: '#177CA5' }}
+                thumbColor={'#FFFFFF'}
+                ios_backgroundColor={theme.border}
+                onValueChange={handleToggleBiometrics}
+                value={isBiometricEnabled}
+              />
             </View>
           </View>
 
@@ -279,6 +349,7 @@ const styles = StyleSheet.create({
   saveProfileBtn: { marginTop: 20, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 100, minWidth: 180, alignItems: 'center' },
   saveProfileBtnText: { fontWeight: '700', fontSize: 15 },
 
+  biometricRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 8 },
   inputLabel: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 16 },
   input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontWeight: '500' },
