@@ -7,6 +7,7 @@ import { errorHandler } from "./middlewares/errorHandler.js";
 import { NotFoundError } from "./utils/errors.js";
 import routes from "./routes/index.js"; 
 import returnRoutes from './routes/returns.routes.js'; // <-- Added .js to match your setup!
+import noteRoutes from './routes/note.routes.js';
 
 const app: Application = express();
 
@@ -37,6 +38,7 @@ app.get("/api/v1/health", (_req: Request, res: Response) => {
 
 // <-- 3. MOUNT API V1 ENDPOINTS HERE
 app.use("/api/v1/returns", returnRoutes); // <-- ADDED THIS LINE TO ACTIVATE THE ROUTE!
+app.use("/api/v1/notes", noteRoutes);
 app.use("/api/v1", routes);
 
 // Catch-all route for undefined endpoints (404 Not Found)
