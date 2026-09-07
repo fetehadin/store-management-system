@@ -3600,7 +3600,6 @@ export namespace Prisma {
   export type SupplierMinAggregateOutputType = {
     id: string | null
     name: string | null
-    phone: string | null
     creditBalance: Decimal | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -3609,7 +3608,6 @@ export namespace Prisma {
   export type SupplierMaxAggregateOutputType = {
     id: string | null
     name: string | null
-    phone: string | null
     creditBalance: Decimal | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -3618,7 +3616,6 @@ export namespace Prisma {
   export type SupplierCountAggregateOutputType = {
     id: number
     name: number
-    phone: number
     creditBalance: number
     createdAt: number
     updatedAt: number
@@ -3637,7 +3634,6 @@ export namespace Prisma {
   export type SupplierMinAggregateInputType = {
     id?: true
     name?: true
-    phone?: true
     creditBalance?: true
     createdAt?: true
     updatedAt?: true
@@ -3646,7 +3642,6 @@ export namespace Prisma {
   export type SupplierMaxAggregateInputType = {
     id?: true
     name?: true
-    phone?: true
     creditBalance?: true
     createdAt?: true
     updatedAt?: true
@@ -3655,7 +3650,6 @@ export namespace Prisma {
   export type SupplierCountAggregateInputType = {
     id?: true
     name?: true
-    phone?: true
     creditBalance?: true
     createdAt?: true
     updatedAt?: true
@@ -3751,7 +3745,6 @@ export namespace Prisma {
   export type SupplierGroupByOutputType = {
     id: string
     name: string
-    phone: string
     creditBalance: Decimal
     createdAt: Date
     updatedAt: Date
@@ -3779,7 +3772,6 @@ export namespace Prisma {
   export type SupplierSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
-    phone?: boolean
     creditBalance?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -3790,7 +3782,6 @@ export namespace Prisma {
   export type SupplierSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
-    phone?: boolean
     creditBalance?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -3799,7 +3790,6 @@ export namespace Prisma {
   export type SupplierSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
-    phone?: boolean
     creditBalance?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -3808,13 +3798,12 @@ export namespace Prisma {
   export type SupplierSelectScalar = {
     id?: boolean
     name?: boolean
-    phone?: boolean
     creditBalance?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type SupplierOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "phone" | "creditBalance" | "createdAt" | "updatedAt", ExtArgs["result"]["supplier"]>
+  export type SupplierOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "creditBalance" | "createdAt" | "updatedAt", ExtArgs["result"]["supplier"]>
   export type SupplierInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     batches?: boolean | Supplier$batchesArgs<ExtArgs>
     _count?: boolean | SupplierCountOutputTypeDefaultArgs<ExtArgs>
@@ -3830,7 +3819,6 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: string
       name: string
-      phone: string
       creditBalance: Prisma.Decimal
       createdAt: Date
       updatedAt: Date
@@ -4260,7 +4248,6 @@ export namespace Prisma {
   interface SupplierFieldRefs {
     readonly id: FieldRef<"Supplier", 'String'>
     readonly name: FieldRef<"Supplier", 'String'>
-    readonly phone: FieldRef<"Supplier", 'String'>
     readonly creditBalance: FieldRef<"Supplier", 'Decimal'>
     readonly createdAt: FieldRef<"Supplier", 'DateTime'>
     readonly updatedAt: FieldRef<"Supplier", 'DateTime'>
@@ -17157,7 +17144,6 @@ export namespace Prisma {
   export const SupplierScalarFieldEnum: {
     id: 'id',
     name: 'name',
-    phone: 'phone',
     creditBalance: 'creditBalance',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -17617,7 +17603,6 @@ export namespace Prisma {
     NOT?: SupplierWhereInput | SupplierWhereInput[]
     id?: StringFilter<"Supplier"> | string
     name?: StringFilter<"Supplier"> | string
-    phone?: StringFilter<"Supplier"> | string
     creditBalance?: DecimalFilter<"Supplier"> | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFilter<"Supplier"> | Date | string
     updatedAt?: DateTimeFilter<"Supplier"> | Date | string
@@ -17627,7 +17612,6 @@ export namespace Prisma {
   export type SupplierOrderByWithRelationInput = {
     id?: SortOrder
     name?: SortOrder
-    phone?: SortOrder
     creditBalance?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -17636,7 +17620,6 @@ export namespace Prisma {
 
   export type SupplierWhereUniqueInput = Prisma.AtLeast<{
     id?: string
-    phone?: string
     AND?: SupplierWhereInput | SupplierWhereInput[]
     OR?: SupplierWhereInput[]
     NOT?: SupplierWhereInput | SupplierWhereInput[]
@@ -17645,12 +17628,11 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"Supplier"> | Date | string
     updatedAt?: DateTimeFilter<"Supplier"> | Date | string
     batches?: InventoryBatchListRelationFilter
-  }, "id" | "phone">
+  }, "id">
 
   export type SupplierOrderByWithAggregationInput = {
     id?: SortOrder
     name?: SortOrder
-    phone?: SortOrder
     creditBalance?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -17667,7 +17649,6 @@ export namespace Prisma {
     NOT?: SupplierScalarWhereWithAggregatesInput | SupplierScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"Supplier"> | string
     name?: StringWithAggregatesFilter<"Supplier"> | string
-    phone?: StringWithAggregatesFilter<"Supplier"> | string
     creditBalance?: DecimalWithAggregatesFilter<"Supplier"> | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeWithAggregatesFilter<"Supplier"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Supplier"> | Date | string
@@ -17888,10 +17869,10 @@ export namespace Prisma {
 
   export type InventoryBatchWhereUniqueInput = Prisma.AtLeast<{
     id?: string
-    batchCode?: string
     AND?: InventoryBatchWhereInput | InventoryBatchWhereInput[]
     OR?: InventoryBatchWhereInput[]
     NOT?: InventoryBatchWhereInput | InventoryBatchWhereInput[]
+    batchCode?: StringFilter<"InventoryBatch"> | string
     productId?: StringFilter<"InventoryBatch"> | string
     supplierId?: StringFilter<"InventoryBatch"> | string
     quantityRecieved?: IntFilter<"InventoryBatch"> | number
@@ -17901,7 +17882,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"InventoryBatch"> | Date | string
     product?: XOR<ProductScalarRelationFilter, ProductWhereInput>
     supplier?: XOR<SupplierScalarRelationFilter, SupplierWhereInput>
-  }, "id" | "batchCode">
+  }, "id">
 
   export type InventoryBatchOrderByWithAggregationInput = {
     id?: SortOrder
@@ -18582,7 +18563,6 @@ export namespace Prisma {
   export type SupplierCreateInput = {
     id?: string
     name: string
-    phone: string
     creditBalance?: Decimal | DecimalJsLike | number | string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -18592,7 +18572,6 @@ export namespace Prisma {
   export type SupplierUncheckedCreateInput = {
     id?: string
     name: string
-    phone: string
     creditBalance?: Decimal | DecimalJsLike | number | string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -18602,7 +18581,6 @@ export namespace Prisma {
   export type SupplierUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
-    phone?: StringFieldUpdateOperationsInput | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18612,7 +18590,6 @@ export namespace Prisma {
   export type SupplierUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
-    phone?: StringFieldUpdateOperationsInput | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18622,7 +18599,6 @@ export namespace Prisma {
   export type SupplierCreateManyInput = {
     id?: string
     name: string
-    phone: string
     creditBalance?: Decimal | DecimalJsLike | number | string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -18631,7 +18607,6 @@ export namespace Prisma {
   export type SupplierUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
-    phone?: StringFieldUpdateOperationsInput | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18640,7 +18615,6 @@ export namespace Prisma {
   export type SupplierUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
-    phone?: StringFieldUpdateOperationsInput | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -19743,7 +19717,6 @@ export namespace Prisma {
   export type SupplierCountOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
-    phone?: SortOrder
     creditBalance?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -19756,7 +19729,6 @@ export namespace Prisma {
   export type SupplierMaxOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
-    phone?: SortOrder
     creditBalance?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -19765,7 +19737,6 @@ export namespace Prisma {
   export type SupplierMinOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
-    phone?: SortOrder
     creditBalance?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -21757,7 +21728,6 @@ export namespace Prisma {
   export type SupplierCreateWithoutBatchesInput = {
     id?: string
     name: string
-    phone: string
     creditBalance?: Decimal | DecimalJsLike | number | string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -21766,7 +21736,6 @@ export namespace Prisma {
   export type SupplierUncheckedCreateWithoutBatchesInput = {
     id?: string
     name: string
-    phone: string
     creditBalance?: Decimal | DecimalJsLike | number | string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -21826,7 +21795,6 @@ export namespace Prisma {
   export type SupplierUpdateWithoutBatchesInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
-    phone?: StringFieldUpdateOperationsInput | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -21835,7 +21803,6 @@ export namespace Prisma {
   export type SupplierUncheckedUpdateWithoutBatchesInput = {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
-    phone?: StringFieldUpdateOperationsInput | string
     creditBalance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string

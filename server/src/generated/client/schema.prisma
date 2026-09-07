@@ -71,7 +71,6 @@ model User {
 model Supplier {
   id            String   @id @default(uuid())
   name          String
-  phone         String   @unique
   creditBalance Decimal  @default("0.00") @db.Decimal(12, 2)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -118,7 +117,7 @@ model SupportedBank {
 
 model InventoryBatch {
   id               String   @id @default(uuid())
-  batchCode        String   @unique
+  batchCode        String // Removed @unique so multiple items can share a batch code
   productId        String
   product          Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
   supplierId       String
@@ -129,7 +128,7 @@ model InventoryBatch {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  // Composite index: instant lookup for olders sellable batches during FIFO checkout
+  @@index([batchCode]) // Fast search index for batch groups
   @@index([productId, remainingQty, createdAt])
 }
 

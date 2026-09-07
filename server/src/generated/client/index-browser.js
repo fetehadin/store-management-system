@@ -138,7 +138,6 @@ exports.Prisma.UserScalarFieldEnum = {
 exports.Prisma.SupplierScalarFieldEnum = {
   id: 'id',
   name: 'name',
-  phone: 'phone',
   creditBalance: 'creditBalance',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
