@@ -270,6 +270,16 @@ exports.Prisma.NoteScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.MessageScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  title: 'title',
+  body: 'body',
+  type: 'type',
+  isRead: 'isRead',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -333,7 +343,8 @@ exports.Prisma.ModelName = {
   LedgerEntry: 'LedgerEntry',
   StockReturn: 'StockReturn',
   ReturnItem: 'ReturnItem',
-  Note: 'Note'
+  Note: 'Note',
+  Message: 'Message'
 };
 
 /**

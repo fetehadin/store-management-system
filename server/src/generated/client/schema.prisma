@@ -67,6 +67,7 @@ model User {
   sales           Sale[]
   returns         StockReturn[]
   notes           Note[]
+  messages        Message[]
 }
 
 model Supplier {
@@ -245,4 +246,17 @@ model Note {
 
   @@unique([userId, dateKey])
   @@index([userId, dateKey])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String   @db.Text
+  type      String   @default("INFO") // INFO, SUCCESS, ERROR, WARNING
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
 }
