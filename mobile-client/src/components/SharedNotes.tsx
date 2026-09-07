@@ -12,44 +12,64 @@ import {
   Platform,
   Alert,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
-
-const INITIAL_NOTES = {
-  '2026-08-30': 'Meeting with Addis Sugar Factory went well. Need to follow up on the missing 50kg bags from last week.',
-  '2026-08-28': 'Market is slowing down slightly this week. Oil prices from suppliers are expected to rise next month, need to stock up now.',
-  '2026-08-25': 'Enrolled a new supplier for confectionery. Initial batch looks good but check expiration dates closely on the chocolate boxes.',
-};
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '../api/client';
 
 export default function SharedNotes() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
 
-  const [notesLedger, setNotesLedger] = useState<Record<string, string>>(INITIAL_NOTES);
   const [activeDateKey, setActiveDateKey] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [draftContent, setDraftContent] = useState('');
 
-  const sortedNotes = Object.entries(notesLedger)
-    .filter(([_, text]) => text.trim().length > 0)
+  // Fetch live notes from PostgreSQL via backend
+  const { data: notesLedger = {}, isLoading } = useQuery({
+    queryKey: ['user-notes'],
+    queryFn: async () => {
+      const res = await apiClient.get('/notes');
+      return res.data?.data || {};
+    }
+  });
+
+  // Save/Upsert note mutation
+  const saveMutation = useMutation({
+    mutationFn: async ({ dateKey, content }: { dateKey: string; content: string }) => {
+      return apiClient.post('/notes', { dateKey, content });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-notes'] });
+    },
+    onError: (err: any) => {
+      Alert.alert('Error', err.response?.data?.message || 'Failed to save note.');
+    }
+  });
+
+  const sortedNotes = Object.entries(notesLedger as Record<string, string>)
+    .filter(([_, text]) => text && text.trim().length > 0)
     .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
     .map(([date, text]) => ({ date, text }));
 
   const getTodayKey = () => new Date().toISOString().split('T')[0];
 
   const openNote = (dateKey: string) => {
-    if (!notesLedger[dateKey]) {
-      setNotesLedger(prev => ({ ...prev, [dateKey]: '' }));
-    }
     setActiveDateKey(dateKey);
+    setDraftContent((notesLedger as Record<string, string>)[dateKey] || '');
     setIsEditorOpen(true);
   };
 
-  const handleTextChange = (text: string) => {
+  const handleCloseEditor = () => {
     if (activeDateKey) {
-      setNotesLedger((prev) => ({ ...prev, [activeDateKey]: text }));
+      saveMutation.mutate({ dateKey: activeDateKey, content: draftContent });
     }
+    setIsEditorOpen(false);
+    setActiveDateKey(null);
   };
 
   const deleteCurrentNote = () => {
@@ -62,11 +82,9 @@ export default function SharedNotes() {
           text: "Delete", 
           style: "destructive", 
           onPress: () => {
-            setNotesLedger((prev) => {
-              const updated = { ...prev };
-              if (activeDateKey) delete updated[activeDateKey];
-              return updated;
-            });
+            if (activeDateKey) {
+              saveMutation.mutate({ dateKey: activeDateKey, content: '' });
+            }
             setIsEditorOpen(false);
             setActiveDateKey(null);
           } 
@@ -109,7 +127,9 @@ export default function SharedNotes() {
       </View>
 
       <ScrollView contentContainerStyle={styles.listContainer} showsVerticalScrollIndicator={false}>
-        {sortedNotes.length === 0 ? (
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#1D61F2" style={{ marginTop: 60 }} />
+        ) : sortedNotes.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="journal-outline" size={48} color={theme.textMuted} />
             <Text style={[styles.emptyStateTitle, { color: theme.text }]}>No Notes Yet</Text>
@@ -138,7 +158,7 @@ export default function SharedNotes() {
       <Modal visible={isEditorOpen} animationType="slide" presentationStyle="pageSheet">
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.safeArea, { backgroundColor: theme.bg }]}>
           <View style={[styles.editorHeader, { borderBottomColor: theme.border }]}>
-            <TouchableOpacity onPress={() => setIsEditorOpen(false)} style={styles.closeEditorBtn}>
+            <TouchableOpacity onPress={handleCloseEditor} style={styles.closeEditorBtn}>
               <Ionicons name="chevron-down" size={24} color={theme.text} />
               <Text style={[styles.closeEditorText, { color: theme.text }]}>Save & Close</Text>
             </TouchableOpacity>
@@ -159,8 +179,8 @@ export default function SharedNotes() {
               multiline
               textAlignVertical="top"
               autoFocus
-              value={activeDateKey ? notesLedger[activeDateKey] : ''}
-              onChangeText={handleTextChange}
+              value={draftContent}
+              onChangeText={setDraftContent}
             />
           </View>
         </KeyboardAvoidingView>
