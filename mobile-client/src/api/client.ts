@@ -1,8 +1,8 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-// Change this from 10.240.23.101 to your new IP
-const BASE_URL = 'http://172.30.75.101:5000/api/v1';
+const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://localhost:5000';
+const BASE_URL = `${BASE_IP}/api/v1`;
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
