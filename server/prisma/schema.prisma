@@ -66,6 +66,7 @@ model User {
   paymentProofs          PaymentProof[]
   sales                  Sale[]
   returns                StockReturn[]
+  notes                  Note[]
 }
 
 model Supplier {
@@ -231,4 +232,17 @@ model ReturnItem {
   stockReturn   StockReturn @relation(fields: [stockReturnId], references: [id])
   itemId        String      // References your Inventory Item ID
   quantity      Int
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateKey   String   // Stored as "YYYY-MM-DD"
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, dateKey])
+  @@index([userId, dateKey])
 }
