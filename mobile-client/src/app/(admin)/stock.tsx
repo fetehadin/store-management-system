@@ -10,8 +10,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../api/client';
 
-const BASE_IP = 'http://172.30.75.101:5000';
-
+const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://localhost:5000';
 const resolveImageUrl = (url: string) => {
   if (!url) return null;
   if (url.startsWith('data:') || url.startsWith('http')) return url;
