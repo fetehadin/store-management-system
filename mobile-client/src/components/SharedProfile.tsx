@@ -30,7 +30,7 @@ export default function SharedProfile() {
   
   const displayRole = role === 'ADMIN' ? 'System Administrator' : 'Sales Representative';
 
-  const BASE_IP = 'http://10.104.108.101:5000';
+  const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://localhost:5000'; 
   const initialAvatar = authProfilePic 
     ? `${BASE_IP}${authProfilePic}` 
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(authUserName)}&background=1D61F2&color=fff`;
