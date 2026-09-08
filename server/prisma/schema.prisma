@@ -84,14 +84,16 @@ model Product {
   id                String  @id @default(uuid()) 
   name              String  
   description       String?
-  category          String?   // <--- ADDED: To power the horizontal category filter
-  imageUrl          String?   // <--- ADDED: To display product images
+  category          String?   //To power the horizontal category filter
+  imageUrl          String?   //To display product images
   price             Decimal   @db.Decimal(12, 2)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   batches           InventoryBatch[]
   sales             Sale[]
+
+  @@index([name, category])
 }
 
 model Retailer {
