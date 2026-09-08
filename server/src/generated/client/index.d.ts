@@ -8209,12 +8209,14 @@ export namespace Prisma {
     quantityRecieved: number | null
     remainingQty: number | null
     unitCostPrice: Decimal | null
+    amountPaid: Decimal | null
   }
 
   export type InventoryBatchSumAggregateOutputType = {
     quantityRecieved: number | null
     remainingQty: number | null
     unitCostPrice: Decimal | null
+    amountPaid: Decimal | null
   }
 
   export type InventoryBatchMinAggregateOutputType = {
@@ -8225,6 +8227,8 @@ export namespace Prisma {
     quantityRecieved: number | null
     remainingQty: number | null
     unitCostPrice: Decimal | null
+    amountPaid: Decimal | null
+    isArchived: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -8237,6 +8241,8 @@ export namespace Prisma {
     quantityRecieved: number | null
     remainingQty: number | null
     unitCostPrice: Decimal | null
+    amountPaid: Decimal | null
+    isArchived: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -8249,6 +8255,8 @@ export namespace Prisma {
     quantityRecieved: number
     remainingQty: number
     unitCostPrice: number
+    amountPaid: number
+    isArchived: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -8259,12 +8267,14 @@ export namespace Prisma {
     quantityRecieved?: true
     remainingQty?: true
     unitCostPrice?: true
+    amountPaid?: true
   }
 
   export type InventoryBatchSumAggregateInputType = {
     quantityRecieved?: true
     remainingQty?: true
     unitCostPrice?: true
+    amountPaid?: true
   }
 
   export type InventoryBatchMinAggregateInputType = {
@@ -8275,6 +8285,8 @@ export namespace Prisma {
     quantityRecieved?: true
     remainingQty?: true
     unitCostPrice?: true
+    amountPaid?: true
+    isArchived?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -8287,6 +8299,8 @@ export namespace Prisma {
     quantityRecieved?: true
     remainingQty?: true
     unitCostPrice?: true
+    amountPaid?: true
+    isArchived?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -8299,6 +8313,8 @@ export namespace Prisma {
     quantityRecieved?: true
     remainingQty?: true
     unitCostPrice?: true
+    amountPaid?: true
+    isArchived?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -8398,6 +8414,8 @@ export namespace Prisma {
     quantityRecieved: number
     remainingQty: number
     unitCostPrice: Decimal
+    amountPaid: Decimal
+    isArchived: boolean
     createdAt: Date
     updatedAt: Date
     _count: InventoryBatchCountAggregateOutputType | null
@@ -8429,6 +8447,8 @@ export namespace Prisma {
     quantityRecieved?: boolean
     remainingQty?: boolean
     unitCostPrice?: boolean
+    amountPaid?: boolean
+    isArchived?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     product?: boolean | ProductDefaultArgs<ExtArgs>
@@ -8443,6 +8463,8 @@ export namespace Prisma {
     quantityRecieved?: boolean
     remainingQty?: boolean
     unitCostPrice?: boolean
+    amountPaid?: boolean
+    isArchived?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     product?: boolean | ProductDefaultArgs<ExtArgs>
@@ -8457,6 +8479,8 @@ export namespace Prisma {
     quantityRecieved?: boolean
     remainingQty?: boolean
     unitCostPrice?: boolean
+    amountPaid?: boolean
+    isArchived?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     product?: boolean | ProductDefaultArgs<ExtArgs>
@@ -8471,11 +8495,13 @@ export namespace Prisma {
     quantityRecieved?: boolean
     remainingQty?: boolean
     unitCostPrice?: boolean
+    amountPaid?: boolean
+    isArchived?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type InventoryBatchOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "batchCode" | "productId" | "supplierId" | "quantityRecieved" | "remainingQty" | "unitCostPrice" | "createdAt" | "updatedAt", ExtArgs["result"]["inventoryBatch"]>
+  export type InventoryBatchOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "batchCode" | "productId" | "supplierId" | "quantityRecieved" | "remainingQty" | "unitCostPrice" | "amountPaid" | "isArchived" | "createdAt" | "updatedAt", ExtArgs["result"]["inventoryBatch"]>
   export type InventoryBatchInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     product?: boolean | ProductDefaultArgs<ExtArgs>
     supplier?: boolean | SupplierDefaultArgs<ExtArgs>
@@ -8503,6 +8529,8 @@ export namespace Prisma {
       quantityRecieved: number
       remainingQty: number
       unitCostPrice: Prisma.Decimal
+      amountPaid: Prisma.Decimal
+      isArchived: boolean
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["inventoryBatch"]>
@@ -8937,6 +8965,8 @@ export namespace Prisma {
     readonly quantityRecieved: FieldRef<"InventoryBatch", 'Int'>
     readonly remainingQty: FieldRef<"InventoryBatch", 'Int'>
     readonly unitCostPrice: FieldRef<"InventoryBatch", 'Decimal'>
+    readonly amountPaid: FieldRef<"InventoryBatch", 'Decimal'>
+    readonly isArchived: FieldRef<"InventoryBatch", 'Boolean'>
     readonly createdAt: FieldRef<"InventoryBatch", 'DateTime'>
     readonly updatedAt: FieldRef<"InventoryBatch", 'DateTime'>
   }
@@ -19617,6 +19647,8 @@ export namespace Prisma {
     quantityRecieved: 'quantityRecieved',
     remainingQty: 'remainingQty',
     unitCostPrice: 'unitCostPrice',
+    amountPaid: 'amountPaid',
+    isArchived: 'isArchived',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -20299,6 +20331,8 @@ export namespace Prisma {
     quantityRecieved?: IntFilter<"InventoryBatch"> | number
     remainingQty?: IntFilter<"InventoryBatch"> | number
     unitCostPrice?: DecimalFilter<"InventoryBatch"> | Decimal | DecimalJsLike | number | string
+    amountPaid?: DecimalFilter<"InventoryBatch"> | Decimal | DecimalJsLike | number | string
+    isArchived?: BoolFilter<"InventoryBatch"> | boolean
     createdAt?: DateTimeFilter<"InventoryBatch"> | Date | string
     updatedAt?: DateTimeFilter<"InventoryBatch"> | Date | string
     product?: XOR<ProductScalarRelationFilter, ProductWhereInput>
@@ -20313,6 +20347,8 @@ export namespace Prisma {
     quantityRecieved?: SortOrder
     remainingQty?: SortOrder
     unitCostPrice?: SortOrder
+    amountPaid?: SortOrder
+    isArchived?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     product?: ProductOrderByWithRelationInput
@@ -20330,6 +20366,8 @@ export namespace Prisma {
     quantityRecieved?: IntFilter<"InventoryBatch"> | number
     remainingQty?: IntFilter<"InventoryBatch"> | number
     unitCostPrice?: DecimalFilter<"InventoryBatch"> | Decimal | DecimalJsLike | number | string
+    amountPaid?: DecimalFilter<"InventoryBatch"> | Decimal | DecimalJsLike | number | string
+    isArchived?: BoolFilter<"InventoryBatch"> | boolean
     createdAt?: DateTimeFilter<"InventoryBatch"> | Date | string
     updatedAt?: DateTimeFilter<"InventoryBatch"> | Date | string
     product?: XOR<ProductScalarRelationFilter, ProductWhereInput>
@@ -20344,6 +20382,8 @@ export namespace Prisma {
     quantityRecieved?: SortOrder
     remainingQty?: SortOrder
     unitCostPrice?: SortOrder
+    amountPaid?: SortOrder
+    isArchived?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: InventoryBatchCountOrderByAggregateInput
@@ -20364,6 +20404,8 @@ export namespace Prisma {
     quantityRecieved?: IntWithAggregatesFilter<"InventoryBatch"> | number
     remainingQty?: IntWithAggregatesFilter<"InventoryBatch"> | number
     unitCostPrice?: DecimalWithAggregatesFilter<"InventoryBatch"> | Decimal | DecimalJsLike | number | string
+    amountPaid?: DecimalWithAggregatesFilter<"InventoryBatch"> | Decimal | DecimalJsLike | number | string
+    isArchived?: BoolWithAggregatesFilter<"InventoryBatch"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"InventoryBatch"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"InventoryBatch"> | Date | string
   }
@@ -21413,6 +21455,8 @@ export namespace Prisma {
     quantityRecieved: number
     remainingQty: number
     unitCostPrice: Decimal | DecimalJsLike | number | string
+    amountPaid?: Decimal | DecimalJsLike | number | string
+    isArchived?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     product: ProductCreateNestedOneWithoutBatchesInput
@@ -21427,6 +21471,8 @@ export namespace Prisma {
     quantityRecieved: number
     remainingQty: number
     unitCostPrice: Decimal | DecimalJsLike | number | string
+    amountPaid?: Decimal | DecimalJsLike | number | string
+    isArchived?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -21437,6 +21483,8 @@ export namespace Prisma {
     quantityRecieved?: IntFieldUpdateOperationsInput | number
     remainingQty?: IntFieldUpdateOperationsInput | number
     unitCostPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    amountPaid?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isArchived?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     product?: ProductUpdateOneRequiredWithoutBatchesNestedInput
@@ -21451,6 +21499,8 @@ export namespace Prisma {
     quantityRecieved?: IntFieldUpdateOperationsInput | number
     remainingQty?: IntFieldUpdateOperationsInput | number
     unitCostPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    amountPaid?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isArchived?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -21463,6 +21513,8 @@ export namespace Prisma {
     quantityRecieved: number
     remainingQty: number
     unitCostPrice: Decimal | DecimalJsLike | number | string
+    amountPaid?: Decimal | DecimalJsLike | number | string
+    isArchived?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -21473,6 +21525,8 @@ export namespace Prisma {
     quantityRecieved?: IntFieldUpdateOperationsInput | number
     remainingQty?: IntFieldUpdateOperationsInput | number
     unitCostPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    amountPaid?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isArchived?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -21485,6 +21539,8 @@ export namespace Prisma {
     quantityRecieved?: IntFieldUpdateOperationsInput | number
     remainingQty?: IntFieldUpdateOperationsInput | number
     unitCostPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    amountPaid?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isArchived?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -22601,6 +22657,8 @@ export namespace Prisma {
     quantityRecieved?: SortOrder
     remainingQty?: SortOrder
     unitCostPrice?: SortOrder
+    amountPaid?: SortOrder
+    isArchived?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -22609,6 +22667,7 @@ export namespace Prisma {
     quantityRecieved?: SortOrder
     remainingQty?: SortOrder
     unitCostPrice?: SortOrder
+    amountPaid?: SortOrder
   }
 
   export type InventoryBatchMaxOrderByAggregateInput = {
@@ -22619,6 +22678,8 @@ export namespace Prisma {
     quantityRecieved?: SortOrder
     remainingQty?: SortOrder
     unitCostPrice?: SortOrder
+    amountPaid?: SortOrder
+    isArchived?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -22631,6 +22692,8 @@ export namespace Prisma {
     quantityRecieved?: SortOrder
     remainingQty?: SortOrder
     unitCostPrice?: SortOrder
+    amountPaid?: SortOrder
+    isArchived?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -22639,6 +22702,7 @@ export namespace Prisma {
     quantityRecieved?: SortOrder
     remainingQty?: SortOrder
     unitCostPrice?: SortOrder
+    amountPaid?: SortOrder
   }
 
   export type IntWithAggregatesFilter<$PrismaModel = never> = {
@@ -24521,6 +24585,8 @@ export namespace Prisma {
     quantityRecieved: number
     remainingQty: number
     unitCostPrice: Decimal | DecimalJsLike | number | string
+    amountPaid?: Decimal | DecimalJsLike | number | string
+    isArchived?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     product: ProductCreateNestedOneWithoutBatchesInput
@@ -24533,6 +24599,8 @@ export namespace Prisma {
     quantityRecieved: number
     remainingQty: number
     unitCostPrice: Decimal | DecimalJsLike | number | string
+    amountPaid?: Decimal | DecimalJsLike | number | string
+    isArchived?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -24574,6 +24642,8 @@ export namespace Prisma {
     quantityRecieved?: IntFilter<"InventoryBatch"> | number
     remainingQty?: IntFilter<"InventoryBatch"> | number
     unitCostPrice?: DecimalFilter<"InventoryBatch"> | Decimal | DecimalJsLike | number | string
+    amountPaid?: DecimalFilter<"InventoryBatch"> | Decimal | DecimalJsLike | number | string
+    isArchived?: BoolFilter<"InventoryBatch"> | boolean
     createdAt?: DateTimeFilter<"InventoryBatch"> | Date | string
     updatedAt?: DateTimeFilter<"InventoryBatch"> | Date | string
   }
@@ -24584,6 +24654,8 @@ export namespace Prisma {
     quantityRecieved: number
     remainingQty: number
     unitCostPrice: Decimal | DecimalJsLike | number | string
+    amountPaid?: Decimal | DecimalJsLike | number | string
+    isArchived?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
     supplier: SupplierCreateNestedOneWithoutBatchesInput
@@ -24596,6 +24668,8 @@ export namespace Prisma {
     quantityRecieved: number
     remainingQty: number
     unitCostPrice: Decimal | DecimalJsLike | number | string
+    amountPaid?: Decimal | DecimalJsLike | number | string
+    isArchived?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -25990,6 +26064,8 @@ export namespace Prisma {
     quantityRecieved: number
     remainingQty: number
     unitCostPrice: Decimal | DecimalJsLike | number | string
+    amountPaid?: Decimal | DecimalJsLike | number | string
+    isArchived?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -26000,6 +26076,8 @@ export namespace Prisma {
     quantityRecieved?: IntFieldUpdateOperationsInput | number
     remainingQty?: IntFieldUpdateOperationsInput | number
     unitCostPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    amountPaid?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isArchived?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     product?: ProductUpdateOneRequiredWithoutBatchesNestedInput
@@ -26012,6 +26090,8 @@ export namespace Prisma {
     quantityRecieved?: IntFieldUpdateOperationsInput | number
     remainingQty?: IntFieldUpdateOperationsInput | number
     unitCostPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    amountPaid?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isArchived?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -26023,6 +26103,8 @@ export namespace Prisma {
     quantityRecieved?: IntFieldUpdateOperationsInput | number
     remainingQty?: IntFieldUpdateOperationsInput | number
     unitCostPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    amountPaid?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isArchived?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -26034,6 +26116,8 @@ export namespace Prisma {
     quantityRecieved: number
     remainingQty: number
     unitCostPrice: Decimal | DecimalJsLike | number | string
+    amountPaid?: Decimal | DecimalJsLike | number | string
+    isArchived?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -26054,6 +26138,8 @@ export namespace Prisma {
     quantityRecieved?: IntFieldUpdateOperationsInput | number
     remainingQty?: IntFieldUpdateOperationsInput | number
     unitCostPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    amountPaid?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isArchived?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     supplier?: SupplierUpdateOneRequiredWithoutBatchesNestedInput
@@ -26066,6 +26152,8 @@ export namespace Prisma {
     quantityRecieved?: IntFieldUpdateOperationsInput | number
     remainingQty?: IntFieldUpdateOperationsInput | number
     unitCostPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    amountPaid?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isArchived?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -26077,6 +26165,8 @@ export namespace Prisma {
     quantityRecieved?: IntFieldUpdateOperationsInput | number
     remainingQty?: IntFieldUpdateOperationsInput | number
     unitCostPrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    amountPaid?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    isArchived?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

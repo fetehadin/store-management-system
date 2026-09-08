@@ -178,6 +178,8 @@ exports.Prisma.InventoryBatchScalarFieldEnum = {
   quantityRecieved: 'quantityRecieved',
   remainingQty: 'remainingQty',
   unitCostPrice: 'unitCostPrice',
+  amountPaid: 'amountPaid',
+  isArchived: 'isArchived',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
