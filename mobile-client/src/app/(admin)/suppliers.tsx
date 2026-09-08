@@ -5,7 +5,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../store/authStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../api/client';
@@ -28,6 +27,9 @@ export default function SuppliersScreen() {
   const [activeSupplierId, setActiveSupplierId] = useState<string | null>(null);
   const [activeBatch, setActiveBatch] = useState<any | null>(null);
 
+  // Track exactly which input is focused for displaying inline suggestion chips
+  const [focusedField, setFocusedField] = useState<{ index: number, field: 'name' | 'category' } | null>(null);
+
   const [vendorName, setVendorName] = useState('');
   const [primaryCategory, setPrimaryCategory] = useState('');
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -36,6 +38,7 @@ export default function SuppliersScreen() {
   ]);
   const [refundInputs, setRefundInputs] = useState<Record<string, string>>({});
 
+  // 1. Fetch Suppliers
   const { data: suppliers = [], isLoading, refetch } = useQuery({
     queryKey: ['admin-suppliers'],
     queryFn: async () => {
@@ -45,12 +48,26 @@ export default function SuppliersScreen() {
     enabled: isAdmin,
   });
 
+  // 2. Fetch all known products once for instant, in-memory filtering (No more typing lag!)
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ['all-products'],
+    queryFn: async () => {
+      const response = await apiClient.get('/inventory/products');
+      return response.data?.data || [];
+    },
+    enabled: isAdmin,
+  });
+
+  // Extract a master list of unique categories
+  const uniqueCategories = Array.from(new Set(allProducts.map((p: any) => p.category).filter(Boolean)));
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
   }, [refetch]);
 
+  // Mutations
   const enrollSupplierMutation = useMutation({
     mutationFn: async (payload: any) => apiClient.post('/admin/suppliers', payload),
     onSuccess: () => {
@@ -114,9 +131,10 @@ export default function SuppliersScreen() {
       setIsAdjustModalVisible(false);
       setActiveBatch(null);
     },
-    onError: (error: any) => Alert.alert('Error', error.response?.data?.message || 'Refund failed.')
+    onError: (error: any) => Alert.alert('Refund Blocked', error.response?.data?.message || 'Failed.')
   });
 
+  // Handlers
   const toggleSupplierExpand = (id: string) => {
     setExpandedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
@@ -206,7 +224,6 @@ export default function SuppliersScreen() {
     );
   }
 
-  // System-level calculation directly from the backend dynamic data
   const totalPayableSum = suppliers.reduce((acc: number, s: any) => acc + Number(s.totalPayable || 0), 0);
 
   const theme = {
@@ -219,36 +236,108 @@ export default function SuppliersScreen() {
 
   const renderBatchItems = () => (
     <>
-      {batchItems.map((item, index) => (
-        <View key={item.localId} style={[styles.itemEntryCard, { backgroundColor: theme.cardBg, borderColor: theme.border }]}>
-          <View style={styles.itemEntryHeader}>
-            <Text style={[styles.itemEntryTitle, { color: theme.text }]}>Item {index + 1}</Text>
-            {batchItems.length > 1 && (
-              <TouchableOpacity onPress={() => batchItems.length > 1 && setBatchItems(prev => prev.filter((_, i) => i !== index))}>
-                <Ionicons name="trash-outline" size={20} color="#DC2626" />
-              </TouchableOpacity>
-            )}
+      {batchItems.map((item, index) => {
+        // --- IN-MEMORY CLASSIC FILTERING ---
+        const categorySearch = item.category.toLowerCase();
+        const filteredCategories = uniqueCategories.filter((c: any) => c.toLowerCase().includes(categorySearch));
+
+        const nameSearch = item.name.toLowerCase();
+        // Only suggest items that match the currently typed/selected category
+        const availableItemsInCategory = allProducts.filter((p: any) => p.category === item.category);
+        const filteredItems = availableItemsInCategory.filter((p: any) => p.name.toLowerCase().includes(nameSearch));
+
+        return (
+          <View key={item.localId} style={[styles.itemEntryCard, { backgroundColor: theme.cardBg, borderColor: theme.border }]}>
+            <View style={styles.itemEntryHeader}>
+              <Text style={[styles.itemEntryTitle, { color: theme.text }]}>Item {index + 1}</Text>
+              {batchItems.length > 1 && (
+                <TouchableOpacity onPress={() => removeBatchItem(index)}>
+                  <Ionicons name="trash-outline" size={20} color="#DC2626" />
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            {/* 1. CATEGORY INPUT FIRST */}
+            <View>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Category</Text>
+              <TextInput 
+                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} 
+                placeholder="e.g. Beverages" 
+                placeholderTextColor={theme.textMuted} 
+                value={item.category} 
+                onFocus={() => setFocusedField({ index, field: 'category' })}
+                onChangeText={(val) => updateBatchItem(index, 'category', val)} 
+              />
+              
+              {/* Classic Horizontal Chips for Categories */}
+              {focusedField?.index === index && focusedField?.field === 'category' && filteredCategories.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScrollContainer} keyboardShouldPersistTaps="always">
+                  {filteredCategories.map((cat: any, cIdx: number) => (
+                    <TouchableOpacity 
+                      key={cIdx} 
+                      style={[styles.chip, { backgroundColor: theme.invertedBg }]} 
+                      onPress={() => { 
+                        updateBatchItem(index, 'category', cat); 
+                        setFocusedField({ index, field: 'name' }); // Auto-advance to item name!
+                      }}
+                    >
+                      <Text style={[styles.chipText, { color: theme.invertedText }]}>{cat}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+
+            {/* 2. ITEM NAME INPUT SECOND */}
+            <View style={{ marginTop: 12 }}>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Item Name (Filtered by Category)</Text>
+              <TextInput 
+                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} 
+                placeholder="e.g. Cooking Oil" 
+                placeholderTextColor={theme.textMuted} 
+                value={item.name} 
+                onFocus={() => setFocusedField({ index, field: 'name' })}
+                onChangeText={(val) => updateBatchItem(index, 'name', val)} 
+              />
+              
+              {/* Classic Horizontal Chips for Items */}
+              {focusedField?.index === index && focusedField?.field === 'name' && filteredItems.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScrollContainer} keyboardShouldPersistTaps="always">
+                  {filteredItems.map((prod: any, pIdx: number) => (
+                    <TouchableOpacity 
+                      key={pIdx} 
+                      style={[styles.chip, { backgroundColor: theme.invertedBg }]} 
+                      onPress={() => { 
+                        updateBatchItem(index, 'name', prod.name); 
+                        updateBatchItem(index, 'selling', prod.sellingPrice.toString()); 
+                        setFocusedField(null); 
+                      }}
+                    >
+                      <Text style={[styles.chipText, { color: theme.invertedText }]}>{prod.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+            
+            {/* 3. MATH INPUTS */}
+            <View style={[styles.rowInputs, { marginTop: 16 }]}>
+              <View style={styles.thirdInput}>
+                <Text style={[styles.inputLabel, { color: theme.text }]}>Qty</Text>
+                <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="0" keyboardType="numeric" placeholderTextColor={theme.textMuted} value={item.qty} onChangeText={(val) => updateBatchItem(index, 'qty', val)} />
+              </View>
+              <View style={styles.thirdInput}>
+                <Text style={[styles.inputLabel, { color: theme.text }]}>Cost</Text>
+                <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" placeholderTextColor={theme.textMuted} value={item.cost} onChangeText={(val) => updateBatchItem(index, 'cost', val)} />
+              </View>
+              <View style={styles.thirdInput}>
+                <Text style={[styles.inputLabel, { color: theme.text }]}>Selling</Text>
+                <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" placeholderTextColor={theme.textMuted} value={item.selling} onChangeText={(val) => updateBatchItem(index, 'selling', val)} />
+              </View>
+            </View>
           </View>
-          <Text style={[styles.inputLabel, { color: theme.text }]}>Item Name</Text>
-          <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="e.g. Cooking Oil" placeholderTextColor={theme.textMuted} value={item.name} onChangeText={(val) => updateBatchItem(index, 'name', val)} />
-          <Text style={[styles.inputLabel, { color: theme.text }]}>Category</Text>
-          <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="e.g. Beverages" placeholderTextColor={theme.textMuted} value={item.category} onChangeText={(val) => updateBatchItem(index, 'category', val)} />
-          <View style={styles.rowInputs}>
-            <View style={styles.thirdInput}>
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Qty</Text>
-              <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="0" keyboardType="numeric" placeholderTextColor={theme.textMuted} value={item.qty} onChangeText={(val) => updateBatchItem(index, 'qty', val)} />
-            </View>
-            <View style={styles.thirdInput}>
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Cost</Text>
-              <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" placeholderTextColor={theme.textMuted} value={item.cost} onChangeText={(val) => updateBatchItem(index, 'cost', val)} />
-            </View>
-            <View style={styles.thirdInput}>
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Selling</Text>
-              <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" placeholderTextColor={theme.textMuted} value={item.selling} onChangeText={(val) => updateBatchItem(index, 'selling', val)} />
-            </View>
-          </View>
-        </View>
-      ))}
+        );
+      })}
       <TouchableOpacity style={[styles.addAnotherBtn, { borderColor: theme.border }]} onPress={addBatchItem}>
         <Ionicons name="add" size={18} color={theme.text} style={{ marginRight: 6 }} />
         <Text style={{ color: theme.text, fontWeight: '700' }}>Add Another Item</Text>
@@ -269,7 +358,12 @@ export default function SuppliersScreen() {
         </View>
       </View>
 
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        keyboardShouldPersistTaps="handled" 
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} 
+        contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} 
+        showsVerticalScrollIndicator={false}
+      >
         
         <View style={styles.titleContainer}>
           <View style={styles.summaryBadgeRow}>
@@ -432,7 +526,7 @@ export default function SuppliersScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Enroll Supplier & Add Batch Modals */}
+      {/* Enroll Supplier Modal */}
       <Modal visible={isEnrollModalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={[styles.bottomSheet, { backgroundColor: theme.bg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, maxHeight: '95%' }]}>
@@ -440,8 +534,8 @@ export default function SuppliersScreen() {
               <Text style={[styles.sheetTitle, { color: theme.text }]}>Enroll Supplier</Text>
               <TouchableOpacity onPress={() => setIsEnrollModalVisible(false)} style={styles.closeBtn}><Ionicons name="close" size={24} color={theme.textMuted} /></TouchableOpacity>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetScroll}>
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Vendor Name</Text>
+            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetScroll}>
+              <Text style={[styles.inputLabel, { color: theme.text, marginTop: 0 }]}>Vendor Name</Text>
               <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} value={vendorName} onChangeText={setVendorName} />
               {renderBatchItems()}
               <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.invertedBg, opacity: enrollSupplierMutation.isPending ? 0.7 : 1 }]} onPress={handleEnrollSupplier}>
@@ -452,6 +546,7 @@ export default function SuppliersScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* Receive New Batch Modal */}
       <Modal visible={isAddBatchModalVisible} animationType="slide" transparent>
          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={[styles.bottomSheet, { backgroundColor: theme.bg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, maxHeight: '95%' }]}>
@@ -459,7 +554,7 @@ export default function SuppliersScreen() {
               <Text style={[styles.sheetTitle, { color: theme.text }]}>Receive New Batch</Text>
               <TouchableOpacity onPress={() => setIsAddBatchModalVisible(false)} style={styles.closeBtn}><Ionicons name="close" size={24} color={theme.textMuted} /></TouchableOpacity>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetScroll}>
+            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetScroll}>
               {renderBatchItems()}
               <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.invertedBg, opacity: addBatchMutation.isPending ? 0.7 : 1 }]} onPress={handleAddBatch}>
                 <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>Record Batch</Text>
@@ -535,7 +630,7 @@ const styles = StyleSheet.create({
   itemEntryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   itemEntryTitle: { fontSize: 14, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
   addAnotherBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', marginBottom: 24 },
-  inputLabel: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 12 },
+  inputLabel: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 8 },
   input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontWeight: '600' },
   rowInputs: { flexDirection: 'row', gap: 8 },
   thirdInput: { flex: 1 },
@@ -545,4 +640,9 @@ const styles = StyleSheet.create({
   refundInput: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, width: 80, textAlign: 'center', fontWeight: '700' },
   submitBtn: { marginTop: 12, paddingVertical: 16, borderRadius: 100, alignItems: 'center', justifyContent: 'center' },
   submitBtnText: { fontSize: 16, fontWeight: '700' },
+  
+  // NEW CLASSIC UI CHIPS
+  chipScrollContainer: { marginTop: 8, marginBottom: 4 },
+  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 100, marginRight: 8 },
+  chipText: { fontSize: 13, fontWeight: '600' },
 });
