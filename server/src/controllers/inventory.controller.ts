@@ -360,3 +360,36 @@ export const getMyStock = async (
     next(err);
   }
 };
+
+
+/**
+ * @route   GET /api/v1/inventory/products/suggestions
+ * @desc    Fetch distinct product names and categories for autocomplete to prevent dirty data
+ * @access  Protected (ADMIN)
+ */
+export const getProductSuggestions = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const query = (req.query.q as string) || "";
+    
+    // Fetch distinct names and categories matching the search query
+    const products = await db.product.findMany({
+      where: {
+        OR: [
+          { name: { contains: query, mode: "insensitive" } },
+          { category: { contains: query, mode: "insensitive" } }
+        ]
+      },
+      distinct: ['name', 'category'],
+      select: { name: true, category: true, price: true },
+      take: 10, // O(limit) constraint to ensure fast network payloads
+    });
+
+    res.status(200).json({ status: 'success', data: products });
+  } catch (err) {
+    next(err);
+  }
+};

@@ -4,7 +4,8 @@ import {
   issueStock,
   getInventory,
   updateSellingPrice,
-  getMyStock // <-- 1. Import the new function
+  getMyStock,
+  getProductSuggestions // <-- 1. Import the new suggestions function
 } from "../controllers/inventory.controller.js";
 import { authenticate } from "../middlewares/authenticate.js";
 import { authorize } from "../middlewares/authorize.js";
@@ -14,10 +15,14 @@ const router = Router();
 
 // 2. REP ENDPOINT: Only requires basic authentication so Sales Reps can see their own items
 router.get("/my-stock", authenticate, getMyStock);
+
+// 3. PRODUCT & SUGGESTIONS ENDPOINTS
+// CRITICAL: Specific /suggestions route MUST come before /:id routes
+router.get("/products/suggestions", authenticate, authorize(Role.ADMIN), getProductSuggestions);
 router.get("/products", getInventory);
 router.patch("/products/:id/price", updateSellingPrice);
 
-// 3. ADMIN ENDPOINTS: Explicitly protect the admin-only routes
+// 4. ADMIN ENDPOINTS: Explicitly protect the admin-only routes
 router.post("/batches", authenticate, authorize(Role.ADMIN), createStockBatch);
 router.post("/issue", authenticate, issueStock);
 

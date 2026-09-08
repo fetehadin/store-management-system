@@ -11,16 +11,17 @@ import {
 const router = Router();
 router.use(authenticate, authorize(Role.ADMIN));
 
+// 1. Static Root Routes
 router.get("/", getSuppliers);
 router.post("/", enrollSupplier);
-router.post("/:id/batches", addSupplierBatch);
 
-// CRITICAL: Specific Batch actions MUST come before /:id deletions
+// 2. CRITICAL FIX: Specific multi-parameter nested routes MUST be defined FIRST
 router.post("/:supplierId/batches/:batchCode/pay", paySupplierBatch);
 router.post("/:supplierId/batches/:batchCode/refund", refundSupplierBatch);
 router.delete('/:supplierId/batches/:batchCode', deleteSupplierBatch);
 
-// Generic ID action at the very bottom
+// 3. Generic wildcard /:id routes fall to the bottom to prevent swallowing
+router.post("/:id/batches", addSupplierBatch);
 router.delete('/:id', deleteSupplier);
 
 export default router;
