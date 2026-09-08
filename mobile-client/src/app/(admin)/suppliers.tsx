@@ -1,20 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  StatusBar,
-  Modal,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  ActivityIndicator,
-  RefreshControl
+  View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity,
+  StatusBar, Modal, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -31,11 +18,8 @@ export default function SuppliersScreen() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const isAdmin = role === 'ADMIN' || role === null;
 
-  // Local UI State for accordions
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-
-  // Modals & Form State
   const [isEnrollModalVisible, setIsEnrollModalVisible] = useState(false);
   const [isAddBatchModalVisible, setIsAddBatchModalVisible] = useState(false);
   const [isAdjustModalVisible, setIsAdjustModalVisible] = useState(false);
@@ -52,7 +36,6 @@ export default function SuppliersScreen() {
   ]);
   const [refundInputs, setRefundInputs] = useState<Record<string, string>>({});
 
-  // --- LIVE BACKEND DATA FETCHING ---
   const { data: suppliers = [], isLoading, refetch } = useQuery({
     queryKey: ['admin-suppliers'],
     queryFn: async () => {
@@ -68,7 +51,6 @@ export default function SuppliersScreen() {
     setRefreshing(false);
   }, [refetch]);
 
-  // --- MUTATIONS ---
   const enrollSupplierMutation = useMutation({
     mutationFn: async (payload: any) => apiClient.post('/admin/suppliers', payload),
     onSuccess: () => {
@@ -78,6 +60,25 @@ export default function SuppliersScreen() {
       resetForm();
     },
     onError: (error: any) => Alert.alert('Error', error.response?.data?.message || 'Failed to save supplier.')
+  });
+
+  const deleteSupplierMutation = useMutation({
+    mutationFn: async (supplierId: string) => apiClient.delete(`/admin/suppliers/${supplierId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-suppliers'] });
+      Alert.alert('Success', 'Supplier removed successfully.');
+    },
+    onError: (error: any) => Alert.alert('Error', error.response?.data?.message || 'Failed to delete supplier.')
+  });
+
+  const deleteBatchMutation = useMutation({
+    mutationFn: async ({ supplierId, batchId }: { supplierId: string, batchId: string }) => 
+      apiClient.delete(`/admin/suppliers/${supplierId}/batches/${batchId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-suppliers'] });
+      Alert.alert('Cleared', 'Fully sold and paid batch has been removed.');
+    },
+    onError: (error: any) => Alert.alert('Error', error.response?.data?.message || 'Failed to remove batch.')
   });
 
   const addBatchMutation = useMutation({
@@ -97,7 +98,7 @@ export default function SuppliersScreen() {
       apiClient.post(`/admin/suppliers/${supplierId}/batches/${batchId}/pay`, { amount }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-suppliers'] });
-      Alert.alert('Success', 'Payment recorded and database updated.');
+      Alert.alert('Success', 'Payment distributed and logged securely.');
       setIsPayModalVisible(false);
       setActiveBatch(null);
     },
@@ -109,16 +110,37 @@ export default function SuppliersScreen() {
       apiClient.post(`/admin/suppliers/${supplierId}/batches/${batchId}/refund`, { refunds }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-suppliers'] });
-      Alert.alert('Success', 'Refund processed and supplier debt decreased.');
+      Alert.alert('Success', 'Refund processed correctly.');
       setIsAdjustModalVisible(false);
       setActiveBatch(null);
     },
     onError: (error: any) => Alert.alert('Error', error.response?.data?.message || 'Refund failed.')
   });
 
-  // --- HANDLERS ---
   const toggleSupplierExpand = (id: string) => {
     setExpandedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleDeleteSupplier = (supplierId: string, supplierName: string) => {
+    Alert.alert(
+      "Delete Supplier",
+      `Are you sure you want to delete ${supplierName}? This will remove all associated history.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => deleteSupplierMutation.mutate(supplierId) }
+      ]
+    );
+  };
+
+  const handleDeleteBatch = (supplierId: string, batchId: string) => {
+    Alert.alert(
+      "Remove Batch",
+      "This batch is fully sold out and completely paid off. Archive it?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Archive", style: "destructive", onPress: () => deleteBatchMutation.mutate({ supplierId, batchId }) }
+      ]
+    );
   };
 
   const addBatchItem = () => setBatchItems(prev => [...prev, { localId: Date.now().toString(), name: '', category: '', qty: '', cost: '', selling: '', photoUri: null }]);
@@ -129,11 +151,6 @@ export default function SuppliersScreen() {
       newItems[index] = { ...newItems[index], [field]: value };
       return newItems;
     });
-  };
-
-  const handlePickImage = async (index: number) => {
-    let result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [1, 1], quality: 0.8 });
-    if (!result.canceled) updateBatchItem(index, 'photoUri', result.assets[0].uri);
   };
 
   const resetForm = () => {
@@ -162,9 +179,7 @@ export default function SuppliersScreen() {
       const formattedRefunds = Object.entries(refundInputs)
         .map(([itemId, qtyStr]) => ({ itemId, refundQty: parseInt(qtyStr) || 0 }))
         .filter(r => r.refundQty > 0);
-      
       if (formattedRefunds.length === 0) return Alert.alert("Error", "Enter at least one refund quantity.");
-      
       refundMutation.mutate({ supplierId: activeSupplierId, batchId: activeBatch.id, refunds: formattedRefunds });
     }
   };
@@ -191,17 +206,14 @@ export default function SuppliersScreen() {
     );
   }
 
+  // System-level calculation directly from the backend dynamic data
   const totalPayableSum = suppliers.reduce((acc: number, s: any) => acc + Number(s.totalPayable || 0), 0);
 
   const theme = {
-    bg: isDarkMode ? '#000000' : '#F8FAFC',
-    text: isDarkMode ? '#E7E9EA' : '#0F172A',
-    textMuted: isDarkMode ? '#71767B' : '#64748B',
-    border: isDarkMode ? '#2F3336' : '#E2E8F0',
-    invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5',
-    invertedText: isDarkMode ? '#000000' : '#FFFFFF',
-    cardBg: isDarkMode ? '#000000' : '#FFFFFF',
-    subCardBg: isDarkMode ? '#1E293B' : '#F8FAFC',
+    bg: isDarkMode ? '#000000' : '#F8FAFC', text: isDarkMode ? '#E7E9EA' : '#0F172A',
+    textMuted: isDarkMode ? '#71767B' : '#64748B', border: isDarkMode ? '#2F3336' : '#E2E8F0',
+    invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5', invertedText: isDarkMode ? '#000000' : '#FFFFFF',
+    cardBg: isDarkMode ? '#000000' : '#FFFFFF', subCardBg: isDarkMode ? '#1E293B' : '#F8FAFC',
     inputBg: isDarkMode ? '#0F1419' : '#F1F5F9',
   };
 
@@ -212,17 +224,15 @@ export default function SuppliersScreen() {
           <View style={styles.itemEntryHeader}>
             <Text style={[styles.itemEntryTitle, { color: theme.text }]}>Item {index + 1}</Text>
             {batchItems.length > 1 && (
-              <TouchableOpacity onPress={() => removeBatchItem(index)}>
+              <TouchableOpacity onPress={() => batchItems.length > 1 && setBatchItems(prev => prev.filter((_, i) => i !== index))}>
                 <Ionicons name="trash-outline" size={20} color="#DC2626" />
               </TouchableOpacity>
             )}
           </View>
-
           <Text style={[styles.inputLabel, { color: theme.text }]}>Item Name</Text>
           <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="e.g. Cooking Oil" placeholderTextColor={theme.textMuted} value={item.name} onChangeText={(val) => updateBatchItem(index, 'name', val)} />
           <Text style={[styles.inputLabel, { color: theme.text }]}>Category</Text>
           <TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]} placeholder="e.g. Beverages" placeholderTextColor={theme.textMuted} value={item.category} onChangeText={(val) => updateBatchItem(index, 'category', val)} />
-
           <View style={styles.rowInputs}>
             <View style={styles.thirdInput}>
               <Text style={[styles.inputLabel, { color: theme.text }]}>Qty</Text>
@@ -283,8 +293,8 @@ export default function SuppliersScreen() {
 
             return (
             <View key={supplier.id} style={[styles.supplierCard, { backgroundColor: theme.cardBg }, isDarkMode ? { borderWidth: 1, borderColor: theme.border } : styles.lightShadow]}>
-              <TouchableOpacity style={styles.supplierHeaderRow} onPress={() => toggleSupplierExpand(supplier.id)} activeOpacity={0.7}>
-                <View style={styles.supplierMetaRow}>
+              <View style={styles.supplierHeaderRow}>
+                <TouchableOpacity style={styles.supplierMetaRow} onPress={() => toggleSupplierExpand(supplier.id)} activeOpacity={0.7}>
                   <View style={[styles.supplierIconBox, isDarkMode && { backgroundColor: '#1E293B' }]}>
                     <Ionicons name="business-outline" size={24} color="#1D61F2" />
                   </View>
@@ -294,9 +304,16 @@ export default function SuppliersScreen() {
                       ETB {Number(supplier.totalPayable).toLocaleString()} Due
                     </Text>
                   </View>
+                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <TouchableOpacity onPress={() => handleDeleteSupplier(supplier.id, supplier.name)} style={{ padding: 8, marginRight: 8 }}>
+                    <Ionicons name="trash-outline" size={20} color="#DC2626" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => toggleSupplierExpand(supplier.id)}>
+                    <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={theme.textMuted} />
+                  </TouchableOpacity>
                 </View>
-                <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={theme.textMuted} />
-              </TouchableOpacity>
+              </View>
 
               {isExpanded && (
                 <View style={[styles.batchesContainer, { borderTopColor: theme.border }]}>
@@ -308,54 +325,65 @@ export default function SuppliersScreen() {
                     </TouchableOpacity>
                   </View>
                   
-                  {supplier.batches.map((batch: any) => (
-                    <View key={batch.id} style={[styles.batchCard, { backgroundColor: theme.subCardBg, borderColor: theme.border }]}>
-                      <View style={styles.batchHeader}>
-                        <View>
-                          <Text style={[styles.batchId, { color: theme.text }]}>{batch.id}</Text>
-                          <Text style={[styles.batchDate, { color: theme.textMuted }]}>{batch.date}</Text>
-                        </View>
-                        <View style={{ alignItems: 'flex-end' }}>
-                          <View style={[styles.statusPill, batch.status === 'Paid' ? styles.statusPaid : styles.statusUnpaid]}>
-                            <Text style={[styles.statusPillText, batch.status === 'Paid' ? { color: '#059669' } : { color: '#DC2626' }]}>
-                              {batch.status}
-                            </Text>
-                          </View>
-                          <Text style={[styles.batchTotal, { color: theme.text }]}>ETB {Number(batch.totalAmount).toLocaleString()}</Text>
-                        </View>
-                      </View>
+                  {supplier.batches.map((batch: any) => {
+                    const isFullySoldOut = batch.items.every((item: any) => (item.remainingQty ?? item.qty) === 0);
+                    const isFullyPaid = batch.unpaidAmount <= 0;
+                    const canRemoveBatch = isFullySoldOut && isFullyPaid;
 
-                      <View style={[styles.itemsLedger, { borderTopColor: theme.border }]}>
-                        {batch.items.map((item: any) => (
-                          <View key={item.id} style={styles.itemRow}>
-                            <View style={styles.itemInfo}>
-                              <Ionicons name="cube-outline" size={14} color={theme.textMuted} style={{ marginRight: 6 }} />
-                              <View>
-                                <Text style={[styles.itemName, { color: theme.text }]}>{item.name}</Text>
-                                <Text style={[styles.itemSellingPrice, { color: '#059669' }]}>Sells for ETB {item.selling}</Text>
-                              </View>
+                    return (
+                      <View key={batch.id} style={[styles.batchCard, { backgroundColor: theme.subCardBg, borderColor: theme.border }]}>
+                        <View style={styles.batchHeader}>
+                          <View>
+                            <Text style={[styles.batchId, { color: theme.text }]}>{batch.id}</Text>
+                            <Text style={[styles.batchDate, { color: theme.textMuted }]}>{batch.date}</Text>
+                          </View>
+                          <View style={{ alignItems: 'flex-end' }}>
+                            <View style={[styles.statusPill, isFullyPaid ? styles.statusPaid : styles.statusUnpaid]}>
+                              <Text style={[styles.statusPillText, isFullyPaid ? { color: '#059669' } : { color: '#DC2626' }]}>
+                                {isFullyPaid ? 'CLEARED' : `UNPAID: ETB ${batch.unpaidAmount.toLocaleString()}`}
+                              </Text>
                             </View>
-                            <Text style={[styles.itemMath, { color: theme.textMuted }]}>
-                              {item.qty} × {item.cost} = <Text style={{ color: theme.text, fontWeight: '700' }}>{(item.qty * item.cost).toLocaleString()}</Text>
-                            </Text>
+                            <Text style={[styles.batchTotal, { color: theme.text }]}>Total: ETB {Number(batch.totalAmount).toLocaleString()}</Text>
                           </View>
-                        ))}
-                      </View>
+                        </View>
 
-                      <View style={styles.batchActionRow}>
-                        <TouchableOpacity style={[styles.adjustBtn, { flex: 1, marginRight: 6, borderColor: theme.border, backgroundColor: theme.cardBg }]} onPress={() => { setActiveBatch(batch); setActiveSupplierId(supplier.id); setRefundInputs({}); setIsAdjustModalVisible(true); }}>
-                          <Ionicons name="swap-horizontal" size={14} color={theme.textMuted} style={{ marginRight: 6 }} />
-                          <Text style={[styles.adjustBtnText, { color: theme.text }]}>Refund</Text>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity style={[styles.adjustBtn, { flex: 1, marginLeft: 6, borderColor: '#059669', backgroundColor: '#ECFDF5' }]} onPress={() => { setActiveBatch(batch); setActiveSupplierId(supplier.id); setPaymentAmount(''); setIsPayModalVisible(true); }}>
-                          <Ionicons name="cash-outline" size={14} color="#059669" style={{ marginRight: 6 }} />
-                          <Text style={[styles.adjustBtnText, { color: '#059669' }]}>Pay</Text>
-                        </TouchableOpacity>
-                      </View>
+                        <View style={[styles.itemsLedger, { borderTopColor: theme.border }]}>
+                          {batch.items.map((item: any) => (
+                            <View key={item.id} style={styles.itemRow}>
+                              <View style={styles.itemInfo}>
+                                <Ionicons name="cube-outline" size={14} color={theme.textMuted} style={{ marginRight: 6 }} />
+                                <View>
+                                  <Text style={[styles.itemName, { color: theme.text }]}>{item.name}</Text>
+                                  <Text style={[styles.itemSellingPrice, { color: '#059669' }]}>Sells for ETB {item.selling}</Text>
+                                </View>
+                              </View>
+                              <Text style={[styles.itemMath, { color: theme.textMuted }]}>
+                                {item.qty} × {item.cost} = <Text style={{ color: theme.text, fontWeight: '700' }}>{(item.qty * item.cost).toLocaleString()}</Text>
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
 
-                    </View>
-                  ))}
+                        {canRemoveBatch ? (
+                          <TouchableOpacity style={[styles.adjustBtn, { marginTop: 12, borderColor: '#DC2626', backgroundColor: '#FEF2F2' }]} onPress={() => handleDeleteBatch(supplier.id, batch.id)}>
+                            <Ionicons name="trash-outline" size={14} color="#DC2626" style={{ marginRight: 6 }} />
+                            <Text style={[styles.adjustBtnText, { color: '#DC2626' }]}>Remove Cleared Batch</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <View style={styles.batchActionRow}>
+                            <TouchableOpacity style={[styles.adjustBtn, { flex: 1, marginRight: 6, borderColor: theme.border, backgroundColor: theme.cardBg }]} onPress={() => { setActiveBatch(batch); setActiveSupplierId(supplier.id); setRefundInputs({}); setIsAdjustModalVisible(true); }}>
+                              <Ionicons name="swap-horizontal" size={14} color={theme.textMuted} style={{ marginRight: 6 }} />
+                              <Text style={[styles.adjustBtnText, { color: theme.text }]}>Refund</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.adjustBtn, { flex: 1, marginLeft: 6, borderColor: '#059669', backgroundColor: '#ECFDF5' }]} onPress={() => { setActiveBatch(batch); setActiveSupplierId(supplier.id); setPaymentAmount(''); setIsPayModalVisible(true); }}>
+                              <Ionicons name="cash-outline" size={14} color="#059669" style={{ marginRight: 6 }} />
+                              <Text style={[styles.adjustBtnText, { color: '#059669' }]}>Pay</Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })}
                 </View>
               )}
             </View>
@@ -440,12 +468,10 @@ export default function SuppliersScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-
     </SafeAreaView>
   );
 }
 
-// Keep the exact same StyleSheet from your previous code here
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
@@ -509,16 +535,10 @@ const styles = StyleSheet.create({
   itemEntryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   itemEntryTitle: { fontSize: 14, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
   addAnotherBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', marginBottom: 24 },
-  photoPicker: { height: 70, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 16, overflow: 'hidden' },
-  photoPickerText: { marginTop: 4, fontWeight: '600', fontSize: 12 },
-  previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   inputLabel: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 12 },
   input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontWeight: '600' },
   rowInputs: { flexDirection: 'row', gap: 8 },
   thirdInput: { flex: 1 },
-  dividerLine: { height: 1, marginVertical: 20 },
-  sectionSubtitle: { fontSize: 16, fontWeight: '800', marginBottom: 12 },
-  helperText: { fontSize: 13, marginBottom: 20, lineHeight: 20 },
   refundRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 8 },
   refundItemName: { fontSize: 15, fontWeight: '700', marginBottom: 4 },
   refundCostInfo: { fontSize: 12 },

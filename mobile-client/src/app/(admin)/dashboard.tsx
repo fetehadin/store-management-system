@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import {
   View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity,
   StatusBar, FlatList, Dimensions, Modal, TouchableWithoutFeedback,
-  ViewToken, Platform, Image, RefreshControl
+  ViewToken, Platform, Image, RefreshControl, Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
@@ -49,7 +49,6 @@ export default function AdminDashboard() {
       const response = await apiClient.get('/analytics/summary', { params: { period: activeFilter } });
       return response.data?.data;
     },
-    // Prevent UI layout shifts by instantly feeding placeholder data
     placeholderData: { netBalance: 0, totalRevenue: 0, totalDebt: 0 }
   });
 
@@ -95,6 +94,25 @@ export default function AdminDashboard() {
   const navigateFromProfile = (route: string) => {
     setIsProfileMenuVisible(false);
     router.push(route as any); 
+  };
+
+  const handleSignOut = () => {
+    Alert.alert(
+      "Sign Out",
+      "Are you sure you want to sign out of your account?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Sign Out", 
+          style: "destructive", 
+          onPress: () => {
+            setIsProfileMenuVisible(false);
+            logout();
+            router.replace('/');
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -168,7 +186,7 @@ export default function AdminDashboard() {
           </TouchableWithoutFeedback>
         </Modal>
 
-        {/* Full-Width Sliding Carousel - No Loading Wrapper */}
+        {/* Full-Width Sliding Carousel */}
         <View style={styles.cardsWrapper}>
           <FlatList
             ref={flatListRef}
@@ -305,13 +323,10 @@ export default function AdminDashboard() {
                 <View style={{ flex: 1 }} />
                 <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
-                {/* Wired Secure Logout */}
+                {/* Wired Secure Logout on Sidebar */}
                 <TouchableOpacity 
                   style={styles.logoutBtn} 
-                  onPress={() => {
-                    setIsProfileMenuVisible(false);
-                    logout();
-                  }}
+                  onPress={handleSignOut}
                 >
                   <Ionicons name="log-out-outline" size={26} color="#DC2626" style={styles.drawerMenuIcon} />
                   <Text style={[styles.drawerMenuText, { color: '#DC2626' }]}>Sign Out</Text>
