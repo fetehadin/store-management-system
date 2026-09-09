@@ -44,40 +44,28 @@ export const getFinancialSummary = async (
     });
     const totalRevenue = Number(approvedPayments._sum.amount || 0);
 
-    // 3. Dynamic Debt Calculation
-    let totalDebt = 0;
+    // 3. Dynamic Supplier Debt Calculation (The Fix)
+    // We ignore the static 'creditBalance' column on Supplier (which got desynced during soft-delete tests).
+    // Instead, we dynamically calculate the exact unpaid debt from live batches to perfectly mirror the Suppliers page.
+    const batches = await db.inventoryBatch.findMany({
+      ...(dateFilter ? { where: { createdAt: dateFilter } } : {})
+    });
 
-    if (!dateFilter) {
-      // TOTAL: Live standing credit balance snapshot across all sales reps
-      const reps = await db.user.aggregate({
-        where: { role: 'SALES_REP' },
-        _sum: { creditBalance: true }
-      });
-      totalDebt = Number(reps._sum.creditBalance || 0);
-    } else {
-      // PERIOD FILTERED: (Total Stock Checked Out - Total Approved Returns)
-      const issued = (db as any).stockIssuance
-        ? await (db as any).stockIssuance.aggregate({
-            where: { createdAt: dateFilter },
-            _sum: { totalWholesaleValue: true }
-          })
-        : { _sum: { totalWholesaleValue: 0 } };
+    // We group by batchCode exactly how the Suppliers page does it to ensure a 1:1 mathematical match
+    const batchMap = new Map();
+    batches.forEach(b => {
+      if (!batchMap.has(b.batchCode)) {
+        batchMap.set(b.batchCode, { totalAmount: 0, amountPaid: 0 });
+      }
+      const entry = batchMap.get(b.batchCode);
+      entry.totalAmount += Number(b.quantityRecieved) * Number(b.unitCostPrice);
+      entry.amountPaid += Number(b.amountPaid || 0);
+    });
 
-      const returned = (db as any).stockReturn
-        ? await (db as any).stockReturn.aggregate({
-            where: { 
-              status: 'APPROVED',
-              updatedAt: dateFilter 
-            },
-            _sum: { totalValue: true }
-          })
-        : { _sum: { totalValue: 0 } };
-
-      const issuedAmount = Number(issued._sum?.totalWholesaleValue || 0);
-      const returnedAmount = Number(returned._sum?.totalValue || 0);
-
-      totalDebt = issuedAmount - returnedAmount;
-    }
+    const totalDebt = Array.from(batchMap.values()).reduce((sum: number, batch: any) => {
+      const unpaid = batch.totalAmount - batch.amountPaid;
+      return sum + Math.max(0, unpaid);
+    }, 0);
 
     // 4. Net Balance Calculation
     const netBalance = totalRevenue - totalDebt;
