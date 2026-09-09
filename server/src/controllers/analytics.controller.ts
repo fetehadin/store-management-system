@@ -34,24 +34,20 @@ export const getFinancialSummary = async (
       }
     }
 
-    // 2. Total Revenue: Sum of APPROVED payment proofs
-    const approvedPayments = await db.paymentProof.aggregate({
-      where: { 
-        status: 'APPROVED',
-        ...(dateFilter && { updatedAt: dateFilter })
+    // 2. Total Revenue: Sum of live Sales records, filtered by date if a period is selected
+    const salesAggregate = await db.sale.aggregate({
+      where: {
+        ...(dateFilter && { createdAt: dateFilter })
       },
-      _sum: { amount: true }
+      _sum: { totalAmount: true }
     });
-    const totalRevenue = Number(approvedPayments._sum.amount || 0);
+    const totalRevenue = Number(salesAggregate._sum.totalAmount || 0);
 
-    // 3. Dynamic Supplier Debt Calculation (The Fix)
-    // We ignore the static 'creditBalance' column on Supplier (which got desynced during soft-delete tests).
-    // Instead, we dynamically calculate the exact unpaid debt from live batches to perfectly mirror the Suppliers page.
+    // 3. Dynamic Supplier Debt Calculation (Mirrors the Suppliers page)
     const batches = await db.inventoryBatch.findMany({
       ...(dateFilter ? { where: { createdAt: dateFilter } } : {})
     });
 
-    // We group by batchCode exactly how the Suppliers page does it to ensure a 1:1 mathematical match
     const batchMap = new Map();
     batches.forEach(b => {
       if (!batchMap.has(b.batchCode)) {
