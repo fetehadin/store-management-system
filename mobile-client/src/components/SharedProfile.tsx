@@ -28,22 +28,35 @@ export default function SharedProfile() {
   
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const role = useAuthStore((state) => state.role);
-  const authUserName = useAuthStore((state) => (state as any).userName || 'Fetehadin Negash');
-  const authProfilePic = useAuthStore((state) => state.profilePic);
   const logout = useAuthStore((state) => state.logout);
+  const updateProfilePic = useAuthStore((state) => state.updateProfilePic);
+  
+  // FIX 1: Safely check both the root state and the nested user object
+  const authUserName = useAuthStore((state: any) => state.userName || state.user?.fullName || 'Fetehadin Negash');
+  const rawProfilePic = useAuthStore((state: any) => state.profilePic || state.user?.profilePic);
   
   const displayRole = role === 'ADMIN' ? 'System Administrator' : 'Sales Representative';
 
-  const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://localhost:5000'; 
-  const initialAvatar = authProfilePic 
-    ? `${BASE_IP}${authProfilePic}` 
-    : `https://ui-avatars.com/api/?name=${encodeURIComponent(authUserName)}&background=1D61F2&color=fff`;
+  // FIX 2: Hardcode your network IP as the ultimate fallback so physical mobile devices don't fail on 'localhost'
+  const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://172.30.75.101:5000'; 
+
+  // FIX 3: Bulletproof URI parser to prevent broken image links or double IPs
+  const getAvatarUri = (uri: string | null | undefined) => {
+    if (!uri) return null;
+    if (uri.startsWith('http') || uri.startsWith('file://') || uri.startsWith('data:')) {
+      // Hotfix: If the backend accidentally saved "localhost", replace it dynamically so the phone can reach it
+      return uri.replace('http://localhost:5000', BASE_IP);
+    }
+    return uri.startsWith('/') ? `${BASE_IP}${uri}` : `${BASE_IP}/${uri}`;
+  };
+
+  const generatedAvatar = getAvatarUri(rawProfilePic);
+  const defaultFallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(authUserName)}&background=1D61F2&color=fff`;
 
   // Profile States
-  const [avatarUri, setAvatarUri] = useState<string | null>(initialAvatar);
+  const [avatarUri, setAvatarUri] = useState<string | null>(generatedAvatar || defaultFallback);
   const [isAvatarChanged, setIsAvatarChanged] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const updateProfilePic = useAuthStore((state) => state.updateProfilePic);
 
   // Security States
   const [currentPassword, setCurrentPassword] = useState('');
@@ -56,7 +69,6 @@ export default function SharedProfile() {
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
 
   useEffect(() => {
-    // Check if biometric credentials are saved in SecureStore on load
     checkBiometricStatus();
   }, []);
 
@@ -71,7 +83,6 @@ export default function SharedProfile() {
 
   const handleToggleBiometrics = async (value: boolean) => {
     if (value) {
-      // Enabling biometrics: Verify hardware support
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
@@ -80,14 +91,12 @@ export default function SharedProfile() {
         return;
       }
 
-      // Prompt user to verify identity before enabling
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Confirm biometric registration',
         fallbackLabel: 'Cancel',
       });
 
       if (result.success) {
-        // Prompt for current credentials temporarily or use current input if available
         Alert.alert(
           'Biometrics Enabled',
           'Your device biometric scanner is now linked to quick sign-in.'
@@ -95,7 +104,6 @@ export default function SharedProfile() {
         setIsBiometricEnabled(true);
       }
     } else {
-      // Disabling: Clear stored biometric tokens
       await SecureStore.deleteItemAsync('bio_username');
       await SecureStore.deleteItemAsync('bio_pin');
       setIsBiometricEnabled(false);
@@ -147,6 +155,7 @@ export default function SharedProfile() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
+      // Update the global store so the Home Pages re-render instantly
       const savedImageUrl = response.data.data.profilePic;
       updateProfilePic(savedImageUrl);
       
