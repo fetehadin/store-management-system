@@ -30,12 +30,11 @@ export default function RepStockScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // 1. LIVE DATA: Fetch real products from the backend
+  // 1. LIVE DATA: Pointing correctly to the inventory products endpoint
   const { data: products = [], isLoading, refetch } = useQuery({
-    queryKey: ['warehouse-products'],
+    queryKey: ['warehouse-products-rep'],
     queryFn: async () => {
-      const response = await apiClient.get('/products');
-      // Adjust this based on your actual backend response structure
+      const response = await apiClient.get('/inventory/products');
       return response.data?.data || [];
     },
   });
@@ -68,8 +67,8 @@ export default function RepStockScreen() {
 
   const cartTotal = Object.entries(cart).reduce((total, [id, qty]) => {
     const item = products.find((s: any) => s.id === id);
-    // Assuming backend returns item.price. Adjust if it uses item.sellingPrice or item.wholesalePrice
-    const price = item ? Number(item.price || item.wholesalePrice || 0) : 0;
+    // Mapped safely to backend response property 'sellingPrice'
+    const price = item ? Number(item.sellingPrice || item.costPrice || 0) : 0;
     return total + (price * qty);
   }, 0);
 
@@ -109,27 +108,25 @@ export default function RepStockScreen() {
             setIsProcessing(true);
             
             try {
-              // 2. LIVE CHECKOUT: Dispatch API requests
+              // 2. LIVE CHECKOUT: Dispatch API requests to issue stock
               for (const [itemId, qty] of Object.entries(cart)) {
                 if (qty > 0) {
                   const item = products.find((s: any) => s.id === itemId);
                   if (!item) continue;
 
-                  // Use apiClient instead of raw fetch - it auto-attaches tokens and base URL
                   await apiClient.post('/inventory/issue', {
                     productId: item.id,
                     qtyIssued: qty,
-                    wholesalePrice: Number(item.price || item.wholesalePrice || 0)
+                    wholesalePrice: Number(item.sellingPrice || 0)
                   });
                 }
               }
 
               Alert.alert("Success", "Stock dispatched and debt updated successfully.");
               
-              // Clear cart and invalidate cache to force a fresh pull of financials on the Home screen
               setCart({});
               queryClient.invalidateQueries({ queryKey: ['rep-profile-financials'] });
-              queryClient.invalidateQueries({ queryKey: ['warehouse-products'] });
+              queryClient.invalidateQueries({ queryKey: ['warehouse-products-rep'] });
               
               router.replace('/(rep)/home');
             } catch (error: any) {
@@ -202,22 +199,22 @@ export default function RepStockScreen() {
         ) : (
           filteredStock.map((item: any) => {
             const currentQty = cart[item.id] || 0;
-            // Fallback to 999 if your backend doesn't aggregate physical stock limits yet
-            const maxAvailable = item.currentStock ?? 999; 
-            const price = Number(item.price || item.wholesalePrice || 0);
+            // Mapped safely to backend response property 'stock'
+            const maxAvailable = Number(item.stock ?? 0); 
+            const price = Number(item.sellingPrice || 0);
             const isOutOfStock = maxAvailable <= 0;
 
             return (
               <View key={item.id} style={[styles.productCard, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }, !isDarkMode && styles.lightShadow]}>
                 <View style={[styles.iconPlaceholder, { backgroundColor: theme.inputBg }]}>
-                  <Ionicons name={item.icon || 'cube-outline'} size={28} color={theme.textMuted} />
+                  <Ionicons name={'cube-outline'} size={28} color={theme.textMuted} />
                 </View>
                 
                 <View style={styles.productDetails}>
                   <Text style={[styles.productName, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
                   <Text style={[styles.productPrice, { color: '#059669' }]}>Sells for ETB {price.toLocaleString()}</Text>
                   <Text style={[styles.stockText, { color: isOutOfStock ? '#DC2626' : theme.textMuted }]}>
-                    {isOutOfStock ? 'Out of Stock' : (item.currentStock ? `${maxAvailable} Available` : 'Available')}
+                    {isOutOfStock ? 'Out of Stock' : `${maxAvailable} Available`}
                   </Text>
                 </View>
 
