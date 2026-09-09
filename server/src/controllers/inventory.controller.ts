@@ -243,6 +243,7 @@ export const issueStock = async (
               {
                 productId: validated.productId,
                 qtyIssued: validated.qtyIssued,
+                qtyRemaining: validated.qtyIssued, // <-- THE FIX: Initialize remaining van stock
                 wholesalePrice: toDecimal(validated.wholesalePrice),
                 cogsCalculated: blendedUnitCogs,
               },
