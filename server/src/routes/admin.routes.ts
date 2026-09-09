@@ -7,8 +7,11 @@ import {
   enrollSupplier, 
   addSupplierBatch, 
   paySupplierBatch, 
-  refundSupplierBatch 
+  refundSupplierBatch,
+  deleteSupplier,        // <-- ADDED
+  deleteSupplierBatch    // <-- ADDED
 } from '../controllers/supplier.controller.js';
+
 const router = Router();
 
 // Secure all admin routes
@@ -23,7 +26,13 @@ router.delete("/reps/:id", removeSalesRep);
 router.get('/suppliers', getSuppliers);
 router.post('/suppliers', enrollSupplier);
 router.post('/suppliers/:id/batches', addSupplierBatch);
-router.post('/suppliers/:supplierId/batches/:batchId/pay', paySupplierBatch);
-router.post('/suppliers/:supplierId/batches/:batchId/refund', refundSupplierBatch);
+
+// Nested Batch Routes
+router.post('/suppliers/:supplierId/batches/:batchCode/pay', paySupplierBatch);
+router.post('/suppliers/:supplierId/batches/:batchCode/refund', refundSupplierBatch);
+
+// THE MISSING ENDPOINTS: Hard Delete Routes
+router.delete('/suppliers/:supplierId/batches/:batchCode', deleteSupplierBatch);
+router.delete('/suppliers/:id', deleteSupplier);
 
 export default router;
