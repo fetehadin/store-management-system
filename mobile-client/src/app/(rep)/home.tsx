@@ -26,16 +26,31 @@ const REP_MODULES = [
   { id: 'Notes', title: 'My Notes', sub: 'Daily field diary', icon: 'journal-outline', lightBg: '#FEF2F2', lightColor: '#DC2626', route: '/(rep)/note' },
 ];
 
-// Always use your active local network IP or production URL
-const BASE_IP = 'http://172.30.75.101:5000';
+// Wired to your .env file with your specific local network IP fallback
+const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://10.54.178.101:5000';
 
 export default function RepDashboard() {
   const router = useRouter();
   
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
-  const userName = useAuthStore((state) => (state as any).userName || 'Sales Rep');
-  const authProfilePic = useAuthStore((state) => (state as any).profilePic);
+  
+  // Safely check both root state and nested user object for username and profile pic
+  const userName = useAuthStore((state: any) => state.userName || state.user?.fullName || 'Sales Rep');
+  const rawProfilePic = useAuthStore((state: any) => state.profilePic || state.user?.profilePic);
+  
+  // Bulletproof URI parser to prevent broken paths or double-ip stacking
+  const getAvatarUri = (uri: string | null | undefined) => {
+    if (!uri) return null;
+    if (uri.startsWith('http') || uri.startsWith('file://') || uri.startsWith('data:')) {
+      let cleanUri = uri.replace('http://localhost:5000', BASE_IP);
+      cleanUri = cleanUri.replace('http://172.30.75.101:5000', BASE_IP);
+      return cleanUri;
+    }
+    return uri.startsWith('/') ? `${BASE_IP}${uri}` : `${BASE_IP}/${uri}`;
+  };
+
+  const avatarUri = getAvatarUri(rawProfilePic);
   
   // Zustand store values (acts as initial cache)
   const creditBalance = useAuthStore((state) => state.creditBalance) || 0;
@@ -49,7 +64,6 @@ export default function RepDashboard() {
   const { refetch } = useQuery({
     queryKey: ['rep-profile-financials'],
     queryFn: async () => {
-      // Note: adjust this endpoint if your user profile fetch route is named differently (e.g., /auth/me or /users/profile)
       const response = await apiClient.get('/auth/me'); 
       const user = response.data.data;
       
@@ -61,7 +75,6 @@ export default function RepDashboard() {
       
       return user;
     },
-    // Don't auto-fetch aggressively, let the user pull-to-refresh to save mobile data
     enabled: true, 
   });
 
@@ -93,14 +106,10 @@ export default function RepDashboard() {
       {/* Global Header */}
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
         <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(rep)/profile')}>
-            {authProfilePic ? (
+            {avatarUri ? (
               <Image 
-                source={{ 
-                  uri: authProfilePic.startsWith('file://') 
-                    ? authProfilePic 
-                    : `${BASE_IP}${authProfilePic}` 
-                }} 
-                style={{ width: 32, height: 32, borderRadius: 16 }} 
+                source={{ uri: avatarUri }} 
+                style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDarkMode ? '#2F3336' : '#E2E8F0' }} 
               />
             ) : (
               <Ionicons name="person-circle" size={32} color={theme.textMuted} />
