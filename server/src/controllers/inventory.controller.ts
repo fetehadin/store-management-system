@@ -32,28 +32,29 @@ export const getInventory = async (
       orderBy: { createdAt: "desc" },
     });
 
-    const mappedInventory = products.map((product) => {
-      // 1. Calculate total available physical stock across all active batches
-      const totalStock = product.batches.reduce(
-        (sum, batch) => sum + batch.remainingQty,
-        0
-      );
+    const mappedInventory = products
+      .map((product) => {
+        // 1. Calculate total available physical stock across all active batches
+        const totalStock = product.batches.reduce(
+          (sum, batch) => sum + batch.remainingQty,
+          0
+        );
 
-      // 2. Identify the active FIFO batch (the oldest batch that still has sellable units)
-      const activeBatch = product.batches.find((b) => b.remainingQty > 0);
-      const currentCostPrice = activeBatch ? activeBatch.unitCostPrice : 0;
+        // 2. Identify the active FIFO batch (the oldest batch that still has sellable units)
+        const activeBatch = product.batches.find((b) => b.remainingQty > 0);
+        const currentCostPrice = activeBatch ? activeBatch.unitCostPrice : 0;
 
-      return {
-        id: product.id,
-        name: product.name,
-        // Type casting to support schema additions seamlessly
-        category: (product as any).category || "General",
-        imageUrl: (product as any).imageUrl || null,
-        stock: totalStock,
-        costPrice: Number(currentCostPrice),
-        sellingPrice: Number(product.price),
-      };
-    });
+        return {
+          id: product.id,
+          name: product.name,
+          category: (product as any).category || "General",
+          imageUrl: (product as any).imageUrl || null,
+          stock: totalStock,
+          costPrice: Number(currentCostPrice),
+          sellingPrice: Number(product.price),
+        };
+      })
+      .filter((product) => product.stock > 0); // <-- THE FIX: Filters out any product with 0 total stock
 
     res.status(200).json({
       status: "success",
