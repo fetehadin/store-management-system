@@ -178,21 +178,78 @@ export const refundSupplierBatch = async (req: Request, res: Response, next: Nex
     });
     res.status(200).json({ status: 'success' });
   } catch (err: any) { 
-    // Catch transaction throws as 400 Bad Request
     res.status(400).json({ status: 'error', message: err.message }); 
   }
 };
 
+// =========================================================================
+// ERP STRICT HARD DELETES (TRANSACTIONAL)
+// =========================================================================
+
 export const deleteSupplier = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await db.supplier.delete({ where: { id: req.params.id } });
+    const { id } = req.params;
+
+    const supplier = await db.supplier.findUnique({ 
+      where: { id },
+      include: { batches: true }
+    });
+
+    if (!supplier) {
+      res.status(404).json({ status: 'error', message: 'Supplier record not found.' }); 
+      return;
+    }
+
+    // ERP RULE 1: Deny deletion if outstanding financial balance exists
+    if (Number(supplier.creditBalance) > 0) {
+      res.status(400).json({ status: 'error', message: 'Cannot delete: Unpaid debt exists. Settle ledger first.' }); 
+      return;
+    }
+
+    // ERP RULE 2: Deny deletion if physical inventory remains
+    const hasActiveInventory = supplier.batches.some(b => b.remainingQty > 0);
+    if (hasActiveInventory) {
+      res.status(400).json({ status: 'error', message: 'Cannot delete: Unsold stock remains in the warehouse.' }); 
+      return;
+    }
+
+    // THE FIX: Transactional Hard Delete. Delete child rows first, then parent.
+    await db.$transaction([
+      db.inventoryBatch.deleteMany({ where: { supplierId: id } }),
+      db.supplier.delete({ where: { id } })
+    ]);
+
     res.status(200).json({ status: 'success' });
   } catch (err) { next(err); }
 };
 
 export const deleteSupplierBatch = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await db.inventoryBatch.updateMany({ where: { batchCode: req.params.batchCode, supplierId: req.params.supplierId }, data: { isArchived: true } });
+    const { supplierId, batchCode } = req.params;
+
+    const batches = await db.inventoryBatch.findMany({ where: { batchCode, supplierId } });
+    if (batches.length === 0) {
+      res.status(404).json({ status: 'error', message: `Batch not found.` }); 
+      return;
+    }
+
+    // ERP RULES: Batch must be fully sold AND fully paid off to qualify for deletion
+    for (const b of batches) {
+      if (b.remainingQty > 0) {
+        res.status(400).json({ status: 'error', message: 'Cannot delete: Items from this batch remain in stock.' }); 
+        return;
+      }
+      
+      const lineTotal = Number(b.quantityRecieved) * Number(b.unitCostPrice);
+      if (Number(b.amountPaid) < lineTotal) {
+        res.status(400).json({ status: 'error', message: 'Cannot delete: Invoice for this batch is not fully paid.' }); 
+        return;
+      }
+    }
+
+    // THE FIX: Hard delete the batch
+    await db.inventoryBatch.deleteMany({ where: { batchCode, supplierId } });
+
     res.status(200).json({ status: 'success' });
   } catch (err) { next(err); }
 };
