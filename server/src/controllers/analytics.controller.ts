@@ -9,7 +9,7 @@ export const getFinancialSummary = async (
   try {
     const { period } = req.query; // 'Today', 'Yesterday', 'This Week', 'Total'
 
-    // 1. Calculate isolated date boundaries without mutating shared Date objects
+    // 1. Calculate isolated date boundaries
     let dateFilter: any = undefined;
 
     if (period && period !== 'Total') {
@@ -25,25 +25,43 @@ export const getFinancialSummary = async (
       } else if (period === 'This Week') {
         const startOfWeek = new Date(today);
         const currentDay = startOfWeek.getDay(); 
-        
-        // JS defaults Sunday to 0. We shift it so Monday is 0 days away, and Sunday is 6 days away.
         const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1;
-        
         startOfWeek.setDate(startOfWeek.getDate() - distanceToMonday);
         dateFilter = { gte: startOfWeek };
       }
     }
 
-    // 2. Total Revenue: Sum of live Sales records, filtered by date if a period is selected
-    const salesAggregate = await db.sale.aggregate({
-      where: {
-        ...(dateFilter && { createdAt: dateFilter })
-      },
-      _sum: { totalAmount: true }
-    });
-    const totalRevenue = Number(salesAggregate._sum.totalAmount || 0);
+    // 2. Total Revenue (Sales Outstanding - Money owed TO you by Sales Reps)
+    let totalRevenue = 0;
+    
+    if (!dateFilter) {
+      // TOTAL: Sum of all active Sales Reps' credit balances (Accounts Receivable)
+      const reps = await db.user.aggregate({
+        where: { role: 'SALES_REP' },
+        _sum: { creditBalance: true }
+      });
+      totalRevenue = Number(reps._sum.creditBalance || 0);
+    } else {
+      // PERIOD FILTERED: Value of stock issued in this period
+      const issued = await db.stockIssuance.aggregate({
+        where: { createdAt: dateFilter },
+        _sum: { totalWholesaleValue: true }
+      });
+      
+      // Fallback for stock returns if the table exists
+      let returnedAmount = 0;
+      if ('stockReturn' in db) {
+        const returned = await (db as any).stockReturn.aggregate({
+          where: { status: 'APPROVED', updatedAt: dateFilter },
+          _sum: { totalValue: true }
+        });
+        returnedAmount = Number(returned._sum.totalValue || 0);
+      }
+      
+      totalRevenue = Number(issued._sum.totalWholesaleValue || 0) - returnedAmount;
+    }
 
-    // 3. Dynamic Supplier Debt Calculation (Mirrors the Suppliers page)
+    // 3. Total Debt (Suppliers - Money you owe TO Vendors)
     const batches = await db.inventoryBatch.findMany({
       ...(dateFilter ? { where: { createdAt: dateFilter } } : {})
     });
@@ -63,7 +81,7 @@ export const getFinancialSummary = async (
       return sum + Math.max(0, unpaid);
     }, 0);
 
-    // 4. Net Balance Calculation
+    // 4. Net Balance (The true health of the business)
     const netBalance = totalRevenue - totalDebt;
 
     res.status(200).json({
