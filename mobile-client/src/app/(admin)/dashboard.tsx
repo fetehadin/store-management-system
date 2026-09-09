@@ -22,7 +22,8 @@ const CORE_MODULES = [
   { id: 'Suppliers', title: 'Supplier Directory', sub: 'Manage vendors and credit', icon: 'people-outline', lightBg: '#ECFDF5', lightColor: '#10B981', route: '/(admin)/suppliers' },
 ];
 
-const BASE_IP = 'http://172.30.75.101:5000';
+// CRITICAL FIX: Wired to your .env file
+const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://10.54.178.101:5000';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -30,9 +31,24 @@ export default function AdminDashboard() {
   // Auth & Theme State
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
-  const userName = useAuthStore((state) => (state as any).userName || 'Admin');
-  const authProfilePic = useAuthStore((state) => (state as any).profilePic);
   const logout = useAuthStore((state) => state.logout);
+  
+  const userName = useAuthStore((state: any) => state.userName || state.user?.fullName || 'Admin');
+  const rawProfilePic = useAuthStore((state: any) => state.profilePic || state.user?.profilePic);
+
+  // CRITICAL FIX: Clean the URI and enforce the correct IP address
+  const getAvatarUri = (uri: string | null | undefined) => {
+    if (!uri) return null;
+    if (uri.startsWith('http') || uri.startsWith('file://') || uri.startsWith('data:')) {
+      // Strip out localhost or old hardcoded IPs just in case they are cached in Zustand
+      let cleanUri = uri.replace('http://localhost:5000', BASE_IP);
+      cleanUri = cleanUri.replace('http://172.30.75.101:5000', BASE_IP);
+      return cleanUri;
+    }
+    return uri.startsWith('/') ? `${BASE_IP}${uri}` : `${BASE_IP}/${uri}`;
+  };
+
+  const avatarUri = getAvatarUri(rawProfilePic);
 
   // UI State
   const [activeCardIndex, setActiveCardIndex] = useState(0);
@@ -42,7 +58,6 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
-  // LIVE FETCH: Pull financial aggregates based on selected filter with Optimistic UI rendering
   const { data: stats, refetch } = useQuery({
     queryKey: ['admin-finance-summary', activeFilter],
     queryFn: async () => {
@@ -58,7 +73,6 @@ export default function AdminDashboard() {
     setRefreshing(false);
   }, [refetch]);
 
-  // Dynamically map backend numbers into carousel cards
   const currentCards = [
     { id: '0', title: 'Total Net Balance', amount: `ETB ${Number(stats?.netBalance || 0).toLocaleString()}`, icon: 'pie-chart-outline' as const },
     { id: '1', title: 'Total Revenue (Sales)', amount: `ETB ${Number(stats?.totalRevenue || 0).toLocaleString()}`, icon: 'wallet-outline' as const },
@@ -122,10 +136,10 @@ export default function AdminDashboard() {
       {/* Header */}
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
         <TouchableOpacity style={styles.iconButton} onPress={() => setIsProfileMenuVisible(true)}>
-          {authProfilePic ? (
+          {avatarUri ? (
             <Image 
-              source={{ uri: authProfilePic.startsWith('file://') ? authProfilePic : `${BASE_IP}${authProfilePic}` }} 
-              style={{ width: 32, height: 32, borderRadius: 16 }} 
+              source={{ uri: avatarUri }} 
+              style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDarkMode ? '#2F3336' : '#E2E8F0' }} 
             />
           ) : (
             <Ionicons name="person-circle" size={32} color={theme.textMuted} />
@@ -148,7 +162,6 @@ export default function AdminDashboard() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}
       >       
-        {/* Greeting & Dropdown Filter */}
         <View style={styles.greetingHeaderRow}>
           <View style={styles.greetingTextContainer}>
             <Text style={[styles.greetingTitle, { color: theme.text }]}>Hello, {userName.split(' ')[0]}</Text>
@@ -164,7 +177,6 @@ export default function AdminDashboard() {
           </TouchableOpacity>
         </View>
 
-        {/* Dropdown Modal */}
         <Modal visible={isDropdownOpen} transparent animationType="fade">
           <TouchableWithoutFeedback onPress={() => setIsDropdownOpen(false)}>
             <View style={styles.modalOverlay}>
@@ -186,7 +198,6 @@ export default function AdminDashboard() {
           </TouchableWithoutFeedback>
         </Modal>
 
-        {/* Full-Width Sliding Carousel */}
         <View style={styles.cardsWrapper}>
           <FlatList
             ref={flatListRef}
@@ -246,7 +257,6 @@ export default function AdminDashboard() {
           </View>
         </View>
 
-        {/* Management Directory */}
         <View style={styles.sectionContainer}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Core Modules</Text>
           
@@ -281,13 +291,12 @@ export default function AdminDashboard() {
             <SafeAreaView style={styles.drawerSafeArea}>
               <View style={styles.drawerContent}>
                 
-                {/* User Header */}
                 <View style={styles.drawerHeader}>
                   <View style={[styles.largeAvatarPlaceholder, isDarkMode && { backgroundColor: '#0F1419' }]}>
-                    {authProfilePic ? (
+                    {avatarUri ? (
                       <Image 
-                        source={{ uri: authProfilePic.startsWith('file://') ? authProfilePic : `${BASE_IP}${authProfilePic}` }} 
-                        style={{ width: 56, height: 56, borderRadius: 28 }} 
+                        source={{ uri: avatarUri }} 
+                        style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: isDarkMode ? '#2F3336' : '#E2E8F0' }} 
                       />
                     ) : (
                       <Ionicons name="person" size={32} color={theme.textMuted} />
@@ -301,7 +310,6 @@ export default function AdminDashboard() {
 
                 <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
-                {/* Menu Items */}
                 <View style={styles.drawerMenuList}>
                   <TouchableOpacity style={styles.drawerMenuItem} onPress={() => navigateFromProfile('/(admin)/profile')}>
                     <Ionicons name="person-outline" size={26} color={theme.text} style={styles.drawerMenuIcon} />
@@ -319,11 +327,9 @@ export default function AdminDashboard() {
                   </TouchableOpacity>
                 </View>
 
-                {/* Spacer pushes logout to the bottom */}
                 <View style={{ flex: 1 }} />
                 <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
-                {/* Wired Secure Logout on Sidebar */}
                 <TouchableOpacity 
                   style={styles.logoutBtn} 
                   onPress={handleSignOut}
