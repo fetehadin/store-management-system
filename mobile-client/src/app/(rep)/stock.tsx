@@ -11,13 +11,24 @@ import {
   Platform,
   StatusBar,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  Image // <-- ADDED: Need this to render images!
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
 import { apiClient } from '../../api/client';
+
+// <-- ADDED: Secure .env resolver for product images
+const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://10.54.178.101:5000';
+
+const resolveImageUrl = (url: string) => {
+  if (!url) return '';
+  if (url.startsWith('data:') || url.startsWith('file://')) return url;
+  if (url.startsWith('http')) return url.replace(/^https?:\/\/[^\/]+/, BASE_IP);
+  return url.startsWith('/') ? `${BASE_IP}${url}` : `${BASE_IP}/${url}`;
+};
 
 export default function RepStockScreen() {
   const router = useRouter();
@@ -30,7 +41,7 @@ export default function RepStockScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // 1. LIVE DATA: Pointing correctly to the inventory products endpoint
+  // 1. LIVE DATA: Fetch products from warehouse
   const { data: products = [], isLoading, refetch } = useQuery({
     queryKey: ['warehouse-products-rep'],
     queryFn: async () => {
@@ -67,7 +78,6 @@ export default function RepStockScreen() {
 
   const cartTotal = Object.entries(cart).reduce((total, [id, qty]) => {
     const item = products.find((s: any) => s.id === id);
-    // Mapped safely to backend response property 'sellingPrice'
     const price = item ? Number(item.sellingPrice || item.costPrice || 0) : 0;
     return total + (price * qty);
   }, 0);
@@ -108,7 +118,6 @@ export default function RepStockScreen() {
             setIsProcessing(true);
             
             try {
-              // 2. LIVE CHECKOUT: Dispatch API requests to issue stock
               for (const [itemId, qty] of Object.entries(cart)) {
                 if (qty > 0) {
                   const item = products.find((s: any) => s.id === itemId);
@@ -199,16 +208,24 @@ export default function RepStockScreen() {
         ) : (
           filteredStock.map((item: any) => {
             const currentQty = cart[item.id] || 0;
-            // Mapped safely to backend response property 'stock'
             const maxAvailable = Number(item.stock ?? 0); 
             const price = Number(item.sellingPrice || 0);
             const isOutOfStock = maxAvailable <= 0;
 
             return (
               <View key={item.id} style={[styles.productCard, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }, !isDarkMode && styles.lightShadow]}>
-                <View style={[styles.iconPlaceholder, { backgroundColor: theme.inputBg }]}>
-                  <Ionicons name={'cube-outline'} size={28} color={theme.textMuted} />
-                </View>
+                
+                {/* <-- FIX: Check for ImageUrl, otherwise show Cube --> */}
+                {item.imageUrl ? (
+                  <Image 
+                    source={{ uri: resolveImageUrl(item.imageUrl) }} 
+                    style={styles.productImage} 
+                  />
+                ) : (
+                  <View style={[styles.iconPlaceholder, { backgroundColor: theme.inputBg }]}>
+                    <Ionicons name={'cube-outline'} size={28} color={theme.textMuted} />
+                  </View>
+                )}
                 
                 <View style={styles.productDetails}>
                   <Text style={[styles.productName, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
@@ -286,6 +303,7 @@ const styles = StyleSheet.create({
   productCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, marginBottom: 12 },
   lightShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3 },
   iconPlaceholder: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  productImage: { width: 48, height: 48, borderRadius: 12, marginRight: 16, backgroundColor: '#E2E8F0', resizeMode: 'cover' }, // <-- ADDED
   productDetails: { flex: 1, paddingRight: 8 },
   productName: { fontSize: 15, fontWeight: '700', marginBottom: 4 },
   productPrice: { fontSize: 14, fontWeight: '800', marginBottom: 4 },
