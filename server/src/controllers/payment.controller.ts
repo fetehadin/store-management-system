@@ -29,54 +29,38 @@ export const submitPayment = async (
       throw new UnauthorizedError("User authentication required");
     }
 
+    // 1. Validate incoming payload
     const validated = submitPaymentSchema.parse(req.body);
     const userId = req.user.id;
 
-    // 1. Generate deterministic SHA-256 fingerprint for anti-duplication shield
-    const signatureString = `${userId}:${validated.transactionRedId.toLowerCase()}:${validated.amount}`;
-    const sha256Hash = crypto
-      .createHash("sha256")
-      .update(signatureString)
-      .digest("hex");
-
-    // 2. Check if transaction reference or hash already exists
-    const existingProof = await db.paymentProof.findFirst({
-      where: {
-        OR: [
-          { transactionRedId: validated.transactionRedId },
-          { sha256Hash: sha256Hash },
-        ],
-      },
+    // 2. Fetch the user's actual name securely from the database
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { fullName: true }
     });
 
-    if (existingProof) {
-      throw new ConflictError(
-        "A payment proof with this transaction reference or fingerprint already exists."
-      );
+    if (!user) {
+      throw new UnauthorizedError("Authenticated user not found in database");
     }
 
-    // 3. Create the pending payment proof
-   // 3. Create the pending payment proof
     // 3. Create the pending payment proof
     const paymentProof = await db.paymentProof.create({
       data: {
         userId,
-        transactionRedId: validated.transactionRedId,
-        sha256Hash,
         amount: toDecimal(validated.amount),
-        bankName: validated.bankName, // <--- ADD THIS LINE HERE!
-        senderName: validated.senderName,
+        bankName: validated.bankName, 
+        senderName: user.fullName, // <--- TAKEN SECURELY FROM THE SYSTEM
         reasonRemark: validated.reasonRemark,
         receipeImageUrl: validated.receipeImageUrl,
         status: ProofStatus.PENDING,
       },
     });
+
     res.status(201).json({
       status: "success",
       message: "Payment proof submitted successfully and is PENDING review",
       data: {
         id: paymentProof.id,
-        transactionRedId: paymentProof.transactionRedId,
         amount: formatETB(paymentProof.amount),
         status: paymentProof.status,
         createdAt: paymentProof.createdAt,
