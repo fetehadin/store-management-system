@@ -1,13 +1,23 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity,
+  View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image,
   StatusBar, Modal, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../store/authStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../api/client';
+
+const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://10.54.178.101:5000';
+
+const resolveImageUrl = (url: string) => {
+  if (!url) return '';
+  if (url.startsWith('data:') || url.startsWith('file://')) return url;
+  if (url.startsWith('http')) return url.replace(/^https?:\/\/[^\/]+/, BASE_IP);
+  return url.startsWith('/') ? `${BASE_IP}${url}` : `${BASE_IP}/${url}`;
+};
 
 export default function SuppliersScreen() {
   const router = useRouter();
@@ -27,7 +37,6 @@ export default function SuppliersScreen() {
   const [activeSupplierId, setActiveSupplierId] = useState<string | null>(null);
   const [activeBatch, setActiveBatch] = useState<any | null>(null);
 
-  // Track exactly which input is focused for displaying inline suggestion chips
   const [focusedField, setFocusedField] = useState<{ index: number, field: 'name' | 'category' } | null>(null);
 
   const [vendorName, setVendorName] = useState('');
@@ -38,7 +47,6 @@ export default function SuppliersScreen() {
   ]);
   const [refundInputs, setRefundInputs] = useState<Record<string, string>>({});
 
-  // 1. Fetch Suppliers
   const { data: suppliers = [], isLoading, refetch } = useQuery({
     queryKey: ['admin-suppliers'],
     queryFn: async () => {
@@ -48,7 +56,6 @@ export default function SuppliersScreen() {
     enabled: isAdmin,
   });
 
-  // 2. Fetch all known products once for instant, in-memory filtering (No more typing lag!)
   const { data: allProducts = [] } = useQuery({
     queryKey: ['all-products'],
     queryFn: async () => {
@@ -58,7 +65,6 @@ export default function SuppliersScreen() {
     enabled: isAdmin,
   });
 
-  // Extract a master list of unique categories
   const uniqueCategories = Array.from(new Set(allProducts.map((p: any) => p.category).filter(Boolean)));
 
   const onRefresh = useCallback(async () => {
@@ -67,7 +73,6 @@ export default function SuppliersScreen() {
     setRefreshing(false);
   }, [refetch]);
 
-  // Mutations
   const enrollSupplierMutation = useMutation({
     mutationFn: async (payload: any) => apiClient.post('/admin/suppliers', payload),
     onSuccess: () => {
@@ -134,7 +139,6 @@ export default function SuppliersScreen() {
     onError: (error: any) => Alert.alert('Refund Blocked', error.response?.data?.message || 'Failed.')
   });
 
-  // Handlers
   const toggleSupplierExpand = (id: string) => {
     setExpandedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
@@ -163,12 +167,32 @@ export default function SuppliersScreen() {
 
   const addBatchItem = () => setBatchItems(prev => [...prev, { localId: Date.now().toString(), name: '', category: '', qty: '', cost: '', selling: '', photoUri: null }]);
   const removeBatchItem = (index: number) => { if (batchItems.length > 1) setBatchItems(prev => prev.filter((_, i) => i !== index)); };
+  
   const updateBatchItem = (index: number, field: string, value: string) => {
     setBatchItems(prev => {
       const newItems = [...prev];
       newItems[index] = { ...newItems[index], [field]: value };
       return newItems;
     });
+  };
+
+  const handlePickImage = async (index: number) => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      return Alert.alert('Permission Required', 'Camera roll permissions are needed to upload item photos.');
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.3,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets) {
+      updateBatchItem(index, 'photoUri', `data:image/jpeg;base64,${result.assets[0].base64}`);
+    }
   };
 
   const resetForm = () => {
@@ -237,12 +261,10 @@ export default function SuppliersScreen() {
   const renderBatchItems = () => (
     <>
       {batchItems.map((item, index) => {
-        // --- IN-MEMORY CLASSIC FILTERING ---
         const categorySearch = item.category.toLowerCase();
         const filteredCategories = uniqueCategories.filter((c: any) => c.toLowerCase().includes(categorySearch));
 
         const nameSearch = item.name.toLowerCase();
-        // Only suggest items that match the currently typed/selected category
         const availableItemsInCategory = allProducts.filter((p: any) => p.category === item.category);
         const filteredItems = availableItemsInCategory.filter((p: any) => p.name.toLowerCase().includes(nameSearch));
 
@@ -257,7 +279,6 @@ export default function SuppliersScreen() {
               )}
             </View>
             
-            {/* 1. CATEGORY INPUT FIRST */}
             <View>
               <Text style={[styles.inputLabel, { color: theme.text }]}>Category</Text>
               <TextInput 
@@ -269,7 +290,6 @@ export default function SuppliersScreen() {
                 onChangeText={(val) => updateBatchItem(index, 'category', val)} 
               />
               
-              {/* Classic Horizontal Chips for Categories */}
               {focusedField?.index === index && focusedField?.field === 'category' && filteredCategories.length > 0 && (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScrollContainer} keyboardShouldPersistTaps="always">
                   {filteredCategories.map((cat: any, cIdx: number) => (
@@ -278,7 +298,7 @@ export default function SuppliersScreen() {
                       style={[styles.chip, { backgroundColor: theme.invertedBg }]} 
                       onPress={() => { 
                         updateBatchItem(index, 'category', cat); 
-                        setFocusedField({ index, field: 'name' }); // Auto-advance to item name!
+                        setFocusedField({ index, field: 'name' }); 
                       }}
                     >
                       <Text style={[styles.chipText, { color: theme.invertedText }]}>{cat}</Text>
@@ -288,7 +308,6 @@ export default function SuppliersScreen() {
               )}
             </View>
 
-            {/* 2. ITEM NAME INPUT SECOND */}
             <View style={{ marginTop: 12 }}>
               <Text style={[styles.inputLabel, { color: theme.text }]}>Item Name (Filtered by Category)</Text>
               <TextInput 
@@ -300,7 +319,6 @@ export default function SuppliersScreen() {
                 onChangeText={(val) => updateBatchItem(index, 'name', val)} 
               />
               
-              {/* Classic Horizontal Chips for Items */}
               {focusedField?.index === index && focusedField?.field === 'name' && filteredItems.length > 0 && (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScrollContainer} keyboardShouldPersistTaps="always">
                   {filteredItems.map((prod: any, pIdx: number) => (
@@ -310,6 +328,7 @@ export default function SuppliersScreen() {
                       onPress={() => { 
                         updateBatchItem(index, 'name', prod.name); 
                         updateBatchItem(index, 'selling', prod.sellingPrice.toString()); 
+                        if (prod.imageUrl) updateBatchItem(index, 'photoUri', prod.imageUrl);
                         setFocusedField(null); 
                       }}
                     >
@@ -319,8 +338,29 @@ export default function SuppliersScreen() {
                 </ScrollView>
               )}
             </View>
+
+            <View style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity 
+                style={[styles.imageUploadBtn, { borderColor: theme.border, backgroundColor: theme.inputBg }]} 
+                onPress={() => handlePickImage(index)}
+              >
+                {item.photoUri ? (
+                  <Image source={{ uri: resolveImageUrl(item.photoUri) }} style={styles.imagePreview} />
+                ) : (
+                  <Ionicons name="camera-outline" size={24} color={theme.textMuted} />
+                )}
+              </TouchableOpacity>
+              <View style={{ marginLeft: 12, flex: 1 }}>
+                <Text style={[styles.inputLabel, { color: theme.text, marginTop: 0 }]}>Product Image <Text style={{ color: theme.textMuted, fontWeight: '500' }}>(Optional)</Text></Text>
+                <Text style={{ fontSize: 12, color: theme.textMuted }}>Tap the camera icon to upload a photo of this item.</Text>
+                {item.photoUri && (
+                   <TouchableOpacity onPress={() => updateBatchItem(index, 'photoUri', '')}>
+                     <Text style={{ color: '#DC2626', fontSize: 12, fontWeight: '700', marginTop: 4 }}>Remove Image</Text>
+                   </TouchableOpacity>
+                )}
+              </View>
+            </View>
             
-            {/* 3. MATH INPUTS */}
             <View style={[styles.rowInputs, { marginTop: 16 }]}>
               <View style={styles.thirdInput}>
                 <Text style={[styles.inputLabel, { color: theme.text }]}>Qty</Text>
@@ -640,9 +680,9 @@ const styles = StyleSheet.create({
   refundInput: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, width: 80, textAlign: 'center', fontWeight: '700' },
   submitBtn: { marginTop: 12, paddingVertical: 16, borderRadius: 100, alignItems: 'center', justifyContent: 'center' },
   submitBtnText: { fontSize: 16, fontWeight: '700' },
-  
-  // NEW CLASSIC UI CHIPS
   chipScrollContainer: { marginTop: 8, marginBottom: 4 },
   chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 100, marginRight: 8 },
   chipText: { fontSize: 13, fontWeight: '600' },
+  imageUploadBtn: { width: 64, height: 64, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  imagePreview: { width: '100%', height: '100%', resizeMode: 'cover' },
 });
