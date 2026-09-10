@@ -23,6 +23,8 @@ export default function SharedMessages() {
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   
   const [refreshing, setRefreshing] = useState(false);
+  // Local state to instantly hide dismissed alerts (especially virtual proof items)
+  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
   const theme = {
     bg: isDarkMode ? '#000000' : '#F8FAFC',
@@ -32,7 +34,7 @@ export default function SharedMessages() {
     cardBg: isDarkMode ? '#1E293B' : '#FFFFFF',
   };
 
-  // LIVE FETCH: Pulls from backend message table
+  // LIVE FETCH: Pulls from backend message table & virtual streams
   const { data: messages = [], isLoading, refetch } = useQuery({
     queryKey: ['system-messages'],
     queryFn: async () => {
@@ -44,12 +46,21 @@ export default function SharedMessages() {
   // Server-side dismissal mutation
   const dismissMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiClient.patch(`/messages/${id}/dismiss`);
+      // Optimistically add to local dismissed state immediately
+      setDismissedIds(prev => [...prev, id]);
+      
+      // If it's a real database message, hit the server endpoint
+      if (!id.startsWith('proof_')) {
+        return apiClient.patch(`/messages/${id}/dismiss`);
+      }
+      return Promise.resolve();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system-messages'] });
     },
-    onError: (err: any) => {
+    onError: (err: any, id: string) => {
+      // Rollback local dismiss on error
+      setDismissedIds(prev => prev.filter(item => item !== id));
       Alert.alert('Error', err.response?.data?.message || 'Failed to dismiss message.');
     }
   });
@@ -60,7 +71,8 @@ export default function SharedMessages() {
     setRefreshing(false);
   }, [refetch]);
 
-  const activeMessages = messages.filter((msg: any) => !msg.isRead);
+  // Filter out unread AND non-locally-dismissed messages
+  const activeMessages = messages.filter((msg: any) => !msg.isRead && !dismissedIds.includes(msg.id));
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
