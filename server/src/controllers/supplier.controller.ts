@@ -84,7 +84,7 @@ export const addSupplierBatch = async (req: Request, res: Response, next: NextFu
       for (const item of items) {
         let product = await tx.product.findFirst({ where: { name: item.name } });
         if (product) {
-          product = await tx.product.update({ where: { id: product.id }, data: { price: item.selling, category: item.category || product.category } });
+          product = await tx.product.update({ where: { id: product.id }, data: { price: item.selling, category: item.category || product.category, imageUrl: item.photoUri || product.imageUrl } });
         } else {
           product = await tx.product.create({ data: { name: item.name, category: item.category || 'General', price: item.selling, imageUrl: item.photoUri || null } });
         }
@@ -151,7 +151,6 @@ export const refundSupplierBatch = async (req: Request, res: Response, next: Nex
         const batchRow = await tx.inventoryBatch.findUnique({ where: { id: refund.itemId } });
         if (!batchRow) throw new Error(`Batch item ${refund.itemId} not found.`);
 
-        // --- STRICT BUSINESS LOGIC VALIDATION ---
         if (refund.refundQty > batchRow.remainingQty) {
           throw new Error(`Invalid refund: You requested to refund ${refund.refundQty}, but only ${batchRow.remainingQty} remain in stock.`);
         }
@@ -182,10 +181,6 @@ export const refundSupplierBatch = async (req: Request, res: Response, next: Nex
   }
 };
 
-// =========================================================================
-// ERP STRICT HARD DELETES (TRANSACTIONAL)
-// =========================================================================
-
 export const deleteSupplier = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
@@ -200,20 +195,17 @@ export const deleteSupplier = async (req: Request, res: Response, next: NextFunc
       return;
     }
 
-    // ERP RULE 1: Deny deletion if outstanding financial balance exists
     if (Number(supplier.creditBalance) > 0) {
       res.status(400).json({ status: 'error', message: 'Cannot delete: Unpaid debt exists. Settle ledger first.' }); 
       return;
     }
 
-    // ERP RULE 2: Deny deletion if physical inventory remains
     const hasActiveInventory = supplier.batches.some(b => b.remainingQty > 0);
     if (hasActiveInventory) {
       res.status(400).json({ status: 'error', message: 'Cannot delete: Unsold stock remains in the warehouse.' }); 
       return;
     }
 
-    // THE FIX: Transactional Hard Delete. Delete child rows first, then parent.
     await db.$transaction([
       db.inventoryBatch.deleteMany({ where: { supplierId: id } }),
       db.supplier.delete({ where: { id } })
@@ -233,7 +225,6 @@ export const deleteSupplierBatch = async (req: Request, res: Response, next: Nex
       return;
     }
 
-    // ERP RULES: Batch must be fully sold AND fully paid off to qualify for deletion
     for (const b of batches) {
       if (b.remainingQty > 0) {
         res.status(400).json({ status: 'error', message: 'Cannot delete: Items from this batch remain in stock.' }); 
@@ -247,7 +238,6 @@ export const deleteSupplierBatch = async (req: Request, res: Response, next: Nex
       }
     }
 
-    // THE FIX: Hard delete the batch
     await db.inventoryBatch.deleteMany({ where: { batchCode, supplierId } });
 
     res.status(200).json({ status: 'success' });
