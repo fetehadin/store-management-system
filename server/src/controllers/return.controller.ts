@@ -4,12 +4,8 @@ import { toDecimal } from "../utils/decimal.js";
 import { AuditEntity, ReturnDestination } from "../generated/client/index.js";
 import { UnauthorizedError, BadRequestError } from "../utils/errors.js";
 
-// Rep Submits Return Request (Sales Rep -> Admin Warehouse/Supplier)
-export const submitReturn = async (
-  req: Request, 
-  res: Response, 
-  next: NextFunction
-): Promise<void> => {
+// 1. Rep Submits Return Request
+export const submitReturn = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = req.user?.id;
     if (!userId) throw new UnauthorizedError("User authentication required");
@@ -35,57 +31,51 @@ export const submitReturn = async (
       }
     });
 
-    res.status(201).json({ 
-      status: "success",
-      message: "Return request submitted successfully.", 
-      data: stockReturn 
-    });
-  } catch (error) {
-    next(error);
-  }
+    res.status(201).json({ status: "success", message: "Return request submitted.", data: stockReturn });
+  } catch (error) { next(error); }
 };
 
-// Admin Fetches All Pending Stock Returns
-export const getPendingReturns = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+// 2. Admin Fetches Pending Returns (with Product Names)
+export const getPendingReturns = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const pendingReturns = await db.stockReturn.findMany({
       where: { status: 'PENDING' },
       include: {
         user: { select: { fullName: true } },
-        items: true
+        items: true 
       },
       orderBy: { createdAt: "desc" },
     });
 
-    res.status(200).json({
-      status: "success",
-      data: pendingReturns,
+    const productIds = [...new Set(pendingReturns.flatMap(r => r.items.map(i => i.itemId)))];
+    const products = await db.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, name: true, price: true }
     });
-  } catch (err) {
-    next(err);
-  }
+    const productMap = new Map(products.map(p => [p.id, p]));
+
+    const formattedReturns = pendingReturns.map(ret => ({
+      ...ret,
+      items: ret.items.map(item => {
+        const prod = productMap.get(item.itemId);
+        return {
+          ...item,
+          product: { name: prod?.name || 'Unknown Product', price: prod?.price || 0 }
+        };
+      })
+    }));
+
+    res.status(200).json({ status: "success", data: formattedReturns });
+  } catch (err) { next(err); }
 };
 
-// Admin Processes Return (Decides whether it goes back to WAREHOUSE or SUPPLIER)
-export const processReturn = async (
-  req: Request, 
-  res: Response, 
-  next: NextFunction
-): Promise<void> => {
+// 3. Admin Approves Return (Adds directly back to batch & clears debt)
+export const processReturn = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
-    const { destination } = req.body; // 'WAREHOUSE' or 'SUPPLIER'
     const adminId = req.user?.id;
     
     if (!adminId) throw new UnauthorizedError("Admin authorization required");
-
-    if (!Object.values(ReturnDestination).includes(destination)) {
-      throw new BadRequestError("Invalid return destination. Must be WAREHOUSE or SUPPLIER.");
-    }
 
     const pendingReturn = await db.stockReturn.findUnique({
       where: { id },
@@ -96,69 +86,53 @@ export const processReturn = async (
       throw new BadRequestError("Return request not found or already processed.");
     }
 
-    // Map ReturnDestination to AuditEntity enum safely for the immutable ledger
-    const targetEntity = destination === ReturnDestination.WAREHOUSE 
-      ? AuditEntity.ADMIN_STORE 
-      : AuditEntity.SUPPLIER;
-
-    // Prepare core database operations
     const operations: any[] = [
-      // 1. Mark as approved and set destination
+      // 1. Approve the return
       db.stockReturn.update({
         where: { id },
-        data: { status: 'APPROVED', destination }
+        data: { status: 'APPROVED', destination: ReturnDestination.WAREHOUSE }
       }),
-      
-      // 2. Decrement Rep's Debt (Clearing liability for returned stock)
+      // 2. Decrement the Rep's Debt
       db.user.update({
         where: { id: pendingReturn.userId },
         data: { creditBalance: { decrement: pendingReturn.totalValue } }
       }),
-      
-      // 3. Write to Immutable Ledger
+      // 3. Ledger Audit
       db.ledgerEntry.create({
         data: {
           fromEntity: AuditEntity.SALES_REP,
           fromEntityId: pendingReturn.userId,
-          toEntity: targetEntity,
+          toEntity: AuditEntity.ADMIN_STORE,
           toEntityId: adminId,
-          amount: pendingReturn.totalValue,
+          amount: pendingReturn.totalValue, 
           transferMethod: 'STOCK_RETURN',
           transactionRefId: pendingReturn.id,
-          auditRemark: `Stock returned to ${destination}. Reason: ${pendingReturn.reason}`,
+          auditRemark: `Stock returned by Rep to WAREHOUSE. Reason: ${pendingReturn.reason}`,
         }
       })
     ];
 
-    // 4. If returning to Warehouse, re-inject into FIFO stock as a new batch
-    if (destination === ReturnDestination.WAREHOUSE) {
-      for (const item of pendingReturn.items) {
-        operations.push(
-          db.inventoryBatch.create({
-            data: {
-              batchCode: `RET-${pendingReturn.id.substring(0, 8).toUpperCase()}`,
-              productId: item.itemId, 
-              supplierId: adminId, 
-              quantityRecieved: item.quantity,
-              remainingQty: item.quantity,
-              unitCostPrice: toDecimal(0), 
-              amountPaid: toDecimal(0),
-              isArchived: false
-            }
-          })
-        );
+    // 4. Add items back into their most recent batch live stock
+    for (const item of pendingReturn.items) {
+      const latestBatch = await db.inventoryBatch.findFirst({
+        where: { productId: item.itemId },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (!latestBatch) {
+        throw new BadRequestError(`Cannot return to stock: No batch found for item ${item.itemId}.`);
       }
+
+      operations.push(
+        db.inventoryBatch.update({
+          where: { id: latestBatch.id },
+          data: { remainingQty: { increment: item.quantity } }
+        })
+      );
     }
 
-    // Execute all updates simultaneously in an unbreakable transaction
     await db.$transaction(operations);
 
-    res.status(200).json({ 
-      status: "success", 
-      message: "Return processed successfully. Rep debt adjusted." 
-    });
-  } catch (error) {
-    console.error("Return Transaction Error:", error);
-    next(error); 
-  }
+    res.status(200).json({ status: "success", message: "Return processed and added to stock." });
+  } catch (error) { next(error); }
 };

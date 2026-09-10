@@ -8,7 +8,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
 import { apiClient } from '../../api/client';
 
-const BASE_IP = 'http://172.30.75.101:5000';
+// FIX: Safely use the .env variable
+const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://localhost:5000';
 
 const resolveImageUrl = (url: string) => {
   if (!url) return '';
@@ -21,19 +22,15 @@ export default function ApprovalsScreen() {
   const queryClient = useQueryClient();
   const role = useAuthStore((state) => state.role);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN' || role === null; // Adjust based on your exact enum
+  const isAdmin = role === 'ADMIN' || role === null; 
 
-  // Tab State
   const [activeTab, setActiveTab] = useState<'PAYMENTS' | 'RETURNS'>('PAYMENTS');
-  
-  // Modals State
   const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
   const [activeReceiptId, setActiveReceiptId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  // 1. LIVE DATA: Fetch Pending Financial Receipts
   const { data: receipts = [], isLoading: isLoadingPayments, refetch: refetchPayments } = useQuery({
     queryKey: ['pending-payments'],
     queryFn: async () => {
@@ -43,7 +40,6 @@ export default function ApprovalsScreen() {
     enabled: isAdmin,
   });
 
-  // 2. LIVE DATA: Fetch Pending Stock Returns
   const { data: returns = [], isLoading: isLoadingReturns, refetch: refetchReturns } = useQuery({
     queryKey: ['pending-returns'],
     queryFn: async () => {
@@ -60,7 +56,6 @@ export default function ApprovalsScreen() {
     setRefreshing(false);
   }, [refetchPayments, refetchReturns]);
 
-  // Mutations for Admin Actions
   const approvePaymentMutation = useMutation({
     mutationFn: async (id: string) => apiClient.patch(`/payments/${id}/approve`, { adminRemark: 'Approved via Admin App' }),
     onSuccess: () => {
@@ -81,15 +76,14 @@ export default function ApprovalsScreen() {
   });
 
   const processReturnMutation = useMutation({
-    mutationFn: async ({ id, destination }: { id: string, destination: string }) => apiClient.post(`/returns/${id}/approve`, { destination }),
+    mutationFn: async ({ id }: { id: string }) => apiClient.post(`/returns/${id}/approve`, { destination: 'WAREHOUSE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pending-returns'] });
-      Alert.alert('Success', 'Return processed and rep debt updated.');
+      Alert.alert('Success', 'Return processed and added back to warehouse stock.');
     },
     onError: (error: any) => Alert.alert('Error', error.response?.data?.message || 'Failed to process return.'),
   });
 
-  // Action Handlers
   const handleApprove = (id: string) => {
     Alert.alert("Confirm Approval", "Are you sure you want to approve this receipt and deduct the rep's debt?", [
       { text: "Cancel", style: "cancel" },
@@ -107,10 +101,10 @@ export default function ApprovalsScreen() {
     rejectPaymentMutation.mutate({ id: activeReceiptId, remark: rejectReason });
   };
 
-  const handleProcessReturn = (id: string, destination: 'WAREHOUSE' | 'SUPPLIER') => {
-    Alert.alert("Confirm Action", `Direct items to ${destination === 'WAREHOUSE' ? 'Warehouse Stock' : 'Supplier Return'} and deduct ETB value from rep's debt?`, [
+  const handleProcessReturn = (id: string) => {
+    Alert.alert("Confirm Action", `Accept this return, deduct ETB value from rep's debt, and add items back to stock?`, [
       { text: "Cancel", style: "cancel" },
-      { text: "Confirm", onPress: () => processReturnMutation.mutate({ id, destination }) }
+      { text: "Confirm", onPress: () => processReturnMutation.mutate({ id }) }
     ]);
   };
 
@@ -129,8 +123,6 @@ export default function ApprovalsScreen() {
         <StatusBar barStyle="dark-content" />
         <Ionicons name="lock-closed-outline" size={64} color="#DC2626" />
         <Text style={styles.unauthorizedTitle}>Access Restricted</Text>
-        <Text style={styles.unauthorizedSubtitle}>This portal is exclusively for system administrators.</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/(rep)/home')}><Text style={styles.backButtonText}>Return to Home</Text></TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -183,7 +175,6 @@ export default function ApprovalsScreen() {
                         <View style={[styles.bankIconBox, isDarkMode && { backgroundColor: '#1E293B' }]}><Ionicons name="business-outline" size={20} color="#177CA5" /></View>
                         <View style={{ flex: 1 }}>
                           <Text style={[styles.repName, { color: theme.text }]} numberOfLines={1}>{item.senderName || item.user?.fullName || 'Unknown Sender'}</Text>
-                          <Text style={[styles.bankDetails, { color: theme.textMuted }]} numberOfLines={1}>Ref: {item.transactionRedId}</Text>
                           <Text style={[styles.bankDetails, { color: theme.text }]}>Bank: {item.bankName}</Text>
                         </View>
                       </View>
@@ -203,9 +194,6 @@ export default function ApprovalsScreen() {
                       )}
                       <View style={styles.docInfo}>
                         <Text style={[styles.docName, { color: theme.text }]} numberOfLines={1}>Attached Receipt</Text>
-                        {item.receipeImageUrl && (
-                          <TouchableOpacity onPress={() => openImageViewer(item.receipeImageUrl)}><Text style={styles.viewDocLink}>View Document</Text></TouchableOpacity>
-                        )}
                       </View>
                     </View>
 
@@ -253,8 +241,11 @@ export default function ApprovalsScreen() {
 
                     <View style={[styles.docPreviewBox, { backgroundColor: theme.docBg, flexDirection: 'column', alignItems: 'flex-start' }]}>
                       <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text, marginBottom: 6 }}>Returned Items:</Text>
+                      {/* FIX: Maps backend 'quantity' correctly and displays names */}
                       {ret.items?.map((i: any, idx: number) => (
-                        <Text key={idx} style={{ fontSize: 13, color: theme.textMuted }}>• {i.qtyReturned || i.qty}x {i.product?.name || 'Item'}</Text>
+                        <Text key={idx} style={{ fontSize: 13, color: theme.textMuted, marginBottom: 2 }}>
+                          • {i.quantity}x {i.product?.name || 'Item'}
+                        </Text>
                       ))}
                     </View>
 
@@ -263,14 +254,11 @@ export default function ApprovalsScreen() {
                     </Text>
 
                     <View style={{ gap: 8 }}>
-                      <TouchableOpacity style={[styles.approveReturnBtn, { backgroundColor: '#059669' }, isProcessingAny && { opacity: 0.5 }]} disabled={isProcessingAny} onPress={() => handleProcessReturn(ret.id, 'WAREHOUSE')}>
+                      <TouchableOpacity style={[styles.approveReturnBtn, { backgroundColor: '#059669' }, isProcessingAny && { opacity: 0.5 }]} disabled={isProcessingAny} onPress={() => handleProcessReturn(ret.id)}>
                         <Ionicons name="cube-outline" size={16} color="#FFF" style={{ marginRight: 6 }} />
                         <Text style={styles.approveBtnText}>Accept & Return to Stock</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={[styles.approveReturnBtn, { backgroundColor: '#D97706' }, isProcessingAny && { opacity: 0.5 }]} disabled={isProcessingAny} onPress={() => handleProcessReturn(ret.id, 'SUPPLIER')}>
-                        <Ionicons name="swap-horizontal-outline" size={16} color="#FFF" style={{ marginRight: 6 }} />
-                        <Text style={styles.approveBtnText}>Accept & Route to Supplier</Text>
-                      </TouchableOpacity>
+                      {/* ROUTE TO SUPPLIER BUTTON REMOVED */}
                     </View>
                   </View>
                 </View>
