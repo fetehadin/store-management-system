@@ -159,37 +159,34 @@ export const updatePin = async (
   }
 };
 
-/**
- * @route   GET /api/v1/auth/me
- * @desc    Get currently authenticated user's profile
- * @access  Protected (Requires Bearer Token)
- */
 export const getMe = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    if (!req.user) throw new UnauthorizedError("User not authenticated");
-
-    res.status(200).json({
-      status: "success",
-      data: {
-        user: {
-          id: req.user.id,
-          fullName: req.user.fullName,
-          username: req.user.username,
-          role: req.user.role,
-          requiresPasswordChange: req.user.requiresPasswordChange,
-          creditLimit: formatETB(req.user.creditLimit),
-          creditBalance: formatETB(req.user.creditBalance),
-          createdAt: req.user.createdAt,
-          profilePic: user.profilePic,
-        },
+    const user = await db.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        fullName: true,
+        username: true,
+        role: true,
+        profilePic: true,
+        creditLimit: true,
+        creditBalance: true,
+        isActive: true,
       },
     });
-  } catch (err) {
-    next(err);
+
+    if (!user) {
+      res.status(404).json({ status: "error", message: "User not found" });
+      return;
+    }
+
+    res.status(200).json({ status: "success", data: user });
+  } catch (error) {
+    next(error);
   }
 };
 
