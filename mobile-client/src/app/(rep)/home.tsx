@@ -8,8 +8,6 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  Modal,
-  TouchableWithoutFeedback,
   Image,
   RefreshControl
 } from 'react-native';
@@ -18,15 +16,13 @@ import { useAuthStore } from '../../store/authStore';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../api/client';
 
-const TIME_FILTERS = ['Today', 'Yesterday', 'This Week', 'Total'];
-
 const REP_MODULES = [
   { id: 'Stock', title: 'Stock & Checkout', sub: 'Manage field inventory', icon: 'cube-outline', lightBg: '#EBF2FF', lightColor: '#1D61F2', route: '/(rep)/stock' },
   { id: 'Ledger', title: 'My Ledger', sub: 'View transaction history', icon: 'wallet-outline', lightBg: '#E6F9F2', lightColor: '#059669', route: '/(rep)/ledger' },
   { id: 'Notes', title: 'My Notes', sub: 'Daily field diary', icon: 'journal-outline', lightBg: '#FEF2F2', lightColor: '#DC2626', route: '/(rep)/note' },
 ];
 
-// Wired to your .env file with your specific local network IP fallback
+// Strictly uses your .env variable
 const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://10.54.178.101:5000';
 
 export default function RepDashboard() {
@@ -39,14 +35,11 @@ export default function RepDashboard() {
   const userName = useAuthStore((state: any) => state.userName || state.user?.fullName || 'Sales Rep');
   const rawProfilePic = useAuthStore((state: any) => state.profilePic || state.user?.profilePic);
   
-  // Bulletproof URI parser to prevent broken paths or double-ip stacking
+  // Bulletproof URI parser: Relies entirely on the .env BASE_IP
   const getAvatarUri = (uri: string | null | undefined) => {
     if (!uri) return null;
-    if (uri.startsWith('http') || uri.startsWith('file://') || uri.startsWith('data:')) {
-      let cleanUri = uri.replace('http://localhost:5000', BASE_IP);
-      cleanUri = cleanUri.replace('http://172.30.75.101:5000', BASE_IP);
-      return cleanUri;
-    }
+    if (uri.startsWith('data:') || uri.startsWith('file://')) return uri;
+    if (uri.startsWith('http')) return uri.replace(/^https?:\/\/[^\/]+/, BASE_IP);
     return uri.startsWith('/') ? `${BASE_IP}${uri}` : `${BASE_IP}/${uri}`;
   };
 
@@ -56,8 +49,6 @@ export default function RepDashboard() {
   const creditBalance = useAuthStore((state) => state.creditBalance) || 0;
   const creditLimit = useAuthStore((state) => state.creditLimit) || 0;
   
-  const [activeFilter, setActiveFilter] = useState('Today');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   // 1. LIVE DATA SYNC: Fetch the latest financial profile from the backend
@@ -103,7 +94,7 @@ export default function RepDashboard() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
 
-      {/* Global Header */}
+      {/* Global Header (Pinned outside ScrollView) */}
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
         <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(rep)/profile')}>
             {avatarUri ? (
@@ -114,7 +105,7 @@ export default function RepDashboard() {
             ) : (
               <Ionicons name="person-circle" size={32} color={theme.textMuted} />
             )}
-          </TouchableOpacity>
+        </TouchableOpacity>
         
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(rep)/message')}>
@@ -126,52 +117,20 @@ export default function RepDashboard() {
           </TouchableOpacity>
         </View>
       </View>
-
-      <ScrollView 
-        contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} 
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />
-        }
-      >
         
-        {/* Greeting & Dropdown Filter */}
+      {/* Scrollable Body Content */}
+      <ScrollView 
+        contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}
+      >
+        {/* Greeting */}
         <View style={styles.greetingHeaderRow}>
           <View style={styles.greetingTextContainer}>
             <Text style={[styles.greetingTitle, { color: theme.text }]}>Hello, {userName.split(' ')[0]}</Text>
             <Text style={[styles.greetingSubtitle, { color: theme.textMuted }]}>Field Operations Dashboard</Text>
           </View>
-          
-          <TouchableOpacity 
-            style={[styles.dropdownTrigger, isDarkMode ? styles.dropdownTriggerDark : styles.dropdownTriggerLight]}
-            onPress={() => setIsDropdownOpen(true)}
-          >
-            <Text style={[styles.dropdownTriggerText, { color: theme.text }]}>Filter: {activeFilter}</Text>
-            <Ionicons name="chevron-down" size={16} color={theme.text} style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
         </View>
-
-        {/* Dropdown Modal */}
-        <Modal visible={isDropdownOpen} transparent animationType="fade">
-          <TouchableWithoutFeedback onPress={() => setIsDropdownOpen(false)}>
-            <View style={styles.modalOverlay}>
-              <View style={[styles.dropdownMenu, { backgroundColor: isDarkMode ? '#1E293B' : '#FFFFFF' }]}>
-                {TIME_FILTERS.map((filter) => (
-                  <TouchableOpacity 
-                    key={filter} 
-                    style={[styles.dropdownItem, activeFilter === filter && { backgroundColor: isDarkMode ? '#334155' : '#F1F5F9' }]}
-                    onPress={() => { setActiveFilter(filter); setIsDropdownOpen(false); }}
-                  >
-                    <Text style={{ color: activeFilter === filter ? (isDarkMode ? '#FFFFFF' : '#1D61F2') : theme.textMuted, fontWeight: activeFilter === filter ? '700' : '500' }}>
-                      {filter}
-                    </Text>
-                    {activeFilter === filter && <Ionicons name="checkmark" size={16} color={isDarkMode ? '#FFFFFF' : '#1D61F2'} />}
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
 
         {/* Hero Debt Card */}
         <View style={styles.cardsWrapper}>
@@ -216,7 +175,6 @@ export default function RepDashboard() {
             </TouchableOpacity>
           ))}
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -236,15 +194,6 @@ const styles = StyleSheet.create({
   greetingTextContainer: { flex: 1, paddingRight: 12 },
   greetingTitle: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
   greetingSubtitle: { fontSize: 15, marginTop: 4 },
-  
-  dropdownTrigger: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
-  dropdownTriggerDark: { borderWidth: 1, borderColor: '#2F3336' },
-  dropdownTriggerLight: { backgroundColor: '#FFFFFF', shadowColor: '#64748B', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
-  dropdownTriggerText: { fontSize: 13, fontWeight: '700' },
-  
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.1)' },
-  dropdownMenu: { position: 'absolute', top: 140, right: 20, width: 140, borderRadius: 12, padding: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 },
-  dropdownItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, borderRadius: 8 },
   
   cardsWrapper: { paddingHorizontal: 20, paddingVertical: 12 },
   financeCard: { borderRadius: 24, padding: 24 },
