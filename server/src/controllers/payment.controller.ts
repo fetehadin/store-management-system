@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from "express";
-import crypto from "crypto";
 import { db } from "../config/db.js";
 import {
   submitPaymentSchema,
@@ -7,49 +6,36 @@ import {
 } from "../validations/payment.validation.js";
 import {
   BadRequestError,
-  ConflictError,
   NotFoundError,
   UnauthorizedError,
 } from "../utils/errors.js";
 import { toDecimal, formatETB } from "../utils/decimal.js";
-import { ProofStatus, AuditEntity } from "../generated/client/index.js";
+import { ProofStatus, AuditEntity, Role } from "../generated/client/index.js";
 
 /**
  * @route   POST /api/v1/payments
  * @desc    Submit a bank payment proof for debt repayment (Sales Rep)
- * @access  Protected (Authenticated Users)
  */
-export const submitPayment = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const submitPayment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    if (!req.user) {
-      throw new UnauthorizedError("User authentication required");
-    }
+    if (!req.user) throw new UnauthorizedError("User authentication required");
 
-    // 1. Validate incoming payload
     const validated = submitPaymentSchema.parse(req.body);
     const userId = req.user.id;
 
-    // 2. Fetch the user's actual name securely from the database
     const user = await db.user.findUnique({
       where: { id: userId },
       select: { fullName: true }
     });
 
-    if (!user) {
-      throw new UnauthorizedError("Authenticated user not found in database");
-    }
+    if (!user) throw new UnauthorizedError("Authenticated user not found in database");
 
-    // 3. Create the pending payment proof
     const paymentProof = await db.paymentProof.create({
       data: {
         userId,
         amount: toDecimal(validated.amount),
         bankName: validated.bankName, 
-        senderName: user.fullName, // <--- TAKEN SECURELY FROM THE SYSTEM
+        senderName: user.fullName, 
         reasonRemark: validated.reasonRemark,
         receipeImageUrl: validated.receipeImageUrl,
         status: ProofStatus.PENDING,
@@ -74,70 +60,59 @@ export const submitPayment = async (
 /**
  * @route   GET /api/v1/payments/pending
  * @desc    Get all pending payment proofs (Admin only)
- * @access  Protected (ADMIN)
  */
-export const getPendingPayments = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const getPendingPayments = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const pendingProofs = await db.paymentProof.findMany({
       where: { status: ProofStatus.PENDING },
-      include: {
-        user: { select: { fullName: true } },
-      },
+      include: { user: { select: { fullName: true } } },
       orderBy: { createdAt: "desc" },
     });
 
-    res.status(200).json({
-      status: "success",
-      data: pendingProofs,
-    });
-  } catch (err) {
-    next(err);
-  }
+    res.status(200).json({ status: "success", data: pendingProofs });
+  } catch (err) { next(err); }
 };
 
 /**
  * @route   PATCH /api/v1/payments/:id/approve
  * @desc    Approve a pending payment proof & deduct from creditBalance (Admin only)
- * @access  Protected (ADMIN)
  */
-export const approvePayment = async (req: Request, res: Response): Promise<void> => {
+export const approvePayment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
     const adminId = req.user?.id;
     
+    // Safety check: Prevent Prisma crash if admin ID is missing
+    if (!adminId) throw new UnauthorizedError("Admin authorization required");
+
     const payment = await db.paymentProof.findUnique({ where: { id } });
-    if (!payment || payment.status !== 'PENDING') {
+    if (!payment || payment.status !== ProofStatus.PENDING) {
       res.status(400).json({ message: "Payment not found or already processed." });
       return;
     }
 
-    // Atomic Mathematical Transaction
     await db.$transaction([
       db.paymentProof.update({
         where: { id },
-        data: { status: 'APPROVED', adminRemark: req.body.adminRemark || 'Approved' }
+        data: { status: ProofStatus.APPROVED, adminRemark: req.body.adminRemark || 'Approved' }
       }),
       db.user.update({
         where: { id: payment.userId },
         data: { creditBalance: { decrement: payment.amount } }
       }),
       db.user.update({
-        where: { id: adminId }, // Assuming the admin's account holds company funds
+        where: { id: adminId }, 
         data: { creditBalance: { increment: payment.amount } }
       }),
       db.ledgerEntry.create({
         data: {
-          fromEntity: 'SALES_REP',
+          fromEntity: AuditEntity.SALES_REP,
           fromEntityId: payment.userId,
-          toEntity: 'ADMIN_STORE',
+          toEntity: AuditEntity.ADMIN_STORE,
           toEntityId: adminId, 
           amount: payment.amount,
           transferMethod: payment.bankName,
-          transactionRefId: payment.transactionRedId,
+          transactionRefId: payment.id,
           auditRemark: "Admin approved payment",
         }
       })
@@ -146,73 +121,69 @@ export const approvePayment = async (req: Request, res: Response): Promise<void>
     res.status(200).json({ message: "Payment approved. Balances updated." });
   } catch (error) {
     console.error("Ledger Transaction Error:", error);
-    res.status(500).json({ message: "Critical math error during approval." });
+    next(error);
   }
 };
 
 /**
  * @route   PATCH /api/v1/payments/:id/reject
  * @desc    Reject a pending payment proof (Admin only)
- * @access  Protected (ADMIN)
  */
-export const rejectPayment = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const rejectPayment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const id = String(req.params.id);
     const validated = reviewPaymentSchema.parse(req.body);
 
-    const proof = await db.paymentProof.findUnique({
-      where: { id },
-    });
-
-    if (!proof) {
-      throw new NotFoundError("Payment proof not found");
-    }
-
-    if (proof.status !== ProofStatus.PENDING) {
-      throw new BadRequestError(
-        `Payment proof has already been processed with status: ${proof.status}`
-      );
-    }
+    const proof = await db.paymentProof.findUnique({ where: { id } });
+    if (!proof) throw new NotFoundError("Payment proof not found");
+    if (proof.status !== ProofStatus.PENDING) throw new BadRequestError(`Payment proof has already been processed.`);
 
     const updatedProof = await db.paymentProof.update({
       where: { id: proof.id },
-      data: {
-        status: ProofStatus.REJECTED,
-        adminRemark: validated.adminRemark,
-      },
+      data: { status: ProofStatus.REJECTED, adminRemark: validated.adminRemark },
     });
 
-    res.status(200).json({
-      status: "success",
-      message: "Payment proof rejected",
-      data: {
-        id: updatedProof.id,
-        transactionRedId: updatedProof.transactionRedId,
-        amount: formatETB(updatedProof.amount),
-        status: updatedProof.status,
-        adminRemark: updatedProof.adminRemark,
-      },
-    });
-  } catch (err) {
-    next(err);
-  }
+    res.status(200).json({ status: "success", data: updatedProof });
+  } catch (err) { next(err); }
 };
 
+/**
+ * @route   GET /api/v1/payments/my-history
+ * @desc    Get the authenticated user's payment history (Approved & Pending only)
+ * @access  Protected (Sales Rep)
+ */
+export const getMyPayments = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    if (!req.user) throw new UnauthorizedError("User authentication required");
+
+    const history = await db.paymentProof.findMany({
+      where: {
+        userId: req.user.id,
+        status: { in: [ProofStatus.PENDING, ProofStatus.APPROVED] }
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json({ status: "success", data: history });
+  } catch (err) { next(err); }
+};
+
+/**
+ * @route   GET /api/v1/payments/messages
+ * @desc    Get notification messages for the authenticated user
+ * @access  Protected
+ */
 export const getMessages = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const user = req.user;
-    if (!user) throw new Error("Unauthorized");
+    if (!user) throw new UnauthorizedError("Unauthorized");
 
     let messages = [];
 
-    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+    if (user.role === Role.ADMIN) {
       // ADMIN: Generate alerts for Pending Receipts
       const pending = await db.paymentProof.findMany({ 
-        where: { status: 'PENDING' }, 
+        where: { status: ProofStatus.PENDING }, 
         include: { user: true },
         orderBy: { createdAt: 'desc' }
       });
@@ -227,18 +198,18 @@ export const getMessages = async (req: Request, res: Response, next: NextFunctio
     } else {
       // REP: Generate alerts for Approved/Rejected Receipts
       const processed = await db.paymentProof.findMany({
-        where: { userId: user.id, status: { in: ['REJECTED', 'APPROVED'] } },
+        where: { userId: user.id, status: { in: [ProofStatus.REJECTED, ProofStatus.APPROVED] } },
         orderBy: { updatedAt: 'desc' }
       });
       
       messages = processed.map(p => ({
         id: `msg_rep_${p.id}`,
-        title: p.status === 'APPROVED' ? 'Receipt Approved' : 'Receipt Rejected',
-        body: p.status === 'APPROVED' 
+        title: p.status === ProofStatus.APPROVED ? 'Receipt Approved' : 'Receipt Rejected',
+        body: p.status === ProofStatus.APPROVED 
           ? `Your receipt for ETB ${Number(p.amount).toLocaleString()} has been verified and your debt is cleared.` 
           : `Your receipt for ETB ${Number(p.amount).toLocaleString()} was rejected. Reason: "${p.adminRemark || 'No reason provided.'}"`,
         date: p.updatedAt,
-        type: p.status === 'REJECTED' ? 'ERROR' : 'SUCCESS'
+        type: p.status === ProofStatus.REJECTED ? 'ERROR' : 'SUCCESS'
       }));
     }
 
