@@ -45,6 +45,31 @@ export const submitReturn = async (
   }
 };
 
+// Admin Fetches All Pending Stock Returns
+export const getPendingReturns = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const pendingReturns = await db.stockReturn.findMany({
+      where: { status: 'PENDING' },
+      include: {
+        user: { select: { fullName: true } },
+        items: true
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: pendingReturns,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Admin Processes Return (Decides whether it goes back to WAREHOUSE or SUPPLIER)
 export const processReturn = async (
   req: Request, 
