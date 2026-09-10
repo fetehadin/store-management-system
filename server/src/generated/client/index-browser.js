@@ -217,7 +217,7 @@ exports.Prisma.SaleScalarFieldEnum = {
 exports.Prisma.PaymentProofScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
-  transactionRedId: 'transactionRedId',
+  transactionRefId: 'transactionRefId',
   sha256Hash: 'sha256Hash',
   amount: 'amount',
   bankName: 'bankName',

@@ -12842,7 +12842,7 @@ export namespace Prisma {
   export type PaymentProofMinAggregateOutputType = {
     id: string | null
     userId: string | null
-    transactionRedId: string | null
+    transactionRefId: string | null
     sha256Hash: string | null
     amount: Decimal | null
     bankName: string | null
@@ -12858,7 +12858,7 @@ export namespace Prisma {
   export type PaymentProofMaxAggregateOutputType = {
     id: string | null
     userId: string | null
-    transactionRedId: string | null
+    transactionRefId: string | null
     sha256Hash: string | null
     amount: Decimal | null
     bankName: string | null
@@ -12874,7 +12874,7 @@ export namespace Prisma {
   export type PaymentProofCountAggregateOutputType = {
     id: number
     userId: number
-    transactionRedId: number
+    transactionRefId: number
     sha256Hash: number
     amount: number
     bankName: number
@@ -12900,7 +12900,7 @@ export namespace Prisma {
   export type PaymentProofMinAggregateInputType = {
     id?: true
     userId?: true
-    transactionRedId?: true
+    transactionRefId?: true
     sha256Hash?: true
     amount?: true
     bankName?: true
@@ -12916,7 +12916,7 @@ export namespace Prisma {
   export type PaymentProofMaxAggregateInputType = {
     id?: true
     userId?: true
-    transactionRedId?: true
+    transactionRefId?: true
     sha256Hash?: true
     amount?: true
     bankName?: true
@@ -12932,7 +12932,7 @@ export namespace Prisma {
   export type PaymentProofCountAggregateInputType = {
     id?: true
     userId?: true
-    transactionRedId?: true
+    transactionRefId?: true
     sha256Hash?: true
     amount?: true
     bankName?: true
@@ -13035,8 +13035,8 @@ export namespace Prisma {
   export type PaymentProofGroupByOutputType = {
     id: string
     userId: string
-    transactionRedId: string
-    sha256Hash: string
+    transactionRefId: string | null
+    sha256Hash: string | null
     amount: Decimal
     bankName: string
     senderName: string | null
@@ -13070,7 +13070,7 @@ export namespace Prisma {
   export type PaymentProofSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
-    transactionRedId?: boolean
+    transactionRefId?: boolean
     sha256Hash?: boolean
     amount?: boolean
     bankName?: boolean
@@ -13087,7 +13087,7 @@ export namespace Prisma {
   export type PaymentProofSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
-    transactionRedId?: boolean
+    transactionRefId?: boolean
     sha256Hash?: boolean
     amount?: boolean
     bankName?: boolean
@@ -13104,7 +13104,7 @@ export namespace Prisma {
   export type PaymentProofSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
-    transactionRedId?: boolean
+    transactionRefId?: boolean
     sha256Hash?: boolean
     amount?: boolean
     bankName?: boolean
@@ -13121,7 +13121,7 @@ export namespace Prisma {
   export type PaymentProofSelectScalar = {
     id?: boolean
     userId?: boolean
-    transactionRedId?: boolean
+    transactionRefId?: boolean
     sha256Hash?: boolean
     amount?: boolean
     bankName?: boolean
@@ -13134,7 +13134,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type PaymentProofOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "transactionRedId" | "sha256Hash" | "amount" | "bankName" | "senderName" | "reasonRemark" | "receipeImageUrl" | "status" | "adminRemark" | "createdAt" | "updatedAt", ExtArgs["result"]["paymentProof"]>
+  export type PaymentProofOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "transactionRefId" | "sha256Hash" | "amount" | "bankName" | "senderName" | "reasonRemark" | "receipeImageUrl" | "status" | "adminRemark" | "createdAt" | "updatedAt", ExtArgs["result"]["paymentProof"]>
   export type PaymentProofInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
   }
@@ -13153,8 +13153,8 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: string
       userId: string
-      transactionRedId: string
-      sha256Hash: string
+      transactionRefId: string | null
+      sha256Hash: string | null
       amount: Prisma.Decimal
       bankName: string
       senderName: string | null
@@ -13590,7 +13590,7 @@ export namespace Prisma {
   interface PaymentProofFieldRefs {
     readonly id: FieldRef<"PaymentProof", 'String'>
     readonly userId: FieldRef<"PaymentProof", 'String'>
-    readonly transactionRedId: FieldRef<"PaymentProof", 'String'>
+    readonly transactionRefId: FieldRef<"PaymentProof", 'String'>
     readonly sha256Hash: FieldRef<"PaymentProof", 'String'>
     readonly amount: FieldRef<"PaymentProof", 'Decimal'>
     readonly bankName: FieldRef<"PaymentProof", 'String'>
@@ -19698,7 +19698,7 @@ export namespace Prisma {
   export const PaymentProofScalarFieldEnum: {
     id: 'id',
     userId: 'userId',
-    transactionRedId: 'transactionRedId',
+    transactionRefId: 'transactionRefId',
     sha256Hash: 'sha256Hash',
     amount: 'amount',
     bankName: 'bankName',
@@ -20626,8 +20626,8 @@ export namespace Prisma {
     NOT?: PaymentProofWhereInput | PaymentProofWhereInput[]
     id?: StringFilter<"PaymentProof"> | string
     userId?: StringFilter<"PaymentProof"> | string
-    transactionRedId?: StringFilter<"PaymentProof"> | string
-    sha256Hash?: StringFilter<"PaymentProof"> | string
+    transactionRefId?: StringNullableFilter<"PaymentProof"> | string | null
+    sha256Hash?: StringNullableFilter<"PaymentProof"> | string | null
     amount?: DecimalFilter<"PaymentProof"> | Decimal | DecimalJsLike | number | string
     bankName?: StringFilter<"PaymentProof"> | string
     senderName?: StringNullableFilter<"PaymentProof"> | string | null
@@ -20643,8 +20643,8 @@ export namespace Prisma {
   export type PaymentProofOrderByWithRelationInput = {
     id?: SortOrder
     userId?: SortOrder
-    transactionRedId?: SortOrder
-    sha256Hash?: SortOrder
+    transactionRefId?: SortOrderInput | SortOrder
+    sha256Hash?: SortOrderInput | SortOrder
     amount?: SortOrder
     bankName?: SortOrder
     senderName?: SortOrderInput | SortOrder
@@ -20659,7 +20659,7 @@ export namespace Prisma {
 
   export type PaymentProofWhereUniqueInput = Prisma.AtLeast<{
     id?: string
-    transactionRedId?: string
+    transactionRefId?: string
     sha256Hash?: string
     AND?: PaymentProofWhereInput | PaymentProofWhereInput[]
     OR?: PaymentProofWhereInput[]
@@ -20675,13 +20675,13 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"PaymentProof"> | Date | string
     updatedAt?: DateTimeFilter<"PaymentProof"> | Date | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
-  }, "id" | "transactionRedId" | "sha256Hash">
+  }, "id" | "transactionRefId" | "sha256Hash">
 
   export type PaymentProofOrderByWithAggregationInput = {
     id?: SortOrder
     userId?: SortOrder
-    transactionRedId?: SortOrder
-    sha256Hash?: SortOrder
+    transactionRefId?: SortOrderInput | SortOrder
+    sha256Hash?: SortOrderInput | SortOrder
     amount?: SortOrder
     bankName?: SortOrder
     senderName?: SortOrderInput | SortOrder
@@ -20704,8 +20704,8 @@ export namespace Prisma {
     NOT?: PaymentProofScalarWhereWithAggregatesInput | PaymentProofScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"PaymentProof"> | string
     userId?: StringWithAggregatesFilter<"PaymentProof"> | string
-    transactionRedId?: StringWithAggregatesFilter<"PaymentProof"> | string
-    sha256Hash?: StringWithAggregatesFilter<"PaymentProof"> | string
+    transactionRefId?: StringNullableWithAggregatesFilter<"PaymentProof"> | string | null
+    sha256Hash?: StringNullableWithAggregatesFilter<"PaymentProof"> | string | null
     amount?: DecimalWithAggregatesFilter<"PaymentProof"> | Decimal | DecimalJsLike | number | string
     bankName?: StringWithAggregatesFilter<"PaymentProof"> | string
     senderName?: StringNullableWithAggregatesFilter<"PaymentProof"> | string | null
@@ -21756,8 +21756,8 @@ export namespace Prisma {
 
   export type PaymentProofCreateInput = {
     id?: string
-    transactionRedId: string
-    sha256Hash: string
+    transactionRefId?: string | null
+    sha256Hash?: string | null
     amount: Decimal | DecimalJsLike | number | string
     bankName: string
     senderName?: string | null
@@ -21773,8 +21773,8 @@ export namespace Prisma {
   export type PaymentProofUncheckedCreateInput = {
     id?: string
     userId: string
-    transactionRedId: string
-    sha256Hash: string
+    transactionRefId?: string | null
+    sha256Hash?: string | null
     amount: Decimal | DecimalJsLike | number | string
     bankName: string
     senderName?: string | null
@@ -21788,8 +21788,8 @@ export namespace Prisma {
 
   export type PaymentProofUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    transactionRedId?: StringFieldUpdateOperationsInput | string
-    sha256Hash?: StringFieldUpdateOperationsInput | string
+    transactionRefId?: NullableStringFieldUpdateOperationsInput | string | null
+    sha256Hash?: NullableStringFieldUpdateOperationsInput | string | null
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     bankName?: StringFieldUpdateOperationsInput | string
     senderName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -21805,8 +21805,8 @@ export namespace Prisma {
   export type PaymentProofUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
-    transactionRedId?: StringFieldUpdateOperationsInput | string
-    sha256Hash?: StringFieldUpdateOperationsInput | string
+    transactionRefId?: NullableStringFieldUpdateOperationsInput | string | null
+    sha256Hash?: NullableStringFieldUpdateOperationsInput | string | null
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     bankName?: StringFieldUpdateOperationsInput | string
     senderName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -21821,8 +21821,8 @@ export namespace Prisma {
   export type PaymentProofCreateManyInput = {
     id?: string
     userId: string
-    transactionRedId: string
-    sha256Hash: string
+    transactionRefId?: string | null
+    sha256Hash?: string | null
     amount: Decimal | DecimalJsLike | number | string
     bankName: string
     senderName?: string | null
@@ -21836,8 +21836,8 @@ export namespace Prisma {
 
   export type PaymentProofUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
-    transactionRedId?: StringFieldUpdateOperationsInput | string
-    sha256Hash?: StringFieldUpdateOperationsInput | string
+    transactionRefId?: NullableStringFieldUpdateOperationsInput | string | null
+    sha256Hash?: NullableStringFieldUpdateOperationsInput | string | null
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     bankName?: StringFieldUpdateOperationsInput | string
     senderName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -21852,8 +21852,8 @@ export namespace Prisma {
   export type PaymentProofUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
-    transactionRedId?: StringFieldUpdateOperationsInput | string
-    sha256Hash?: StringFieldUpdateOperationsInput | string
+    transactionRefId?: NullableStringFieldUpdateOperationsInput | string | null
+    sha256Hash?: NullableStringFieldUpdateOperationsInput | string | null
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     bankName?: StringFieldUpdateOperationsInput | string
     senderName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -22895,7 +22895,7 @@ export namespace Prisma {
   export type PaymentProofCountOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
-    transactionRedId?: SortOrder
+    transactionRefId?: SortOrder
     sha256Hash?: SortOrder
     amount?: SortOrder
     bankName?: SortOrder
@@ -22915,7 +22915,7 @@ export namespace Prisma {
   export type PaymentProofMaxOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
-    transactionRedId?: SortOrder
+    transactionRefId?: SortOrder
     sha256Hash?: SortOrder
     amount?: SortOrder
     bankName?: SortOrder
@@ -22931,7 +22931,7 @@ export namespace Prisma {
   export type PaymentProofMinOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
-    transactionRedId?: SortOrder
+    transactionRefId?: SortOrder
     sha256Hash?: SortOrder
     amount?: SortOrder
     bankName?: SortOrder
@@ -24245,8 +24245,8 @@ export namespace Prisma {
 
   export type PaymentProofCreateWithoutUserInput = {
     id?: string
-    transactionRedId: string
-    sha256Hash: string
+    transactionRefId?: string | null
+    sha256Hash?: string | null
     amount: Decimal | DecimalJsLike | number | string
     bankName: string
     senderName?: string | null
@@ -24260,8 +24260,8 @@ export namespace Prisma {
 
   export type PaymentProofUncheckedCreateWithoutUserInput = {
     id?: string
-    transactionRedId: string
-    sha256Hash: string
+    transactionRefId?: string | null
+    sha256Hash?: string | null
     amount: Decimal | DecimalJsLike | number | string
     bankName: string
     senderName?: string | null
@@ -24449,8 +24449,8 @@ export namespace Prisma {
     NOT?: PaymentProofScalarWhereInput | PaymentProofScalarWhereInput[]
     id?: StringFilter<"PaymentProof"> | string
     userId?: StringFilter<"PaymentProof"> | string
-    transactionRedId?: StringFilter<"PaymentProof"> | string
-    sha256Hash?: StringFilter<"PaymentProof"> | string
+    transactionRefId?: StringNullableFilter<"PaymentProof"> | string | null
+    sha256Hash?: StringNullableFilter<"PaymentProof"> | string | null
     amount?: DecimalFilter<"PaymentProof"> | Decimal | DecimalJsLike | number | string
     bankName?: StringFilter<"PaymentProof"> | string
     senderName?: StringNullableFilter<"PaymentProof"> | string | null
@@ -25823,8 +25823,8 @@ export namespace Prisma {
 
   export type PaymentProofCreateManyUserInput = {
     id?: string
-    transactionRedId: string
-    sha256Hash: string
+    transactionRefId?: string | null
+    sha256Hash?: string | null
     amount: Decimal | DecimalJsLike | number | string
     bankName: string
     senderName?: string | null
@@ -25901,8 +25901,8 @@ export namespace Prisma {
 
   export type PaymentProofUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
-    transactionRedId?: StringFieldUpdateOperationsInput | string
-    sha256Hash?: StringFieldUpdateOperationsInput | string
+    transactionRefId?: NullableStringFieldUpdateOperationsInput | string | null
+    sha256Hash?: NullableStringFieldUpdateOperationsInput | string | null
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     bankName?: StringFieldUpdateOperationsInput | string
     senderName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -25916,8 +25916,8 @@ export namespace Prisma {
 
   export type PaymentProofUncheckedUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
-    transactionRedId?: StringFieldUpdateOperationsInput | string
-    sha256Hash?: StringFieldUpdateOperationsInput | string
+    transactionRefId?: NullableStringFieldUpdateOperationsInput | string | null
+    sha256Hash?: NullableStringFieldUpdateOperationsInput | string | null
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     bankName?: StringFieldUpdateOperationsInput | string
     senderName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -25931,8 +25931,8 @@ export namespace Prisma {
 
   export type PaymentProofUncheckedUpdateManyWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
-    transactionRedId?: StringFieldUpdateOperationsInput | string
-    sha256Hash?: StringFieldUpdateOperationsInput | string
+    transactionRefId?: NullableStringFieldUpdateOperationsInput | string | null
+    sha256Hash?: NullableStringFieldUpdateOperationsInput | string | null
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     bankName?: StringFieldUpdateOperationsInput | string
     senderName?: NullableStringFieldUpdateOperationsInput | string | null

@@ -47,64 +47,64 @@ enum ReturnDestination {
 //CORE ENTITIES (USERS, SUPPLIERS, PRODUCTS, BANKS)
 
 model User {
-  id                     String   @id @default(uuid()) 
-  fullName               String  
-  username               String   @unique 
+  id                     String  @id @default(uuid())
+  fullName               String
+  username               String  @unique
   passwordHash           String
-  profilePic             String?  // <--- ADDED: To display avatars on the Agents screen
-  role                   Role     @default(SALES_REP)
-  requiresPasswordChange Boolean  @default(false) 
-  
-  isActive               Boolean  @default(true) 
+  profilePic             String? // <--- ADDED: To display avatars on the Agents screen
+  role                   Role    @default(SALES_REP)
+  requiresPasswordChange Boolean @default(false)
 
-  creditLimit            Decimal  @default("0.00") @db.Decimal(12, 2)
-  creditBalance          Decimal  @default("0.00") @db.Decimal(12, 2)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  isActive Boolean @default(true)
 
-  stockIssusances        StockIssuance[]
-  paymentProofs          PaymentProof[]
-  sales                  Sale[]
-  returns                StockReturn[]
-  notes                  Note[]
-  messages               Message[]
+  creditLimit   Decimal  @default("0.00") @db.Decimal(12, 2)
+  creditBalance Decimal  @default("0.00") @db.Decimal(12, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  stockIssusances StockIssuance[]
+  paymentProofs   PaymentProof[]
+  sales           Sale[]
+  returns         StockReturn[]
+  notes           Note[]
+  messages        Message[]
 }
 
 model Supplier {
-  id                String  @id @default(uuid()) 
-  name               String  
-  creditBalance      Decimal   @default("0.00") @db.Decimal(12, 2)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id            String   @id @default(uuid())
+  name          String
+  creditBalance Decimal  @default("0.00") @db.Decimal(12, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  batches            InventoryBatch[]
+  batches InventoryBatch[]
 }
 
 model Product {
-  id                String  @id @default(uuid()) 
-  name              String  
-  description       String?
-  category          String?   //To power the horizontal category filter
-  imageUrl          String?   //To display product images
-  price             Decimal   @db.Decimal(12, 2)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  category    String? //To power the horizontal category filter
+  imageUrl    String? //To display product images
+  price       Decimal  @db.Decimal(12, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  batches           InventoryBatch[]
-  sales             Sale[]
+  batches InventoryBatch[]
+  sales   Sale[]
 
   @@index([name, category])
 }
 
 model Retailer {
-  id                String           @id @default(uuid())
-  name              String
-  phone             String?          @unique
-  address           String?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  id        String   @id @default(uuid())
+  name      String
+  phone     String?  @unique
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  sales             Sale[]
+  sales Sale[]
 }
 
 // ----------------------------------------------------
@@ -120,37 +120,38 @@ model SupportedBank {
 // FIFO INVENTORY BATCHES
 
 model InventoryBatch {
-  id                    String       @id @default(uuid())
-  batchCode             String       // Removed @unique so multiple items can share a batch code
-  productId             String
-  product               Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
-  supplierId            String
-  supplier              Supplier    @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-  quantityRecieved      Int
-  remainingQty          Int
-  unitCostPrice         Decimal      @db.Decimal(12, 2)
+  id               String   @id @default(uuid())
+  batchCode        String // Removed @unique so multiple items can share a batch code
+  productId        String
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  supplierId       String
+  supplier         Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  quantityRecieved Int
+  remainingQty     Int
+  unitCostPrice    Decimal  @db.Decimal(12, 2)
 
   // Track payment and archive status per item
-  amountPaid            Decimal      @default("0.00") @db.Decimal(12, 2)
-  isArchived            Boolean      @default(false)    // Hides cleared batches from the UI
+  amountPaid Decimal @default("0.00") @db.Decimal(12, 2)
+  isArchived Boolean @default(false) // Hides cleared batches from the UI
 
-  createdAt             DateTime     @default(now())
-  updatedAt             DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([batchCode]) // Fast search index for batch groups
   @@index([productId, remainingQty, createdAt])
 }
+
 // STOCK ISSUANCE (MODEL B WHOLESALE CHECKOUT)
 model StockIssuance {
-  id                    String       @id @default(uuid())
-  userId                String
-  user                  User         @relation(fields: [userId], references: [id], onDelete: Restrict)
-  status                IssuanceStatus @default(ISSUED)
-  totalWholesaleValue   Decimal      @db.Decimal(12, 2)
-  createdAt             DateTime     @default(now())
-  updatedAt             DateTime     @updatedAt
+  id                  String         @id @default(uuid())
+  userId              String
+  user                User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status              IssuanceStatus @default(ISSUED)
+  totalWholesaleValue Decimal        @db.Decimal(12, 2)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 
-  items                 IssuanceItem[]
+  items IssuanceItem[]
 }
 
 model IssuanceItem {
@@ -160,8 +161,8 @@ model IssuanceItem {
   productId      String
   wholesalePrice Decimal       @db.Decimal(12, 2)
   qtyIssued      Int
-  qtyRemaining   Int           
-  cogsCalculated Decimal       @db.Decimal(12, 2) 
+  qtyRemaining   Int
+  cogsCalculated Decimal       @db.Decimal(12, 2)
 }
 
 // RETAIL SALES TRACKING
@@ -176,20 +177,20 @@ model Sale {
   product       Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
   quantity      Int
   totalAmount   Decimal  @db.Decimal(12, 2)
-  paymentMethod String   
+  paymentMethod String
   createdAt     DateTime @default(now())
 }
 
-model PaymentProof{
-  id               String        @id @default(uuid())
-  userId           String
-  user             User          @relation(fields: [userId], references: [id], onDelete: Restrict)
-  
+model PaymentProof {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
   //3-layer anti-duplicatoin security shield(DB-level unique constraint)
-  transactionRedId String      @unique
-  sha256Hash       String      @unique
+  transactionRefId String?     @unique
+  sha256Hash       String?     @unique
   amount           Decimal     @db.Decimal(12, 2)
-  bankName         String      // <--- ADDED THIS FOR THE DROPDOWN / "OTHER" SUPPORT
+  bankName         String // <--- ADDED THIS FOR THE DROPDOWN / "OTHER" SUPPORT
   senderName       String?
   reasonRemark     String?
   receipeImageUrl  String?
@@ -204,41 +205,40 @@ model PaymentProof{
 // 6. IMMUTABLE FINANCIAL AUDIT LEDGER
 
 model LedgerEntry {
-  id               String       @id @default(uuid())
-  transactionDate  DateTime     @default(now())
+  id               String      @id @default(uuid())
+  transactionDate  DateTime    @default(now())
   fromEntity       AuditEntity
   fromEntityId     String?
   toEntity         AuditEntity
   toEntityId       String?
-  amount           Decimal      @db.Decimal(12, 2)
-  transferMethod   String       // e.g., CBE_BANK, TELEBIRR, CASH, CREDIT_ADJUSTMENT
+  amount           Decimal     @db.Decimal(12, 2)
+  transferMethod   String // e.g., CBE_BANK, TELEBIRR, CASH, CREDIT_ADJUSTMENT
   receiptUrl       String?
-  auditRemark      String?      // Mandatory in app logic if receiptUrl is null
-  transactionRefId String?      @unique
-  createdAt        DateTime     @default(now())
+  auditRemark      String? // Mandatory in app logic if receiptUrl is null
+  transactionRefId String?     @unique
+  createdAt        DateTime    @default(now())
 
   @@index([fromEntity, toEntity, transactionDate])
 }
 
-
 model StockReturn {
-  id          String            @id @default(uuid())
+  id          String             @id @default(uuid())
   userId      String
-  user        User              @relation(fields: [userId], references: [id])
+  user        User               @relation(fields: [userId], references: [id])
   totalValue  Decimal
   reason      String
-  status      ReturnStatus      @default(PENDING)
+  status      ReturnStatus       @default(PENDING)
   destination ReturnDestination?
   items       ReturnItem[]
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 }
 
 model ReturnItem {
   id            String      @id @default(uuid())
   stockReturnId String
   stockReturn   StockReturn @relation(fields: [stockReturnId], references: [id])
-  itemId        String      // References your Inventory Item ID
+  itemId        String // References your Inventory Item ID
   quantity      Int
 }
 
@@ -246,7 +246,7 @@ model Note {
   id        String   @id @default(uuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  dateKey   String   // Stored as "YYYY-MM-DD"
+  dateKey   String // Stored as "YYYY-MM-DD"
   content   String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
