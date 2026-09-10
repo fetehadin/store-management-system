@@ -34,15 +34,19 @@ export const getInventory = async (
 
     const mappedInventory = products
       .map((product) => {
-        // 1. Calculate total available physical stock across all active batches
-        const totalStock = product.batches.reduce(
+        // 1. Filter to only batches that actually have physical stock right now
+        const activeBatches = product.batches.filter((b) => b.remainingQty > 0);
+
+        // 2. Calculate total available physical stock across all active batches
+        const totalStock = activeBatches.reduce(
           (sum, batch) => sum + batch.remainingQty,
           0
         );
 
-        // 2. Identify the active FIFO batch (the oldest batch that still has sellable units)
-        const activeBatch = product.batches.find((b) => b.remainingQty > 0);
-        const currentCostPrice = activeBatch ? activeBatch.unitCostPrice : 0;
+        // 3. FIX: Find the highest cost price among all active batches (Margin Protection)
+        const highestCostPrice = activeBatches.length > 0 
+          ? Math.max(...activeBatches.map(b => Number(b.unitCostPrice))) 
+          : 0;
 
         return {
           id: product.id,
@@ -50,11 +54,11 @@ export const getInventory = async (
           category: (product as any).category || "General",
           imageUrl: (product as any).imageUrl || null,
           stock: totalStock,
-          costPrice: Number(currentCostPrice),
+          costPrice: highestCostPrice,
           sellingPrice: Number(product.price),
         };
       })
-      .filter((product) => product.stock > 0); // <-- THE FIX: Filters out any product with 0 total stock
+      .filter((product) => product.stock > 0); // Filters out any product with 0 total stock
 
     res.status(200).json({
       status: "success",
@@ -243,7 +247,7 @@ export const issueStock = async (
               {
                 productId: validated.productId,
                 qtyIssued: validated.qtyIssued,
-                qtyRemaining: validated.qtyIssued, // <-- THE FIX: Initialize remaining van stock
+                qtyRemaining: validated.qtyIssued,
                 wholesalePrice: toDecimal(validated.wholesalePrice),
                 cogsCalculated: blendedUnitCogs,
               },
