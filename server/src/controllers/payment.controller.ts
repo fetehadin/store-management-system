@@ -61,7 +61,7 @@ export const submitPayment = async (req: Request, res: Response, next: NextFunct
  * @route   GET /api/v1/payments/pending
  * @desc    Get all pending payment proofs (Admin only)
  */
-export const getPendingPayments = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getPendingPayments = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const pendingProofs = await db.paymentProof.findMany({
       where: { status: ProofStatus.PENDING },
@@ -79,7 +79,7 @@ export const getPendingPayments = async (req: Request, res: Response, next: Next
  */
 export const approvePayment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const adminId = req.user?.id;
     
     // Safety check: Prevent Prisma crash if admin ID is missing

@@ -36,7 +36,7 @@ export const submitReturn = async (req: Request, res: Response, next: NextFuncti
 };
 
 // 2. Admin Fetches Pending Returns (with Product Names)
-export const getPendingReturns = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getPendingReturns = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const pendingReturns = await db.stockReturn.findMany({
       where: { status: 'PENDING' },
@@ -72,7 +72,7 @@ export const getPendingReturns = async (req: Request, res: Response, next: NextF
 // 3. Admin Approves Return (Adds directly back to batch & clears debt)
 export const processReturn = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const adminId = req.user?.id;
     
     if (!adminId) throw new UnauthorizedError("Admin authorization required");
@@ -116,7 +116,7 @@ export const processReturn = async (req: Request, res: Response, next: NextFunct
     for (const item of pendingReturn.items) {
       const latestBatch = await db.inventoryBatch.findFirst({
         where: { productId: item.itemId },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       });
 
       if (!latestBatch) {

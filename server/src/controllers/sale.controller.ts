@@ -2,10 +2,10 @@ import { Request, Response, NextFunction } from "express";
 import { db as prisma } from "../config/db.js";
 import { createSaleSchema } from "../validations/sale.validation.js";
 
-export const processSale = async (req: Request, res: Response, next: NextFunction) => {
+export const processSale = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const data = createSaleSchema.parse(req.body);
-    const salesRepId = req.user.id; 
+    const salesRepId = req.user!.id; 
     const totalAmount = data.quantitySold * data.salePrice;
 
     const transactionResult = await prisma.$transaction(async (tx) => {
@@ -72,16 +72,18 @@ export const processSale = async (req: Request, res: Response, next: NextFunctio
       message: "Sale processed successfully",
       data: transactionResult
     });
-
   } catch (error: any) {
     if (error.message === "INSUFFICIENT_CREDIT") {
-      return res.status(400).json({ status: "error", message: "Sale exceeds authorized credit limit." });
+      res.status(400).json({ status: "error", message: "Sale exceeds authorized credit limit." });
+      return;
     }
     if (error.message === "INSUFFICIENT_STOCK") {
-      return res.status(400).json({ status: "error", message: "Not enough stock in van allocation." });
+      res.status(400).json({ status: "error", message: "Not enough stock in van allocation." });
+      return;
     }
     if (error.message === "USER_NOT_FOUND") {
-      return res.status(404).json({ status: "error", message: "Sales rep not found." });
+      res.status(404).json({ status: "error", message: "Sales rep not found." });
+      return;
     }
     next(error); 
   }

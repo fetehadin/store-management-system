@@ -166,7 +166,7 @@ export const getMe = async (
 ): Promise<void> => {
   try {
     const user = await db.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: req.user!.id },
       select: {
         id: true,
         fullName: true,

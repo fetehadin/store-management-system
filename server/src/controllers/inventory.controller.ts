@@ -17,7 +17,7 @@ import { Role, IssuanceStatus, AuditEntity } from "../generated/client/index.js"
  * @access  Protected (ADMIN)
  */
 export const getInventory = async (
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -80,7 +80,7 @@ export const updateSellingPrice = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const { price } = req.body;
 
     if (price === undefined || isNaN(Number(price))) {
