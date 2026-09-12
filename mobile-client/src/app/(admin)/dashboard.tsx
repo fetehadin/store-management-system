@@ -22,8 +22,7 @@ const CORE_MODULES = [
   { id: 'Suppliers', title: 'Supplier Directory', sub: 'Manage vendors and credit', icon: 'people-outline', lightBg: '#ECFDF5', lightColor: '#10B981', route: '/(admin)/suppliers' },
 ];
 
-// CRITICAL FIX: Wired to your .env file
-const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://10.54.178.101:5000';
+const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'https://tajstore-backend.onrender.com';
 
 export default function AdminDashboard() {
   const router = useRouter();

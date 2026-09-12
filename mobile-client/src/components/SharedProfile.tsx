@@ -31,14 +31,13 @@ export default function SharedProfile() {
   const logout = useAuthStore((state) => state.logout);
   const updateProfilePic = useAuthStore((state) => state.updateProfilePic);
   
-  // FIX 1: Safely check both the root state and the nested user object
+  // Safely check both the root state and the nested user object
   const authUserName = useAuthStore((state: any) => state.userName || state.user?.fullName || 'Fetehadin Negash');
   const rawProfilePic = useAuthStore((state: any) => state.profilePic || state.user?.profilePic);
   
   const displayRole = role === 'ADMIN' ? 'System Administrator' : 'Sales Representative';
 
-  // FIX 2: Hardcode your network IP as the ultimate fallback so physical mobile devices don't fail on 'localhost'
-  const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://172.30.75.101:5000'; 
+  const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'https://tajstore-backend.onrender.com';
 
   // FIX 3: Bulletproof URI parser to prevent broken image links or double IPs
   const getAvatarUri = (uri: string | null | undefined) => {

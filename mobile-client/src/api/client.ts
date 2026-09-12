@@ -2,7 +2,8 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 // Expo injects variables prefixed with EXPO_PUBLIC_ automatically
-const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://localhost:5000';
+// src/api/client.ts
+const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'https://tajstore-backend.onrender.com';
 const BASE_URL = `${BASE_IP}/api/v1`;
 
 // THIS IS THE SMOKING GUN: Check your mobile terminal when the app starts!

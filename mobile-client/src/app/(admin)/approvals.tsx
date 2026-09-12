@@ -8,8 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
 import { apiClient } from '../../api/client';
 
-// FIX: Safely use the .env variable
-const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://localhost:5000';
+const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'https://tajstore-backend.onrender.com';
 
 const resolveImageUrl = (url: string) => {
   if (!url) return '';
