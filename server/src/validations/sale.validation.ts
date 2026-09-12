@@ -10,8 +10,8 @@ export const createSaleSchema = z.object({
   salePrice: z
     .number()
     .positive("Price must be greater than zero"),
-  paymentMethod: z.enum(["CASH", "CREDIT"], {
-    required_error: "Payment method must be exactly CASH or CREDIT",
+  paymentMethod: z.enum(["CASH", "CREDIT"] as const, {
+    message: "Payment method must be exactly CASH or CREDIT",
   }),
 });
 
