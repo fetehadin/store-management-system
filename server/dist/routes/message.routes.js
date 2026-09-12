@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const message_controller_js_1 = require("../controllers/message.controller.js");
+const authenticate_js_1 = require("../middlewares/authenticate.js");
+const router = (0, express_1.Router)();
+router.use(authenticate_js_1.authenticate);
+router.get('/', message_controller_js_1.getMessages);
+router.patch('/:id/dismiss', message_controller_js_1.dismissMessage);
+exports.default = router;

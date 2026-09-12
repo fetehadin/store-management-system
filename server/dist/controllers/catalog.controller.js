@@ -13,16 +13,9 @@ const decimal_js_1 = require("../utils/decimal.js");
 const createSupplier = async (req, res, next) => {
     try {
         const validated = catalog_validation_js_1.createSupplierSchema.parse(req.body);
-        const existing = await db_js_1.db.supplier.findUnique({
-            where: { phone: validated.phone },
-        });
-        if (existing) {
-            throw new errors_js_1.ConflictError("A supplier with this phone number already exists");
-        }
         const supplier = await db_js_1.db.supplier.create({
             data: {
                 name: validated.name,
-                phone: validated.phone,
                 creditBalance: (0, decimal_js_1.toDecimal)(validated.creditBalance),
             },
         });
@@ -32,7 +25,6 @@ const createSupplier = async (req, res, next) => {
             data: {
                 id: supplier.id,
                 name: supplier.name,
-                phone: supplier.phone,
                 creditBalance: (0, decimal_js_1.formatETB)(supplier.creditBalance),
             },
         });
@@ -81,7 +73,7 @@ exports.createProduct = createProduct;
 const receiveInventoryBatch = async (req, res, next) => {
     try {
         const validated = catalog_validation_js_1.receiveBatchSchema.parse(req.body);
-        const existingBatch = await db_js_1.db.inventoryBatch.findUnique({
+        const existingBatch = await db_js_1.db.inventoryBatch.findFirst({
             where: { batchCode: validated.batchCode },
         });
         if (existingBatch) {

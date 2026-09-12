@@ -150,7 +150,6 @@ const getSalesRepPerformanceReport = async (_req, res, next) => {
             return {
                 salesRepId: rep.id,
                 fullName: rep.fullName,
-                phone: rep.phone,
                 totalIssuancesCount: rep.stockIssusances.length, // <-- Corrected property name
                 totalUnitsIssued: repUnitsIssued,
                 revenueGeneratedETB: (0, decimal_js_1.formatETB)(repRevenueETB),

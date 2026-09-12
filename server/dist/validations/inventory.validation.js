@@ -21,7 +21,7 @@ exports.createStockBatchSchema = zod_1.z.object({
 exports.issueStockSchema = zod_1.z.object({
     salesRepId: zod_1.z
         .string()
-        .uuid("Invalid Sales Rep user ID format"),
+        .min(1, "Sales Rep ID is required"), // Changed from .uuid() to .min(1)
     productId: zod_1.z
         .string()
         .min(1, "Product ID is required"),

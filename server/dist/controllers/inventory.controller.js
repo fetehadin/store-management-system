@@ -1,11 +1,84 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.issueStock = exports.createStockBatch = void 0;
+exports.getProductSuggestions = exports.getMyStock = exports.issueStock = exports.createStockBatch = exports.updateSellingPrice = exports.getInventory = void 0;
 const db_js_1 = require("../config/db.js");
 const inventory_validation_js_1 = require("../validations/inventory.validation.js");
 const errors_js_1 = require("../utils/errors.js");
 const decimal_js_1 = require("../utils/decimal.js");
 const index_js_1 = require("../generated/client/index.js");
+/**
+ * @route   GET /api/v1/inventory/products
+ * @desc    Fetch live inventory with dynamic FIFO cost calculation and categories
+ * @access  Protected (ADMIN)
+ */
+const getInventory = async (_req, res, next) => {
+    try {
+        const products = await db_js_1.db.product.findMany({
+            include: {
+                // Fetch all batches to calculate strict FIFO logic
+                batches: {
+                    orderBy: { createdAt: "asc" }, // Oldest first
+                },
+            },
+            orderBy: { createdAt: "desc" },
+        });
+        const mappedInventory = products
+            .map((product) => {
+            // 1. Filter to only batches that actually have physical stock right now
+            const activeBatches = product.batches.filter((b) => b.remainingQty > 0);
+            // 2. Calculate total available physical stock across all active batches
+            const totalStock = activeBatches.reduce((sum, batch) => sum + batch.remainingQty, 0);
+            // 3. FIX: Find the highest cost price among all active batches (Margin Protection)
+            const highestCostPrice = activeBatches.length > 0
+                ? Math.max(...activeBatches.map(b => Number(b.unitCostPrice)))
+                : 0;
+            return {
+                id: product.id,
+                name: product.name,
+                category: product.category || "General",
+                imageUrl: product.imageUrl || null,
+                stock: totalStock,
+                costPrice: highestCostPrice,
+                sellingPrice: Number(product.price),
+            };
+        })
+            .filter((product) => product.stock > 0); // Filters out any product with 0 total stock
+        res.status(200).json({
+            status: "success",
+            data: mappedInventory,
+        });
+    }
+    catch (err) {
+        next(err);
+    }
+};
+exports.getInventory = getInventory;
+/**
+ * @route   PATCH /api/v1/inventory/products/:id/price
+ * @desc    Update the live selling price of a product
+ * @access  Protected (ADMIN)
+ */
+const updateSellingPrice = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { price } = req.body;
+        if (price === undefined || isNaN(Number(price))) {
+            throw new errors_js_1.BadRequestError("A valid price is required.");
+        }
+        await db_js_1.db.product.update({
+            where: { id },
+            data: { price: (0, decimal_js_1.toDecimal)(price) },
+        });
+        res.status(200).json({
+            status: "success",
+            message: "Selling price updated successfully",
+        });
+    }
+    catch (err) {
+        next(err);
+    }
+};
+exports.updateSellingPrice = updateSellingPrice;
 /**
  * @route   POST /api/v1/inventory/batches
  * @desc    Legacy stub / wrapper for warehouse batch receiving (Admin only)
@@ -39,6 +112,10 @@ exports.createStockBatch = createStockBatch;
  */
 const issueStock = async (req, res, next) => {
     try {
+        // 1. AUTO-INJECT THE ID FROM THE LOGIN TOKEN (BULLETPROOF)
+        if (req.user?.id) {
+            req.body.salesRepId = req.user.id;
+        }
         const validated = inventory_validation_js_1.issueStockSchema.parse(req.body);
         // 1. Verify Sales Rep exists and has correct role
         const salesRep = await db_js_1.db.user.findUnique({
@@ -106,6 +183,7 @@ const issueStock = async (req, res, next) => {
                             {
                                 productId: validated.productId,
                                 qtyIssued: validated.qtyIssued,
+                                qtyRemaining: validated.qtyIssued,
                                 wholesalePrice: (0, decimal_js_1.toDecimal)(validated.wholesalePrice),
                                 cogsCalculated: blendedUnitCogs,
                             },
@@ -122,7 +200,7 @@ const issueStock = async (req, res, next) => {
             // 5d. AUTOMATED LEDGER WIRE: create audit trail entry debiting the Sales Rep
             const ledgerEntry = await tx.ledgerEntry.create({
                 data: {
-                    fromEntity: index_js_1.AuditEntity.ADMIN_STORE, // <-- MATCHED TO YOUR EXACT SCHEMA ENUM!
+                    fromEntity: index_js_1.AuditEntity.ADMIN_STORE,
                     toEntity: index_js_1.AuditEntity.SALES_REP,
                     toEntityId: salesRep.id,
                     amount: totalIssuanceValue,
@@ -165,3 +243,76 @@ const issueStock = async (req, res, next) => {
     }
 };
 exports.issueStock = issueStock;
+const getMyStock = async (req, res, next) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId) {
+            throw new errors_js_1.BadRequestError("User authentication required");
+        }
+        // 1. Fetch all issuances for this Sales Rep that are active
+        const issuances = await db_js_1.db.stockIssuance.findMany({
+            where: { userId: userId, status: "ISSUED" },
+            include: { items: true },
+        });
+        // 2. Aggregate quantities by productId (in case they checked out the same item twice)
+        const stockMap = new Map();
+        for (const issuance of issuances) {
+            for (const item of issuance.items) {
+                // Fallback to qtyIssued if qtyRemaining wasn't strictly populated
+                const qtyAvailable = item.qtyRemaining ?? item.qtyIssued;
+                if (qtyAvailable > 0) {
+                    const current = stockMap.get(item.productId) || { qty: 0, price: Number(item.wholesalePrice) };
+                    stockMap.set(item.productId, {
+                        qty: current.qty + qtyAvailable,
+                        price: Number(item.wholesalePrice),
+                    });
+                }
+            }
+        }
+        // 3. Fetch Product details (names) so the mobile app can display them
+        const productIds = Array.from(stockMap.keys());
+        const products = await db_js_1.db.product.findMany({
+            where: { id: { in: productIds } }
+        });
+        const productMap = new Map(products.map(p => [p.id, p.name]));
+        // 4. Format exactly how the mobile app expects it
+        const formattedStock = Array.from(stockMap.entries()).map(([productId, data]) => ({
+            id: productId,
+            name: productMap.get(productId) || "Unknown Product",
+            sellingPrice: data.price,
+            qtyHeld: data.qty
+        }));
+        res.status(200).json({ data: formattedStock });
+    }
+    catch (err) {
+        next(err);
+    }
+};
+exports.getMyStock = getMyStock;
+/**
+ * @route   GET /api/v1/inventory/products/suggestions
+ * @desc    Fetch distinct product names and categories for autocomplete to prevent dirty data
+ * @access  Protected (ADMIN)
+ */
+const getProductSuggestions = async (req, res, next) => {
+    try {
+        const query = req.query.q || "";
+        // Fetch distinct names and categories matching the search query
+        const products = await db_js_1.db.product.findMany({
+            where: {
+                OR: [
+                    { name: { contains: query, mode: "insensitive" } },
+                    { category: { contains: query, mode: "insensitive" } }
+                ]
+            },
+            distinct: ['name', 'category'],
+            select: { name: true, category: true, price: true },
+            take: 10, // O(limit) constraint to ensure fast network payloads
+        });
+        res.status(200).json({ status: 'success', data: products });
+    }
+    catch (err) {
+        next(err);
+    }
+};
+exports.getProductSuggestions = getProductSuggestions;

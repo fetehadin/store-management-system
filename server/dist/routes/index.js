@@ -11,6 +11,9 @@ const ledger_routes_js_1 = __importDefault(require("./ledger.routes.js"));
 const supplier_routes_js_1 = __importDefault(require("./supplier.routes.js"));
 const product_routes_js_1 = __importDefault(require("./product.routes.js"));
 const report_routes_js_1 = __importDefault(require("./report.routes.js"));
+const sale_routes_js_1 = __importDefault(require("./sale.routes.js"));
+const analytics_routes_js_1 = __importDefault(require("./analytics.routes.js"));
+const admin_routes_js_1 = __importDefault(require("./admin.routes.js"));
 const router = (0, express_1.Router)();
 // Mount API v1 Routes
 router.use("/auth", auth_routes_js_1.default);
@@ -20,4 +23,7 @@ router.use("/ledger", ledger_routes_js_1.default);
 router.use("/suppliers", supplier_routes_js_1.default);
 router.use("/products", product_routes_js_1.default);
 router.use("/reports", report_routes_js_1.default);
+router.use("/sales", sale_routes_js_1.default);
+router.use('/analytics', analytics_routes_js_1.default);
+router.use('/admin', admin_routes_js_1.default);
 exports.default = router;

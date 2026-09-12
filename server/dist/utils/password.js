@@ -5,9 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.comparePassword = exports.hashPassword = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
-const SALT_ROUNDS = 12;
+const SALT_ROUNDS = 10; // Match your seed salt rounds
 /**
- * Hashes a plaintext password or PIN using bcrypt with 12 salt rounds.
+ * Hashes a plaintext password or PIN using bcryptjs.
  */
 const hashPassword = async (plaintext) => {
     return bcryptjs_1.default.hash(plaintext, SALT_ROUNDS);
