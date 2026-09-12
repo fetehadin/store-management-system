@@ -10,6 +10,7 @@ import {
   StyleSheet,
   StatusBar,
   ScrollView,
+  Image,
 } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -39,7 +40,6 @@ export default function LoginScreen() {
       const user = responsePayload.data.user;
       const token = responsePayload.token;
 
-      // Securely save credentials for biometric sign-in
       if (rawPin) {
         await SecureStore.setItemAsync('bio_username', savedUser);
         await SecureStore.setItemAsync('bio_pin', rawPin);
@@ -127,10 +127,14 @@ export default function LoginScreen() {
       
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         <View style={styles.header}>
-          <View style={styles.logoSquircle}>
-            <Feather name="box" size={28} color="#FFFFFF" />
+          <View style={styles.logoShadowWrapper}>
+            {/* FIXED IMPORT PATH TO POINT TO THE ROOT ASSETS FOLDER */}
+            <Image 
+              source={require('../../assets/images/icon.png')} 
+              style={styles.logoImage} 
+            />
           </View>
-          <Text style={styles.title}>ibnTaju Store</Text>
+          <Text style={styles.title}>TajStore</Text>
           <Text style={styles.subtitle}>Distribution Portal</Text>
         </View>
 
@@ -140,7 +144,7 @@ export default function LoginScreen() {
             <View style={styles.biometricSection}>
               <View style={styles.biometricOuterRing}>
                 <TouchableOpacity style={styles.biometricInnerBubble} onPress={handleBiometricAuth} activeOpacity={0.8}>
-                  <Ionicons name="finger-print" size={54} color="#1D61F2" />
+                  <Ionicons name="finger-print" size={54} color="#1679A3" />
                 </TouchableOpacity>
               </View>
               <Text style={styles.biometricSubtitle}>Tap scanner to sign in{'\n'}with TouchID / FaceID</Text>
@@ -195,12 +199,12 @@ export default function LoginScreen() {
           >
             {authMode === 'BIOMETRIC' ? (
               <>
-                <Ionicons name="keypad" size={20} color="#1D61F2" />
+                <Ionicons name="keypad" size={20} color="#1679A3" />
                 <Text style={styles.outlineToggleText}>Use Security PIN</Text>
               </>
             ) : (
               <>
-                <Ionicons name="finger-print-outline" size={20} color="#1D61F2" />
+                <Ionicons name="finger-print-outline" size={20} color="#1679A3" />
                 <Text style={styles.outlineToggleText}>Use Biometrics</Text>
               </>
             )}
@@ -220,14 +224,28 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#EEF3FC' },
   scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 40 },
   header: { alignItems: 'center', marginBottom: 32 },
-  logoSquircle: { width: 68, height: 68, backgroundColor: '#177CA5', borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 16, shadowColor: '#177CA5', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 8 },
+  
+  logoShadowWrapper: {
+    marginBottom: 16,
+    shadowColor: '#1679A3',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  logoImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+  },
+
   title: { fontSize: 28, fontWeight: '800', color: '#0F172A', letterSpacing: -0.5 },
   subtitle: { fontSize: 14, fontWeight: '500', color: '#64748B', marginTop: 4 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 28, padding: 24, shadowColor: '#64748B', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.08, shadowRadius: 24, elevation: 10 },
   
   biometricSection: { alignItems: 'center', marginBottom: 16 },
-  biometricOuterRing: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#EBF2FF', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-  biometricInnerBubble: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#DFEAFF', alignItems: 'center', justifyContent: 'center' },
+  biometricOuterRing: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#E1F0F6', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  biometricInnerBubble: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#BDE0EF', alignItems: 'center', justifyContent: 'center' },
   biometricSubtitle: { fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20, marginBottom: 16 },
   
   pinSection: { marginBottom: 24 },
@@ -236,11 +254,11 @@ const styles = StyleSheet.create({
   standardInput: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16, fontSize: 16, fontWeight: '600', color: '#0F172A' },
   pinInput: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16, fontSize: 24, fontWeight: '700', color: '#0F172A', textAlign: 'center', letterSpacing: 12 },
   
-  signInButton: { width: '100%', backgroundColor: '#177CA5', borderRadius: 16, paddingVertical: 18, alignItems: 'center', justifyContent: 'center', marginTop: 8, shadowColor: '#177CA5', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  signInButton: { width: '100%', backgroundColor: '#1679A3', borderRadius: 16, paddingVertical: 18, alignItems: 'center', justifyContent: 'center', marginTop: 8, shadowColor: '#1679A3', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
   signInButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   
   outlineToggleBtn: { borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 16, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
-  outlineToggleText: { color: '#177CA5', fontSize: 15, fontWeight: '700', marginLeft: 10 },
+  outlineToggleText: { color: '#1679A3', fontSize: 15, fontWeight: '700', marginLeft: 10 },
   
   forgotPinContainer: { marginTop: 32, alignItems: 'center' },
   forgotPinText: { color: '#64748B', fontSize: 14, fontWeight: '700' },
