@@ -186,7 +186,6 @@ export const getSalesRepPerformanceReport = async (
       return {
         salesRepId: rep.id,
         fullName: rep.fullName,
-        phone: rep.phone,
         totalIssuancesCount: rep.stockIssusances.length, // <-- Corrected property name
         totalUnitsIssued: repUnitsIssued,
         revenueGeneratedETB: formatETB(repRevenueETB),

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { db } from "../config/db.js";
 
-export const getSuppliers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getSuppliers = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const suppliers = await db.supplier.findMany({
       include: {
@@ -74,7 +74,7 @@ export const enrollSupplier = async (req: Request, res: Response, next: NextFunc
 
 export const addSupplierBatch = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
     const { items } = req.body;
     const batchCode = `BATCH-${Math.floor(1000 + Math.random() * 9000)}`;
     const batchTotal = items.reduce((sum: number, item: any) => sum + (item.qty * item.cost), 0);
@@ -99,8 +99,8 @@ export const addSupplierBatch = async (req: Request, res: Response, next: NextFu
 
 export const paySupplierBatch = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { supplierId, batchCode } = req.params;
-    const { amount, transferMethod, reference } = req.body;
+    const { supplierId, batchCode } = req.params as Record<string, string>;
+    const { amount, transferMethod } = req.body; // Removed unused 'reference'
     let remainingPayment = Number(amount);
 
     if (isNaN(remainingPayment) || remainingPayment <= 0) {
@@ -138,7 +138,7 @@ export const paySupplierBatch = async (req: Request, res: Response, next: NextFu
 
 export const refundSupplierBatch = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { supplierId, batchCode } = req.params;
+    const { supplierId, batchCode } = req.params as Record<string, string>;
     const { refunds } = req.body;
 
     if (!refunds || !Array.isArray(refunds) || refunds.length === 0) {
@@ -176,14 +176,14 @@ export const refundSupplierBatch = async (req: Request, res: Response, next: Nex
       });
     });
     res.status(200).json({ status: 'success' });
-  } catch (err: any) { 
-    res.status(400).json({ status: 'error', message: err.message }); 
+  } catch (err) { 
+    next(err); // Replaced hardcoded status 400 to utilize the global error handler
   }
 };
 
 export const deleteSupplier = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as Record<string, string>;
 
     const supplier = await db.supplier.findUnique({ 
       where: { id },
@@ -217,7 +217,7 @@ export const deleteSupplier = async (req: Request, res: Response, next: NextFunc
 
 export const deleteSupplierBatch = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { supplierId, batchCode } = req.params;
+    const { supplierId, batchCode } = req.params as Record<string, string>;
 
     const batches = await db.inventoryBatch.findMany({ where: { batchCode, supplierId } });
     if (batches.length === 0) {

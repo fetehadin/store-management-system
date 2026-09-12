@@ -6,7 +6,6 @@ import {
   receiveBatchSchema,
 } from "../validations/catalog.validation.js";
 import {
-  
   ConflictError,
   NotFoundError,
 } from "../utils/errors.js";
@@ -25,18 +24,9 @@ export const createSupplier = async (
   try {
     const validated = createSupplierSchema.parse(req.body);
 
-    const existing = await db.supplier.findUnique({
-      where: { phone: validated.phone },
-    });
-
-    if (existing) {
-      throw new ConflictError("A supplier with this phone number already exists");
-    }
-
     const supplier = await db.supplier.create({
       data: {
         name: validated.name,
-        phone: validated.phone,
         creditBalance: toDecimal(validated.creditBalance),
       },
     });
@@ -47,7 +37,6 @@ export const createSupplier = async (
       data: {
         id: supplier.id,
         name: supplier.name,
-        phone: supplier.phone,
         creditBalance: formatETB(supplier.creditBalance),
       },
     });
@@ -105,7 +94,7 @@ export const receiveInventoryBatch = async (
   try {
     const validated = receiveBatchSchema.parse(req.body);
 
-    const existingBatch = await db.inventoryBatch.findUnique({
+    const existingBatch = await db.inventoryBatch.findFirst({
       where: { batchCode: validated.batchCode },
     });
 
