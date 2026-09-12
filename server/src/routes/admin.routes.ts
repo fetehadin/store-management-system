@@ -16,7 +16,7 @@ const router = Router();
 
 // Secure all admin routes
 router.use(authenticate);
-router.use(authorize('ADMIN', 'SUPER_ADMIN'));
+router.use(authorize('ADMIN'));
 
 router.get("/reps", getSalesReps);
 router.post("/reps", enrollSalesRep);

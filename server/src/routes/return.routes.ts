@@ -10,12 +10,12 @@ const router = Router();
 router.use(authenticate);
 
 // Admin fetches all pending stock returns
-router.get("/pending", authorize(Role.ADMIN, Role.SUPER_ADMIN), getPendingReturns);
+router.get("/pending", authorize(Role.ADMIN), getPendingReturns);
 
 // Sales Rep submits a return request for their checked-out stock
 router.post("/", authorize(Role.SALES_REP, Role.ADMIN), submitReturn); 
 
 // Admin processes/approves the return and assigns a destination (WAREHOUSE or SUPPLIER)
-router.post("/:id/approve", authorize(Role.ADMIN, Role.SUPER_ADMIN), processReturn); 
+router.post("/:id/approve", authorize(Role.ADMIN), processReturn); 
 
 export default router;
