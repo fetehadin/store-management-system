@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image,
   StatusBar, Modal, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../api/client';
@@ -22,6 +23,7 @@ const resolveImageUrl = (url: string) => {
 export default function SuppliersScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
   
   const role = useAuthStore((state) => state.role);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
@@ -234,29 +236,36 @@ export default function SuppliersScreen() {
     }
   };
 
+  // Elevated Slate Dark Mode Theme Definition
+  const theme = {
+    bg: isDarkMode ? '#020617' : '#F8FAFC',
+    text: isDarkMode ? '#F8FAFC' : '#0F172A',
+    textMuted: isDarkMode ? '#94A3B8' : '#64748B',
+    border: isDarkMode ? '#1E293B' : '#E2E8F0',
+    invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5',
+    invertedText: isDarkMode ? '#000000' : '#FFFFFF',
+    cardBg: isDarkMode ? '#0F172A' : '#FFFFFF',
+    subCardBg: isDarkMode ? '#1E293B' : '#F8FAFC',
+    inputBg: isDarkMode ? '#0F172A' : '#F1F5F9',
+    iconBg: isDarkMode ? '#1E293B' : '#EFF6FF',
+  };
+
   if (!isAdmin) {
     return (
-      <SafeAreaView style={styles.unauthorizedContainer}>
-        <StatusBar barStyle="dark-content" />
+      <View style={[styles.unauthorizedContainer, { backgroundColor: theme.bg, paddingTop: insets.top }]}>
+        <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} translucent />
         <Ionicons name="lock-closed-outline" size={64} color="#DC2626" />
-        <Text style={styles.unauthorizedTitle}>Access Restricted</Text>
-        <Text style={styles.unauthorizedSubtitle}>This portal is exclusively for system administrators.</Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/(rep)/pos')}>
+        <Text style={[styles.unauthorizedTitle, { color: theme.text }]}>Access Restricted</Text>
+        <Text style={[styles.unauthorizedSubtitle, { color: theme.textMuted }]}>This portal is exclusively for system administrators.</Text>
+        {/* TS FIX: Casting route to any to bypass strict typing without changing logic */}
+        <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/(rep)/pos' as any)}>
           <Text style={styles.backButtonText}>Return to POS</Text>
         </TouchableOpacity>
-      </SafeAreaView>
+      </View>
     );
   }
 
   const totalPayableSum = suppliers.reduce((acc: number, s: any) => acc + Number(s.totalPayable || 0), 0);
-
-  const theme = {
-    bg: isDarkMode ? '#000000' : '#F8FAFC', text: isDarkMode ? '#E7E9EA' : '#0F172A',
-    textMuted: isDarkMode ? '#71767B' : '#64748B', border: isDarkMode ? '#2F3336' : '#E2E8F0',
-    invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5', invertedText: isDarkMode ? '#000000' : '#FFFFFF',
-    cardBg: isDarkMode ? '#000000' : '#FFFFFF', subCardBg: isDarkMode ? '#1E293B' : '#F8FAFC',
-    inputBg: isDarkMode ? '#0F1419' : '#F1F5F9',
-  };
 
   const renderBatchItems = () => (
     <>
@@ -386,12 +395,12 @@ export default function SuppliersScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
+    <View style={[styles.safeArea, { backgroundColor: theme.bg, paddingTop: Math.max(insets.top, 16) }]}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} translucent />
 
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity style={styles.menuButton} onPress={() => router.replace('/(admin)/dashboard')}>
+          <TouchableOpacity style={styles.menuButton} onPress={() => router.replace('/(admin)/dashboard' as any)}>
             <Ionicons name="arrow-back-outline" size={26} color={theme.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.text }]}>Active Suppliers</Text>
@@ -400,7 +409,7 @@ export default function SuppliersScreen() {
 
       <ScrollView 
         keyboardShouldPersistTaps="handled" 
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} 
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />} 
         contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} 
         showsVerticalScrollIndicator={false}
       >
@@ -422,15 +431,15 @@ export default function SuppliersScreen() {
         </View>
 
         <View style={styles.listContainer}>
-          {isLoading ? <ActivityIndicator size="large" color="#177CA5" style={{ marginTop: 40 }} /> : suppliers.map((supplier: any) => {
+          {isLoading ? <ActivityIndicator size="large" color={theme.invertedBg} style={{ marginTop: 40 }} /> : suppliers.map((supplier: any) => {
             const isExpanded = expandedIds.includes(supplier.id);
 
             return (
             <View key={supplier.id} style={[styles.supplierCard, { backgroundColor: theme.cardBg }, isDarkMode ? { borderWidth: 1, borderColor: theme.border } : styles.lightShadow]}>
               <View style={styles.supplierHeaderRow}>
                 <TouchableOpacity style={styles.supplierMetaRow} onPress={() => toggleSupplierExpand(supplier.id)} activeOpacity={0.7}>
-                  <View style={[styles.supplierIconBox, isDarkMode && { backgroundColor: '#1E293B' }]}>
-                    <Ionicons name="business-outline" size={24} color="#1D61F2" />
+                  <View style={[styles.supplierIconBox, { backgroundColor: isDarkMode ? theme.iconBg : '#EFF6FF' }]}>
+                    <Ionicons name="business-outline" size={24} color={isDarkMode ? theme.text : "#1D61F2"} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.supplierName, { color: theme.text }]}>{supplier.name}</Text>
@@ -453,9 +462,9 @@ export default function SuppliersScreen() {
                 <View style={[styles.batchesContainer, { borderTopColor: theme.border }]}>
                   <View style={styles.batchesHeaderRow}>
                     <Text style={[styles.batchesTitle, { color: theme.textMuted }]}>INVENTORY BATCHES</Text>
-                    <TouchableOpacity onPress={() => { setActiveSupplierId(supplier.id); setIsAddBatchModalVisible(true); }} style={styles.addBatchBtnInline}>
-                      <Ionicons name="add-circle" size={16} color="#1D61F2" style={{ marginRight: 4 }} />
-                      <Text style={styles.addBatchInlineText}>New Batch</Text>
+                    <TouchableOpacity onPress={() => { setActiveSupplierId(supplier.id); setIsAddBatchModalVisible(true); }} style={[styles.addBatchBtnInline, isDarkMode && { backgroundColor: theme.iconBg }]}>
+                      <Ionicons name="add-circle" size={16} color={isDarkMode ? theme.text : "#1D61F2"} style={{ marginRight: 4 }} />
+                      <Text style={[styles.addBatchInlineText, isDarkMode && { color: theme.text }]}>New Batch</Text>
                     </TouchableOpacity>
                   </View>
                   
@@ -499,7 +508,7 @@ export default function SuppliersScreen() {
                         </View>
 
                         {canRemoveBatch ? (
-                          <TouchableOpacity style={[styles.adjustBtn, { marginTop: 12, borderColor: '#DC2626', backgroundColor: '#FEF2F2' }]} onPress={() => handleDeleteBatch(supplier.id, batch.id)}>
+                          <TouchableOpacity style={[styles.adjustBtn, { marginTop: 12, borderColor: '#DC2626', backgroundColor: isDarkMode ? 'rgba(220, 38, 38, 0.1)' : '#FEF2F2' }]} onPress={() => handleDeleteBatch(supplier.id, batch.id)}>
                             <Ionicons name="trash-outline" size={14} color="#DC2626" style={{ marginRight: 6 }} />
                             <Text style={[styles.adjustBtnText, { color: '#DC2626' }]}>Remove Cleared Batch</Text>
                           </TouchableOpacity>
@@ -509,7 +518,7 @@ export default function SuppliersScreen() {
                               <Ionicons name="swap-horizontal" size={14} color={theme.textMuted} style={{ marginRight: 6 }} />
                               <Text style={[styles.adjustBtnText, { color: theme.text }]}>Refund</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={[styles.adjustBtn, { flex: 1, marginLeft: 6, borderColor: '#059669', backgroundColor: '#ECFDF5' }]} onPress={() => { setActiveBatch(batch); setActiveSupplierId(supplier.id); setPaymentAmount(''); setIsPayModalVisible(true); }}>
+                            <TouchableOpacity style={[styles.adjustBtn, { flex: 1, marginLeft: 6, borderColor: '#059669', backgroundColor: isDarkMode ? 'rgba(5, 150, 105, 0.1)' : '#ECFDF5' }]} onPress={() => { setActiveBatch(batch); setActiveSupplierId(supplier.id); setPaymentAmount(''); setIsPayModalVisible(true); }}>
                               <Ionicons name="cash-outline" size={14} color="#059669" style={{ marginRight: 6 }} />
                               <Text style={[styles.adjustBtnText, { color: '#059669' }]}>Pay</Text>
                             </TouchableOpacity>
@@ -569,7 +578,7 @@ export default function SuppliersScreen() {
       {/* Enroll Supplier Modal */}
       <Modal visible={isEnrollModalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
-          <View style={[styles.bottomSheet, { backgroundColor: theme.bg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, maxHeight: '95%' }]}>
+          <View style={[styles.bottomSheet, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, maxHeight: '95%' }]}>
             <View style={styles.sheetHeader}>
               <Text style={[styles.sheetTitle, { color: theme.text }]}>Enroll Supplier</Text>
               <TouchableOpacity onPress={() => setIsEnrollModalVisible(false)} style={styles.closeBtn}><Ionicons name="close" size={24} color={theme.textMuted} /></TouchableOpacity>
@@ -589,7 +598,7 @@ export default function SuppliersScreen() {
       {/* Receive New Batch Modal */}
       <Modal visible={isAddBatchModalVisible} animationType="slide" transparent>
          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
-          <View style={[styles.bottomSheet, { backgroundColor: theme.bg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, maxHeight: '95%' }]}>
+          <View style={[styles.bottomSheet, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, maxHeight: '95%' }]}>
             <View style={styles.sheetHeader}>
               <Text style={[styles.sheetTitle, { color: theme.text }]}>Receive New Batch</Text>
               <TouchableOpacity onPress={() => setIsAddBatchModalVisible(false)} style={styles.closeBtn}><Ionicons name="close" size={24} color={theme.textMuted} /></TouchableOpacity>
@@ -603,7 +612,7 @@ export default function SuppliersScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -629,22 +638,22 @@ const styles = StyleSheet.create({
   lightShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3 },
   supplierHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   supplierMetaRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  supplierIconBox: { width: 48, height: 48, borderRadius: 14, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  supplierIconBox: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
   supplierName: { fontSize: 18, fontWeight: '700', marginBottom: 4 },
   supplierCategory: { fontSize: 13, fontWeight: '500' },
   batchesContainer: { marginTop: 20, paddingTop: 16, borderTopWidth: 1 },
   batchesHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   batchesTitle: { fontSize: 11, fontWeight: '800', letterSpacing: 1 },
-  addBatchBtnInline: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, paddingHorizontal: 8, backgroundColor: '#EFF6FF', borderRadius: 100 },
-  addBatchInlineText: { fontSize: 12, fontWeight: '700', color: '#1D61F2' },
+  addBatchBtnInline: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 100 },
+  addBatchInlineText: { fontSize: 12, fontWeight: '700' },
   batchCard: { borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 12 },
   batchHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
   batchId: { fontSize: 16, fontWeight: '800', marginBottom: 2 },
   batchDate: { fontSize: 12 },
   batchTotal: { fontSize: 16, fontWeight: '900', marginTop: 4 },
   statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  statusPaid: { backgroundColor: '#ECFDF5' },
-  statusUnpaid: { backgroundColor: '#FEF2F2' },
+  statusPaid: { backgroundColor: 'rgba(5, 150, 105, 0.1)' },
+  statusUnpaid: { backgroundColor: 'rgba(220, 38, 38, 0.1)' },
   statusPillText: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
   itemsLedger: { borderTopWidth: 1, paddingTop: 12, borderStyle: 'dashed' },
   itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
@@ -655,10 +664,10 @@ const styles = StyleSheet.create({
   batchActionRow: { flexDirection: 'row', marginTop: 12, justifyContent: 'space-between' },
   adjustBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 8, borderWidth: 1 },
   adjustBtnText: { fontSize: 13, fontWeight: '700' },
-  unauthorizedContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, backgroundColor: '#F8FAFC' },
-  unauthorizedTitle: { fontSize: 24, fontWeight: '800', color: '#0F172A', marginTop: 16, marginBottom: 8 },
-  unauthorizedSubtitle: { fontSize: 15, color: '#64748B', textAlign: 'center', marginBottom: 24 },
-  backButton: { backgroundColor: '#1D61F2', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 100 },
+  unauthorizedContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
+  unauthorizedTitle: { fontSize: 24, fontWeight: '800', marginTop: 16, marginBottom: 8 },
+  unauthorizedSubtitle: { fontSize: 15, textAlign: 'center', marginBottom: 24 },
+  backButton: { paddingVertical: 14, paddingHorizontal: 28, borderRadius: 100, backgroundColor: '#1D61F2' },
   backButtonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
   bottomSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 },
