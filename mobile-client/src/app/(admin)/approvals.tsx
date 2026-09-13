@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image, StatusBar, Modal, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, RefreshControl
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Modal, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
 import { apiClient } from '../../api/client';
 
@@ -19,6 +20,7 @@ const resolveImageUrl = (url: string) => {
 export default function ApprovalsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
   const role = useAuthStore((state) => state.role);
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const isAdmin = role === 'ADMIN' || role === null; 
@@ -86,7 +88,7 @@ export default function ApprovalsScreen() {
   const handleApprove = (id: string) => {
     Alert.alert("Confirm Approval", "Are you sure you want to approve this receipt and deduct the rep's debt?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Approve", onPress: () => approvePaymentMutation.mutate(id) }
+      { text: "Approve", style: "default", onPress: () => approvePaymentMutation.mutate(id) }
     ]);
   };
 
@@ -103,7 +105,7 @@ export default function ApprovalsScreen() {
   const handleProcessReturn = (id: string) => {
     Alert.alert("Confirm Action", `Accept this return, deduct ETB value from rep's debt, and add items back to stock?`, [
       { text: "Cancel", style: "cancel" },
-      { text: "Confirm", onPress: () => processReturnMutation.mutate({ id }) }
+      { text: "Confirm", style: "default", onPress: () => processReturnMutation.mutate({ id }) }
     ]);
   };
 
@@ -113,24 +115,33 @@ export default function ApprovalsScreen() {
   };
 
   const theme = {
-    bg: isDarkMode ? '#000000' : '#F8FAFC', text: isDarkMode ? '#E7E9EA' : '#0F172A', textMuted: isDarkMode ? '#71767B' : '#64748B', border: isDarkMode ? '#2F3336' : '#E2E8F0', invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5', invertedText: isDarkMode ? '#000000' : '#FFFFFF', cardBg: isDarkMode ? '#000000' : '#FFFFFF', docBg: isDarkMode ? '#1E293B' : '#F1F5F9', inputBg: isDarkMode ? '#0F1419' : '#F1F5F9',
+    bg: isDarkMode ? '#020617' : '#F8FAFC',
+    text: isDarkMode ? '#F8FAFC' : '#0F172A',
+    textMuted: isDarkMode ? '#94A3B8' : '#64748B',
+    border: isDarkMode ? '#1E293B' : '#E2E8F0',
+    invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5',
+    invertedText: isDarkMode ? '#000000' : '#FFFFFF',
+    cardBg: isDarkMode ? '#0F172A' : '#FFFFFF',
+    docBg: isDarkMode ? '#1E293B' : '#F1F5F9',
+    inputBg: isDarkMode ? '#0F172A' : '#F1F5F9',
+    iconBg: isDarkMode ? '#1E293B' : '#EFF6FF',
   };
 
   if (!isAdmin) {
     return (
-      <SafeAreaView style={styles.unauthorizedContainer}>
-        <StatusBar barStyle="dark-content" />
+      <View style={[styles.unauthorizedContainer, { backgroundColor: theme.bg, paddingTop: insets.top }]}>
+        <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
         <Ionicons name="lock-closed-outline" size={64} color="#DC2626" />
-        <Text style={styles.unauthorizedTitle}>Access Restricted</Text>
-      </SafeAreaView>
+        <Text style={[styles.unauthorizedTitle, { color: theme.text }]}>Access Restricted</Text>
+      </View>
     );
   }
 
   const isProcessingAny = approvePaymentMutation.isPending || rejectPaymentMutation.isPending || processReturnMutation.isPending;
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
+    <View style={[styles.safeArea, { backgroundColor: theme.bg, paddingTop: Math.max(insets.top, 16) }]}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} translucent />
 
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
         <View style={styles.headerLeft}>
@@ -148,11 +159,7 @@ export default function ApprovalsScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
-        contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} 
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}
-      >
+      <ScrollView contentContainerStyle={isDarkMode ? styles.scrollContentDark : styles.scrollContentLight} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}>
         
         {/* PAYMENTS TAB */}
         {activeTab === 'PAYMENTS' && (
@@ -171,10 +178,10 @@ export default function ApprovalsScreen() {
                   <View style={styles.cardMainContent}>
                     <View style={styles.cardHeaderRow}>
                       <View style={styles.repMetaRow}>
-                        <View style={[styles.bankIconBox, isDarkMode && { backgroundColor: '#1E293B' }]}><Ionicons name="business-outline" size={20} color="#177CA5" /></View>
+                        <View style={[styles.bankIconBox, { backgroundColor: theme.iconBg }]}><Ionicons name="business-outline" size={20} color="#177CA5" /></View>
                         <View style={{ flex: 1 }}>
                           <Text style={[styles.repName, { color: theme.text }]} numberOfLines={1}>{item.senderName || item.user?.fullName || 'Unknown Sender'}</Text>
-                          <Text style={[styles.bankDetails, { color: theme.text }]}>Bank: {item.bankName}</Text>
+                          <Text style={[styles.bankDetails, { color: theme.textMuted }]}>Bank: {item.bankName}</Text>
                         </View>
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
@@ -189,7 +196,7 @@ export default function ApprovalsScreen() {
                           <Image source={{ uri: resolveImageUrl(item.receipeImageUrl) }} style={styles.docThumbnailImage} />
                         </TouchableOpacity>
                       ) : (
-                        <View style={styles.docThumbnail}><Ionicons name="document-text-outline" size={24} color="#64748B" /></View>
+                        <View style={[styles.docThumbnail, { backgroundColor: theme.inputBg }]}><Ionicons name="document-text-outline" size={24} color={theme.textMuted} /></View>
                       )}
                       <View style={styles.docInfo}>
                         <Text style={[styles.docName, { color: theme.text }]} numberOfLines={1}>Attached Receipt</Text>
@@ -203,7 +210,7 @@ export default function ApprovalsScreen() {
                         <Ionicons name="finger-print" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
                         <Text style={styles.approveBtnText}>Approve & Clear</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={[styles.rejectBtn, isDarkMode && { borderColor: theme.border }, isProcessingAny && { opacity: 0.5 }]} onPress={() => openRejectModal(item.id)} disabled={isProcessingAny}>
+                      <TouchableOpacity style={[styles.rejectBtn, { borderColor: isDarkMode ? 'rgba(220,38,38,0.3)' : '#FECACA', backgroundColor: isDarkMode ? 'rgba(220,38,38,0.1)' : '#FEF2F2' }, isProcessingAny && { opacity: 0.5 }]} onPress={() => openRejectModal(item.id)} disabled={isProcessingAny}>
                         <Ionicons name="close" size={18} color="#DC2626" style={{ marginRight: 4 }} />
                         <Text style={styles.rejectBtnText}>Reject</Text>
                       </TouchableOpacity>
@@ -240,7 +247,6 @@ export default function ApprovalsScreen() {
 
                     <View style={[styles.docPreviewBox, { backgroundColor: theme.docBg, flexDirection: 'column', alignItems: 'flex-start' }]}>
                       <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text, marginBottom: 6 }}>Returned Items:</Text>
-                      {/* FIX: Maps backend 'quantity' correctly and displays names */}
                       {ret.items?.map((i: any, idx: number) => (
                         <Text key={idx} style={{ fontSize: 13, color: theme.textMuted, marginBottom: 2 }}>
                           • {i.quantity}x {i.product?.name || 'Item'}
@@ -257,7 +263,6 @@ export default function ApprovalsScreen() {
                         <Ionicons name="cube-outline" size={16} color="#FFF" style={{ marginRight: 6 }} />
                         <Text style={styles.approveBtnText}>Accept & Return to Stock</Text>
                       </TouchableOpacity>
-                      {/* ROUTE TO SUPPLIER BUTTON REMOVED */}
                     </View>
                   </View>
                 </View>
@@ -267,7 +272,6 @@ export default function ApprovalsScreen() {
         )}
       </ScrollView>
 
-      {/* Reject Modal */}
       <Modal visible={isRejectModalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={[styles.bottomSheet, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }]}>
@@ -285,15 +289,13 @@ export default function ApprovalsScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Image Viewer Modal */}
       <Modal visible={isImageViewerVisible} animationType="fade" transparent>
         <View style={styles.viewerOverlay}>
           <TouchableOpacity style={styles.viewerCloseBtn} onPress={() => setIsImageViewerVisible(false)}><Ionicons name="close-circle" size={40} color="#FFFFFF" /></TouchableOpacity>
           {selectedImage && <Image source={{ uri: selectedImage }} style={styles.fullScreenImage} resizeMode="contain" />}
         </View>
       </Modal>
-
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -303,10 +305,10 @@ const styles = StyleSheet.create({
   scrollContentDark: { paddingBottom: 24, paddingTop: 16 }, scrollContentLight: { paddingBottom: 130, paddingTop: 16 },
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 }, emptyStateTitle: { fontSize: 20, fontWeight: '800', marginTop: 16, marginBottom: 8 }, emptyStateSub: { fontSize: 14, textAlign: 'center' },
   feedContainer: { paddingHorizontal: 20 }, approvalCard: { borderRadius: 20, padding: 20, marginBottom: 20, position: 'relative', overflow: 'hidden' }, lightShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3 }, leftAccentBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, backgroundColor: '#177CA5' }, cardMainContent: { paddingLeft: 6 },
-  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }, repMetaRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 12 }, bankIconBox: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 12 }, repName: { fontSize: 16, fontWeight: '800', marginBottom: 2 }, bankDetails: { fontSize: 12, fontWeight: '500' }, amountText: { fontSize: 18, fontWeight: '900', letterSpacing: -0.5 }, timestampText: { fontSize: 11, marginTop: 4, fontWeight: '500' },
-  docPreviewBox: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, marginBottom: 16 }, docThumbnail: { width: 40, height: 40, backgroundColor: '#FFFFFF', borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 12 }, docThumbnailImage: { width: 40, height: 40, borderRadius: 8, marginRight: 12, backgroundColor: '#E2E8F0' }, docInfo: { flex: 1 }, docName: { fontSize: 13, fontWeight: '700', marginBottom: 2 }, viewDocLink: { fontSize: 12, fontWeight: '700', color: '#1D61F2' },
-  actionRow: { flexDirection: 'row', gap: 12 }, approveBtn: { flex: 1.2, flexDirection: 'row', backgroundColor: '#064E3B', paddingVertical: 14, borderRadius: 100, alignItems: 'center', justifyContent: 'center' }, approveReturnBtn: { flexDirection: 'row', paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, approveBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 }, rejectBtn: { flex: 1, flexDirection: 'row', borderWidth: 1, borderColor: '#FECACA', backgroundColor: '#FEF2F2', paddingVertical: 14, borderRadius: 100, alignItems: 'center', justifyContent: 'center' }, rejectBtnText: { color: '#DC2626', fontWeight: '700', fontSize: 14 },
-  unauthorizedContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, backgroundColor: '#F8FAFC' }, unauthorizedTitle: { fontSize: 24, fontWeight: '800', color: '#0F172A', marginTop: 16, marginBottom: 8 }, unauthorizedSubtitle: { fontSize: 15, color: '#64748B', textAlign: 'center', marginBottom: 24 }, backButton: { backgroundColor: '#1D61F2', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 100 }, backButtonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }, repMetaRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 12 }, bankIconBox: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 }, repName: { fontSize: 16, fontWeight: '800', marginBottom: 2 }, bankDetails: { fontSize: 12, fontWeight: '500' }, amountText: { fontSize: 18, fontWeight: '900', letterSpacing: -0.5 }, timestampText: { fontSize: 11, marginTop: 4, fontWeight: '500' },
+  docPreviewBox: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, marginBottom: 16 }, docThumbnail: { width: 40, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 12 }, docThumbnailImage: { width: 40, height: 40, borderRadius: 8, marginRight: 12 }, docInfo: { flex: 1 }, docName: { fontSize: 13, fontWeight: '700', marginBottom: 2 }, viewDocLink: { fontSize: 12, fontWeight: '700', color: '#1D61F2' },
+  actionRow: { flexDirection: 'row', gap: 12 }, approveBtn: { flex: 1.2, flexDirection: 'row', backgroundColor: '#064E3B', paddingVertical: 14, borderRadius: 100, alignItems: 'center', justifyContent: 'center' }, approveReturnBtn: { flexDirection: 'row', paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, approveBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 }, rejectBtn: { flex: 1, flexDirection: 'row', borderWidth: 1, paddingVertical: 14, borderRadius: 100, alignItems: 'center', justifyContent: 'center' }, rejectBtnText: { color: '#DC2626', fontWeight: '700', fontSize: 14 },
+  unauthorizedContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }, unauthorizedTitle: { fontSize: 24, fontWeight: '800', marginTop: 16, marginBottom: 8 }, unauthorizedSubtitle: { fontSize: 15, textAlign: 'center', marginBottom: 24 }, backButton: { backgroundColor: '#1D61F2', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 100 }, backButtonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }, bottomSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 }, sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }, sheetTitle: { fontSize: 20, fontWeight: '800' }, closeBtn: { padding: 4 }, inputLabel: { fontSize: 14, fontWeight: '700', marginBottom: 8 }, textArea: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontWeight: '500', minHeight: 100, textAlignVertical: 'top' }, helperText: { fontSize: 13, marginTop: 12, lineHeight: 18 }, submitBtn: { marginTop: 24, paddingVertical: 16, borderRadius: 100, alignItems: 'center', justifyContent: 'center' }, submitBtnText: { fontSize: 16, fontWeight: '700' },
   viewerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }, viewerCloseBtn: { position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 10 }, fullScreenImage: { width: '95%', height: '80%' }
 });
