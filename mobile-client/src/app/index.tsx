@@ -12,7 +12,7 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
-import { Ionicons, Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import { useMutation } from '@tanstack/react-query';
@@ -27,6 +27,7 @@ export default function LoginScreen() {
   const [authMode, setAuthMode] = useState<'BIOMETRIC' | 'PIN'>('PIN');
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
+  const [isPinVisible, setIsPinVisible] = useState(false); // <-- ADDED VISIBILITY STATE
 
   const loginMutation = useMutation({
     mutationFn: async (payload: { username: string; pin?: string }) => {
@@ -128,18 +129,13 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         <View style={styles.header}>
           <View style={styles.logoShadowWrapper}>
-            {/* FIXED ASSET PATH */}
-            <Image 
-              source={require('../../assets/icon.png')} 
-              style={styles.logoImage} 
-            />
+            <Image source={require('../../assets/icon.png')} style={styles.logoImage} />
           </View>
           <Text style={styles.title}>TajStore</Text>
           <Text style={styles.subtitle}>Distribution Portal</Text>
         </View>
 
         <View style={styles.card}>
-          
           {authMode === 'BIOMETRIC' ? (
             <View style={styles.biometricSection}>
               <View style={styles.biometricOuterRing}>
@@ -165,16 +161,29 @@ export default function LoginScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>PIN</Text>
-                <TextInput
-                  style={styles.pinInput}
-                  placeholder="••••••"
-                  placeholderTextColor="#94A3B8"
-                  secureTextEntry
-                  keyboardType="numeric"
-                  maxLength={6}
-                  value={pin}
-                  onChangeText={setPin}
-                />
+                {/* MODIFIED: Wrapped input to allow for the eye icon overlay */}
+                <View style={styles.pinInputContainer}>
+                  <TextInput
+                    style={[styles.pinInput, isPinVisible && { letterSpacing: 4 }]} // Adjust spacing if visible
+                    placeholder="••••••"
+                    placeholderTextColor="#94A3B8"
+                    secureTextEntry={!isPinVisible}
+                    keyboardType="numeric"
+                    maxLength={6}
+                    value={pin}
+                    onChangeText={setPin}
+                  />
+                  <TouchableOpacity 
+                    style={styles.eyeIconContainer} 
+                    onPress={() => setIsPinVisible(!isPinVisible)}
+                  >
+                    <Ionicons 
+                      name={isPinVisible ? "eye-off-outline" : "eye-outline"} 
+                      size={24} 
+                      color="#94A3B8" 
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <TouchableOpacity
@@ -192,21 +201,11 @@ export default function LoginScreen() {
             </View>
           )}
 
-          <TouchableOpacity
-            style={styles.outlineToggleBtn}
-            onPress={() => setAuthMode(authMode === 'BIOMETRIC' ? 'PIN' : 'BIOMETRIC')}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={styles.outlineToggleBtn} onPress={() => setAuthMode(authMode === 'BIOMETRIC' ? 'PIN' : 'BIOMETRIC')} activeOpacity={0.7}>
             {authMode === 'BIOMETRIC' ? (
-              <>
-                <Ionicons name="keypad" size={20} color="#1679A3" />
-                <Text style={styles.outlineToggleText}>Use Security PIN</Text>
-              </>
+              <><Ionicons name="keypad" size={20} color="#1679A3" /><Text style={styles.outlineToggleText}>Use Security PIN</Text></>
             ) : (
-              <>
-                <Ionicons name="finger-print-outline" size={20} color="#1679A3" />
-                <Text style={styles.outlineToggleText}>Use Biometrics</Text>
-              </>
+              <><Ionicons name="finger-print-outline" size={20} color="#1679A3" /><Text style={styles.outlineToggleText}>Use Biometrics</Text></>
             )}
           </TouchableOpacity>
         </View>
@@ -224,42 +223,29 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#EEF3FC' },
   scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 40 },
   header: { alignItems: 'center', marginBottom: 32 },
-  
-  logoShadowWrapper: {
-    marginBottom: 16,
-    shadowColor: '#1679A3',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  logoImage: {
-    width: 72,
-    height: 72,
-    borderRadius: 22,
-  },
-
+  logoShadowWrapper: { marginBottom: 16, shadowColor: '#1679A3', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 8 },
+  logoImage: { width: 72, height: 72, borderRadius: 22 },
   title: { fontSize: 28, fontWeight: '800', color: '#0F172A', letterSpacing: -0.5 },
   subtitle: { fontSize: 14, fontWeight: '500', color: '#64748B', marginTop: 4 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 28, padding: 24, shadowColor: '#64748B', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.08, shadowRadius: 24, elevation: 10 },
-  
   biometricSection: { alignItems: 'center', marginBottom: 16 },
   biometricOuterRing: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#E1F0F6', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
   biometricInnerBubble: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#BDE0EF', alignItems: 'center', justifyContent: 'center' },
   biometricSubtitle: { fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20, marginBottom: 16 },
-  
   pinSection: { marginBottom: 24 },
   inputGroup: { marginBottom: 16 },
   inputLabel: { fontSize: 13, fontWeight: '700', color: '#64748B', marginBottom: 8, marginLeft: 4 },
   standardInput: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16, fontSize: 16, fontWeight: '600', color: '#0F172A' },
-  pinInput: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16, fontSize: 24, fontWeight: '700', color: '#0F172A', textAlign: 'center', letterSpacing: 12 },
   
+  // ADDED NEW CONTAINER FOR PIN & EYE ICON
+  pinInputContainer: { position: 'relative', justifyContent: 'center' },
+  pinInput: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16, fontSize: 24, fontWeight: '700', color: '#0F172A', textAlign: 'center', letterSpacing: 12, paddingRight: 50 },
+  eyeIconContainer: { position: 'absolute', right: 16, height: '100%', justifyContent: 'center' },
+
   signInButton: { width: '100%', backgroundColor: '#1679A3', borderRadius: 16, paddingVertical: 18, alignItems: 'center', justifyContent: 'center', marginTop: 8, shadowColor: '#1679A3', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
   signInButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-  
   outlineToggleBtn: { borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 16, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
   outlineToggleText: { color: '#1679A3', fontSize: 15, fontWeight: '700', marginLeft: 10 },
-  
   forgotPinContainer: { marginTop: 32, alignItems: 'center' },
   forgotPinText: { color: '#64748B', fontSize: 14, fontWeight: '700' },
 });
