@@ -1,12 +1,13 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import {
-  View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
   StatusBar, FlatList, Dimensions, Modal, TouchableWithoutFeedback,
-  ViewToken, Platform, Image, RefreshControl, Alert
+  ViewToken, Platform, Image, RefreshControl, Alert, SafeAreaView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
 import { apiClient } from '../../api/client';
 
@@ -26,8 +27,8 @@ const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'https://tajstore-backend.onr
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   
-  // Auth & Theme State
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const toggleTheme = useAuthStore((state) => state.toggleTheme);
   const logout = useAuthStore((state) => state.logout);
@@ -35,11 +36,9 @@ export default function AdminDashboard() {
   const userName = useAuthStore((state: any) => state.userName || state.user?.fullName || 'Admin');
   const rawProfilePic = useAuthStore((state: any) => state.profilePic || state.user?.profilePic);
 
-  // CRITICAL FIX: Clean the URI and enforce the correct IP address
   const getAvatarUri = (uri: string | null | undefined) => {
     if (!uri) return null;
     if (uri.startsWith('http') || uri.startsWith('file://') || uri.startsWith('data:')) {
-      // Strip out localhost or old hardcoded IPs just in case they are cached in Zustand
       let cleanUri = uri.replace('http://localhost:5000', BASE_IP);
       cleanUri = cleanUri.replace('http://172.30.75.101:5000', BASE_IP);
       return cleanUri;
@@ -49,7 +48,6 @@ export default function AdminDashboard() {
 
   const avatarUri = getAvatarUri(rawProfilePic);
 
-  // UI State
   const [activeCardIndex, setActiveCardIndex] = useState(0);
   const [activeFilter, setActiveFilter] = useState('Total');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -78,16 +76,19 @@ export default function AdminDashboard() {
     { id: '2', title: 'Total Debt (Suppliers)', amount: `ETB ${Number(stats?.totalDebt || 0).toLocaleString()}`, icon: 'receipt-outline' as const },
   ];
 
+  // UPGRADED THEME: Classic Dark Slate Palette
   const theme = {
-    bg: isDarkMode ? '#000000' : '#F8FAFC',
-    text: isDarkMode ? '#E7E9EA' : '#0F1419',
-    textMuted: isDarkMode ? '#71767B' : '#64748B',
-    border: isDarkMode ? '#2F3336' : 'transparent',
-    invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5',
-    invertedText: isDarkMode ? '#000000' : '#FFFFFF',
-    dotActive: isDarkMode ? '#FFFFFF' : '#177CA5',
-    dotInactive: isDarkMode ? '#2F3336' : '#CBD5E1',
-    menuBg: isDarkMode ? '#1E293B' : '#FFFFFF',
+    bg: isDarkMode ? '#020617' : '#F8FAFC', // Deep rich slate background
+    cardBg: isDarkMode ? '#0F172A' : '#FFFFFF', // Elevated slate card
+    cardActive: isDarkMode ? '#1E293B' : '#177CA5', // Highlighted active card
+    text: isDarkMode ? '#F8FAFC' : '#0F1419', // Soft white
+    textMuted: isDarkMode ? '#94A3B8' : '#64748B', // Elegant muted grey
+    border: isDarkMode ? '#1E293B' : '#E2E8F0', // Subtle borders
+    iconBg: isDarkMode ? '#1E293B' : '#EBF2FF', // Icon wrappers
+    dotActive: isDarkMode ? '#F8FAFC' : '#177CA5',
+    dotInactive: isDarkMode ? '#334155' : '#CBD5E1',
+    menuBg: isDarkMode ? '#0F172A' : '#FFFFFF',
+    invertedText: '#FFFFFF', // Used for light mode active card text
   };
 
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -110,48 +111,33 @@ export default function AdminDashboard() {
   };
 
   const handleSignOut = () => {
-    Alert.alert(
-      "Sign Out",
-      "Are you sure you want to sign out of your account?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Sign Out", 
-          style: "destructive", 
-          onPress: () => {
-            setIsProfileMenuVisible(false);
-            logout();
-            router.replace('/');
-          }
-        }
-      ]
-    );
+    Alert.alert("Sign Out", "Are you sure you want to sign out of your account?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign Out", style: "destructive", onPress: () => { setIsProfileMenuVisible(false); logout(); router.replace('/'); } }
+    ]);
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
+    <View style={[styles.safeArea, { backgroundColor: theme.bg, paddingTop: Math.max(insets.top, 16) }]}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} translucent />
 
       {/* Header */}
-      <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
+      <View style={styles.header}>
         <TouchableOpacity style={styles.iconButton} onPress={() => setIsProfileMenuVisible(true)}>
           {avatarUri ? (
-            <Image 
-              source={{ uri: avatarUri }} 
-              style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: isDarkMode ? '#2F3336' : '#E2E8F0' }} 
-            />
+            <Image source={{ uri: avatarUri }} style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: theme.iconBg }} />
           ) : (
-            <Ionicons name="person-circle" size={32} color={theme.textMuted} />
+            <Ionicons name="person-circle" size={34} color={theme.textMuted} />
           )}
         </TouchableOpacity>
         
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.iconButton} onPress={() => navigateFromProfile('/(admin)/message')}>
-            <Ionicons name="notifications-outline" size={22} color={theme.text} />
+            <Ionicons name="notifications-outline" size={24} color={theme.text} />
             <View style={styles.notificationBadge} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.iconButton, { marginLeft: 8 }]} onPress={toggleTheme}>
-            <Ionicons name={isDarkMode ? "sunny-outline" : "moon-outline"} size={22} color={theme.text} />
+          <TouchableOpacity style={[styles.iconButton, { marginLeft: 12 }]} onPress={toggleTheme}>
+            <Ionicons name={isDarkMode ? "sunny-outline" : "moon-outline"} size={24} color={theme.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -168,22 +154,23 @@ export default function AdminDashboard() {
           </View>
           
           <TouchableOpacity 
-            style={[styles.dropdownTrigger, isDarkMode ? styles.dropdownTriggerDark : styles.dropdownTriggerLight]}
+            style={[styles.dropdownTrigger, isDarkMode ? { backgroundColor: theme.cardBg, borderWidth: 1, borderColor: theme.border } : styles.dropdownTriggerLight]}
             onPress={() => setIsDropdownOpen(true)}
           >
             <Text style={[styles.dropdownTriggerText, { color: theme.text }]}>Filter: {activeFilter}</Text>
-            <Ionicons name="chevron-down" size={16} color={theme.text} style={{ marginLeft: 4 }} />
+            <Ionicons name="chevron-down" size={14} color={theme.text} style={{ marginLeft: 6 }} />
           </TouchableOpacity>
         </View>
 
+        {/* Dropdown Modal */}
         <Modal visible={isDropdownOpen} transparent animationType="fade">
           <TouchableWithoutFeedback onPress={() => setIsDropdownOpen(false)}>
             <View style={styles.modalOverlay}>
-              <View style={[styles.dropdownMenu, { backgroundColor: isDarkMode ? '#1E293B' : '#FFFFFF' }]}>
+              <View style={[styles.dropdownMenu, { backgroundColor: theme.menuBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }]}>
                 {TIME_FILTERS.map((filter) => (
                   <TouchableOpacity 
                     key={filter} 
-                    style={[styles.dropdownItem, activeFilter === filter && { backgroundColor: isDarkMode ? '#334155' : '#F1F5F9' }]}
+                    style={[styles.dropdownItem, activeFilter === filter && { backgroundColor: isDarkMode ? theme.iconBg : '#F1F5F9' }]}
                     onPress={() => handleFilterSelect(filter)}
                   >
                     <Text style={{ color: activeFilter === filter ? (isDarkMode ? '#FFFFFF' : '#1D61F2') : theme.textMuted, fontWeight: activeFilter === filter ? '700' : '500' }}>
@@ -197,6 +184,7 @@ export default function AdminDashboard() {
           </TouchableWithoutFeedback>
         </Modal>
 
+        {/* Finance Cards */}
         <View style={styles.cardsWrapper}>
           <FlatList
             ref={flatListRef}
@@ -218,8 +206,8 @@ export default function AdminDashboard() {
                 <View 
                   style={[
                     styles.financeCard,
-                    { backgroundColor: isActive ? theme.invertedBg : (isDarkMode ? theme.bg : '#FFFFFF') },
-                    isDarkMode && !isActive && { borderWidth: 1, borderColor: theme.border },
+                    { backgroundColor: isActive ? theme.cardActive : theme.cardBg },
+                    isDarkMode && { borderWidth: 1, borderColor: isActive ? '#334155' : theme.border },
                     !isDarkMode && isActive && styles.lightModePrimaryShadow,
                     !isDarkMode && !isActive && styles.lightModeSecondaryShadow,
                   ]}
@@ -228,14 +216,14 @@ export default function AdminDashboard() {
                     <View style={[
                       !isDarkMode && isActive && styles.lightCardIconWrapperPrimary,
                       !isDarkMode && !isActive && styles.lightCardIconWrapperSecondary,
-                      isDarkMode && { padding: 8, borderRadius: 10, backgroundColor: isActive ? 'rgba(0,0,0,0.1)' : '#1E293B' }
+                      isDarkMode && { padding: 10, borderRadius: 14, backgroundColor: isActive ? '#334155' : theme.iconBg }
                     ]}>
-                      <Ionicons name={item.icon} size={28} color={isActive ? theme.invertedText : (isDarkMode ? theme.text : '#64748B')} />
+                      <Ionicons name={item.icon} size={24} color={isActive ? (isDarkMode ? '#FFFFFF' : theme.invertedText) : (isDarkMode ? '#94A3B8' : '#64748B')} />
                     </View>
                   </View>
                   <View style={styles.cardBody}>
-                    <Text style={[styles.cardLabel, { color: isActive ? theme.invertedText : theme.textMuted }]}>{item.title}</Text>
-                    <Text style={[styles.cardAmount, { color: isActive ? theme.invertedText : theme.text }]}>{item.amount}</Text>
+                    <Text style={[styles.cardLabel, { color: isActive ? (isDarkMode ? '#94A3B8' : theme.invertedText) : theme.textMuted }]}>{item.title}</Text>
+                    <Text style={[styles.cardAmount, { color: isActive ? (isDarkMode ? '#F8FAFC' : theme.invertedText) : theme.text }]}>{item.amount}</Text>
                   </View>
                 </View>
               );
@@ -256,47 +244,47 @@ export default function AdminDashboard() {
           </View>
         </View>
 
+        {/* Core Modules - Unified Block Design */}
         <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Core Modules</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text, paddingHorizontal: isDarkMode ? 4 : 0 }]}>Core Modules</Text>
           
-          {CORE_MODULES.map((item) => (
-            <TouchableOpacity 
-              key={item.id} 
-              style={[styles.listItem, isDarkMode ? { borderBottomWidth: 1, borderBottomColor: theme.border } : styles.lightListItem]}
-              onPress={() => router.replace(item.route as any)}
-            >
-              <View style={[styles.listIconWrapper, !isDarkMode && { backgroundColor: item.lightBg }]}>
-                <Ionicons name={item.icon as any} size={22} color={isDarkMode ? theme.text : item.lightColor} />
-              </View>
-              <View style={styles.listTextContainer}>
-                <Text style={[styles.listTitle, { color: theme.text }]}>{item.title}</Text>
-                <Text style={[styles.listSubtitle, { color: theme.textMuted }]}>{item.sub}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
-            </TouchableOpacity>
-          ))}
+          <View style={[isDarkMode && { backgroundColor: theme.cardBg, borderRadius: 24, paddingVertical: 8, borderWidth: 1, borderColor: theme.border }]}>
+            {CORE_MODULES.map((item, index) => (
+              <TouchableOpacity 
+                key={item.id} 
+                style={[
+                  styles.listItem, 
+                  isDarkMode ? { paddingHorizontal: 20 } : styles.lightListItem,
+                  isDarkMode && index !== CORE_MODULES.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border }
+                ]}
+                onPress={() => router.replace(item.route as any)}
+              >
+                <View style={[styles.listIconWrapper, isDarkMode ? { backgroundColor: theme.iconBg } : { backgroundColor: item.lightBg }]}>
+                  <Ionicons name={item.icon as any} size={22} color={isDarkMode ? theme.text : item.lightColor} />
+                </View>
+                <View style={styles.listTextContainer}>
+                  <Text style={[styles.listTitle, { color: theme.text }]}>{item.title}</Text>
+                  <Text style={[styles.listSubtitle, { color: theme.textMuted }]}>{item.sub}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </ScrollView>
 
-      {/* Left Side Drawer */}
+      {/* Left Side Drawer - Updated for Classic Dark Mode */}
       <Modal visible={isProfileMenuVisible} animationType="fade" transparent>
         <View style={styles.drawerOverlay}>
-          <TouchableOpacity 
-            style={StyleSheet.absoluteFill} 
-            activeOpacity={1} 
-            onPress={() => setIsProfileMenuVisible(false)}
-          />
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setIsProfileMenuVisible(false)} />
           <View style={[styles.sideDrawer, { backgroundColor: theme.menuBg, borderColor: theme.border, borderRightWidth: isDarkMode ? 1 : 0 }]}>
             <SafeAreaView style={styles.drawerSafeArea}>
               <View style={styles.drawerContent}>
                 
-                <View style={styles.drawerHeader}>
-                  <View style={[styles.largeAvatarPlaceholder, isDarkMode && { backgroundColor: '#0F1419' }]}>
+                <View style={styles.drawerHeaderProfile}>
+                  <View style={[styles.largeAvatarPlaceholder, isDarkMode && { backgroundColor: theme.iconBg }]}>
                     {avatarUri ? (
-                      <Image 
-                        source={{ uri: avatarUri }} 
-                        style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: isDarkMode ? '#2F3336' : '#E2E8F0' }} 
-                      />
+                      <Image source={{ uri: avatarUri }} style={{ width: 64, height: 64, borderRadius: 32 }} />
                     ) : (
                       <Ionicons name="person" size={32} color={theme.textMuted} />
                     )}
@@ -311,17 +299,15 @@ export default function AdminDashboard() {
 
                 <View style={styles.drawerMenuList}>
                   <TouchableOpacity style={styles.drawerMenuItem} onPress={() => navigateFromProfile('/(admin)/profile')}>
-                    <Ionicons name="person-outline" size={26} color={theme.text} style={styles.drawerMenuIcon} />
+                    <Ionicons name="person-outline" size={24} color={theme.text} style={styles.drawerMenuIcon} />
                     <Text style={[styles.drawerMenuText, { color: theme.text }]}>Profile & Security</Text>
                   </TouchableOpacity>
-
                   <TouchableOpacity style={styles.drawerMenuItem} onPress={() => navigateFromProfile('/(admin)/note')}>
-                    <Ionicons name="journal-outline" size={26} color={theme.text} style={styles.drawerMenuIcon} />
+                    <Ionicons name="journal-outline" size={24} color={theme.text} style={styles.drawerMenuIcon} />
                     <Text style={[styles.drawerMenuText, { color: theme.text }]}>Admin Notes</Text>
                   </TouchableOpacity>
-
                   <TouchableOpacity style={styles.drawerMenuItem} onPress={() => navigateFromProfile('/(admin)/message')}>
-                    <Ionicons name="mail-outline" size={26} color={theme.text} style={styles.drawerMenuIcon} />
+                    <Ionicons name="mail-outline" size={24} color={theme.text} style={styles.drawerMenuIcon} />
                     <Text style={[styles.drawerMenuText, { color: theme.text }]}>Messages</Text>
                   </TouchableOpacity>
                 </View>
@@ -329,11 +315,8 @@ export default function AdminDashboard() {
                 <View style={{ flex: 1 }} />
                 <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
-                <TouchableOpacity 
-                  style={styles.logoutBtn} 
-                  onPress={handleSignOut}
-                >
-                  <Ionicons name="log-out-outline" size={26} color="#DC2626" style={styles.drawerMenuIcon} />
+                <TouchableOpacity style={styles.logoutBtn} onPress={handleSignOut}>
+                  <Ionicons name="log-out-outline" size={24} color="#DC2626" style={styles.drawerMenuIcon} />
                   <Text style={[styles.drawerMenuText, { color: '#DC2626' }]}>Sign Out</Text>
                 </TouchableOpacity>
 
@@ -342,84 +325,76 @@ export default function AdminDashboard() {
           </View>
         </View>
       </Modal>
-
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 12,
-  },
-  iconButton: { padding: 4, position: 'relative' },
-  notificationBadge: { position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: '#DC2626', borderWidth: 1, borderColor: '#FFFFFF' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+  iconButton: { padding: 4 },
+  notificationBadge: { position: 'absolute', top: 6, right: 6, width: 9, height: 9, borderRadius: 4.5, backgroundColor: '#DC2626', borderWidth: 1.5, borderColor: '#FFFFFF' },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
   
   scrollContentDark: { paddingBottom: 100 },
   scrollContentLight: { paddingBottom: 100 },
   
-  greetingHeaderRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, marginTop: 16, marginBottom: 12,
-  },
+  greetingHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 16, marginBottom: 16 },
   greetingTextContainer: { flex: 1, paddingRight: 12 },
   greetingTitle: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
   greetingSubtitle: { fontSize: 15, marginTop: 4 },
   
-  dropdownTrigger: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
-  dropdownTriggerDark: { borderWidth: 1, borderColor: '#2F3336' },
+  dropdownTrigger: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12 },
   dropdownTriggerLight: { backgroundColor: '#FFFFFF', shadowColor: '#64748B', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
   dropdownTriggerText: { fontSize: 13, fontWeight: '700' },
   
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.1)' },
-  dropdownMenu: { position: 'absolute', top: 140, right: 20, width: 140, borderRadius: 12, padding: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 },
-  dropdownItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, borderRadius: 8 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' },
+  dropdownMenu: { position: 'absolute', top: 140, right: 20, width: 140, borderRadius: 16, padding: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 10 },
+  dropdownItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, borderRadius: 10 },
   
   cardsWrapper: { paddingVertical: 16 },
   flatListContent: { paddingHorizontal: 20 },
-  financeCard: { width: CARD_WIDTH, borderRadius: 24, padding: 24, marginRight: CARD_SPACING, height: 180, justifyContent: 'space-between' },
+  financeCard: { width: CARD_WIDTH, borderRadius: 28, padding: 24, marginRight: CARD_SPACING, height: 185, justifyContent: 'space-between' },
   lightModePrimaryShadow: { shadowColor: '#177CA5', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 10 },
   lightModeSecondaryShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
   
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  lightCardIconWrapperPrimary: { width: 48, height: 48, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
-  lightCardIconWrapperSecondary: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
+  lightCardIconWrapperPrimary: { width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  lightCardIconWrapperSecondary: { width: 48, height: 48, borderRadius: 14, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
   
   cardBody: { marginTop: 'auto' },
-  cardLabel: { fontSize: 13, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 },
-  cardAmount: { fontSize: 36, fontWeight: '900', letterSpacing: -1.5 },
+  cardLabel: { fontSize: 12, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1.2 },
+  cardAmount: { fontSize: 36, fontWeight: '900', letterSpacing: -1 },
   
-  paginationContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 16 },
+  paginationContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
   dot: { width: 6, height: 6, borderRadius: 3, marginHorizontal: 4 },
-  dotActiveWide: { width: 18 },
+  dotActiveWide: { width: 20 },
 
-  sectionContainer: { paddingHorizontal: 20, marginBottom: 32 },
+  sectionContainer: { paddingHorizontal: 20, marginBottom: 32, marginTop: 8 },
   sectionTitle: { fontSize: 20, fontWeight: '800', marginBottom: 16, letterSpacing: -0.5 },
   
-  listItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16 },
-  lightListItem: { backgroundColor: '#FFFFFF', padding: 16, borderRadius: 16, marginBottom: 12, shadowColor: '#64748B', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  listIconWrapper: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  listItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 18 },
+  lightListItem: { backgroundColor: '#FFFFFF', padding: 16, borderRadius: 20, marginBottom: 12, shadowColor: '#64748B', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  listIconWrapper: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
   listTextContainer: { flex: 1 },
-  listTitle: { fontSize: 16, fontWeight: '700', marginBottom: 2 },
-  listSubtitle: { fontSize: 14 },
+  listTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
+  listSubtitle: { fontSize: 13 },
 
-  drawerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', flexDirection: 'row' },
-  sideDrawer: { width: SCREEN_WIDTH * 0.75, height: '100%', borderTopRightRadius: 24, borderBottomRightRadius: 24, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 2, height: 0 }, shadowOpacity: 0.15, shadowRadius: 10, elevation: 5 },
+  drawerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', flexDirection: 'row' },
+  sideDrawer: { width: SCREEN_WIDTH * 0.75, height: '100%', borderTopRightRadius: 28, borderBottomRightRadius: 28, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 4, height: 0 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 15 },
   drawerSafeArea: { flex: 1 },
   drawerContent: { flex: 1, padding: 24, paddingTop: Platform.OS === 'android' ? 24 : 12 },
   
-  drawerHeader: { flexDirection: 'column', alignItems: 'flex-start', marginBottom: 16 },
-  largeAvatarPlaceholder: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginBottom: 12, overflow: 'hidden' },
+  drawerHeaderProfile: { flexDirection: 'column', alignItems: 'flex-start', marginBottom: 20 },
+  largeAvatarPlaceholder: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginBottom: 16, overflow: 'hidden' },
   drawerUserInfo: { justifyContent: 'center' },
-  drawerName: { fontSize: 20, fontWeight: '800', marginBottom: 2 },
+  drawerName: { fontSize: 22, fontWeight: '800', marginBottom: 4 },
   drawerRole: { fontSize: 14, fontWeight: '500' },
 
-  drawerMenuList: { marginTop: 12 },
+  drawerMenuList: { marginTop: 16 },
   drawerMenuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16 },
-  drawerMenuIcon: { marginRight: 20 },
-  drawerMenuText: { fontSize: 18, fontWeight: '700', flex: 1 },
+  drawerMenuIcon: { marginRight: 18 },
+  drawerMenuText: { fontSize: 17, fontWeight: '600', flex: 1 },
 
   divider: { height: 1, marginVertical: 8 },
   logoutBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingBottom: Platform.OS === 'ios' ? 0 : 16 },
