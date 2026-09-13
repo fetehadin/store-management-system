@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, 
   TextInput, Alert, Platform, StatusBar, Image, ActivityIndicator, Modal
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -14,6 +14,7 @@ import { apiClient } from '../../api/client';
 export default function RepLedgerScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
 
   // Actions State
@@ -37,16 +38,17 @@ export default function RepLedgerScreen() {
   const creditLimit = useAuthStore((state) => state.creditLimit) || 0;
   const debtPercentage = creditLimit > 0 ? Math.min((creditBalance / creditLimit) * 100, 100) : 0;
 
+  // UPGRADED THEME: Classic Dark Slate Palette
   const theme = {
-    bg: isDarkMode ? '#000000' : '#FFFFFF', 
-    text: isDarkMode ? '#E7E9EA' : '#0F172A', 
-    textMuted: isDarkMode ? '#71767B' : '#64748B', 
-    border: isDarkMode ? '#2F3336' : '#E2E8F0', 
-    cardBg: isDarkMode ? '#1E293B' : '#FFFFFF', 
-    rowBg: isDarkMode ? '#1E293B' : '#F8FAFC',
-    inputBg: isDarkMode ? '#0F1419' : '#F1F5F9', 
-    invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5', 
-    invertedText: isDarkMode ? '#000000' : '#FFFFFF', 
+    bg: isDarkMode ? '#020617' : '#F8FAFC',
+    cardBg: isDarkMode ? '#0F172A' : '#FFFFFF',
+    text: isDarkMode ? '#F8FAFC' : '#0F172A',
+    textMuted: isDarkMode ? '#94A3B8' : '#64748B',
+    border: isDarkMode ? '#1E293B' : '#E2E8F0',
+    rowBg: isDarkMode ? '#0F172A' : '#F8FAFC',
+    inputBg: isDarkMode ? '#0F172A' : '#F1F5F9',
+    invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5',
+    invertedText: isDarkMode ? '#000000' : '#FFFFFF',
     primary: '#177CA5',
   };
 
@@ -140,8 +142,8 @@ export default function RepLedgerScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
+    <View style={[styles.safeArea, { backgroundColor: theme.bg, paddingTop: Math.max(insets.top, 16) }]}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} translucent />
 
       <View style={[styles.header, { borderBottomColor: theme.border, borderBottomWidth: isDarkMode ? StyleSheet.hairlineWidth : 1 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}><Ionicons name="arrow-back" size={26} color={theme.text} /></TouchableOpacity>
@@ -168,7 +170,7 @@ export default function RepLedgerScreen() {
           <View style={[styles.actionCard, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: 1 }]}>
             <TouchableOpacity style={styles.actionTrigger} onPress={() => setIsUploadFormOpen(!isUploadFormOpen)}>
               <View style={styles.actionHeaderLeft}>
-                <View style={[styles.iconBox, { backgroundColor: isDarkMode ? '#0F1419' : '#EFF6FF' }]}><Ionicons name="receipt-outline" size={20} color="#1D61F2" /></View>
+                <View style={[styles.iconBox, { backgroundColor: isDarkMode ? '#1E293B' : '#EFF6FF' }]}><Ionicons name="receipt-outline" size={20} color={isDarkMode ? theme.text : "#1D61F2"} /></View>
                 <Text style={[styles.actionTitle, { color: theme.text }]}>Submit Payment Proof</Text>
               </View>
               <Ionicons name={isUploadFormOpen ? "chevron-up" : "chevron-down"} size={20} color={theme.textMuted} />
@@ -188,7 +190,7 @@ export default function RepLedgerScreen() {
                 </ScrollView>
                 <Text style={[styles.label, { color: theme.text, marginTop: 4 }]}>Transaction Screenshot (Required)</Text>
                 <TouchableOpacity style={[styles.uploadImageBtn, { borderColor: theme.border, backgroundColor: theme.inputBg, padding: receiptUri ? 0 : 16 }]} onPress={pickImage}>
-                  {receiptUri ? <Image source={{ uri: receiptUri }} style={{ width: '100%', height: 120, borderRadius: 12 }} resizeMode="cover" /> : <><Ionicons name="camera" size={24} color={theme.primary} /><Text style={[styles.uploadImageText, { color: theme.primary }]}>Attach Photo</Text></>}
+                  {receiptUri ? <Image source={{ uri: receiptUri }} style={{ width: '100%', height: 120, borderRadius: 12 }} resizeMode="cover" /> : <><Ionicons name="camera" size={24} color={theme.textMuted} /><Text style={[styles.uploadImageText, { color: theme.textMuted }]}>Attach Photo</Text></>}
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.invertedBg }, isUploading && { opacity: 0.7 }]} onPress={handleUpload} disabled={isUploading}>
                   {isUploading ? <ActivityIndicator color={theme.invertedText} /> : <Text style={[styles.submitBtnText, { color: theme.invertedText }]}>Submit to Admin</Text>}
@@ -200,7 +202,7 @@ export default function RepLedgerScreen() {
           <View style={[styles.actionCard, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: 1 }]}>
             <TouchableOpacity style={styles.actionTrigger} onPress={() => setIsRefundModalVisible(true)}>
               <View style={styles.actionHeaderLeft}>
-                <View style={[styles.iconBox, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFF1F2' }]}><Ionicons name="return-down-back" size={20} color="#E11D48" /></View>
+                <View style={[styles.iconBox, { backgroundColor: isDarkMode ? '#1E293B' : '#FFF1F2' }]}><Ionicons name="return-down-back" size={20} color="#E11D48" /></View>
                 <Text style={[styles.actionTitle, { color: theme.text }]}>Request Stock Return</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
@@ -234,7 +236,7 @@ export default function RepLedgerScreen() {
                 return (
                   <View key={entry.id} style={[styles.ledgerRow, { backgroundColor: theme.rowBg, borderColor: theme.border }]}>
                     <View style={styles.ledgerLeft}>
-                      <Ionicons name={iconName} size={24} color={isDarkMode ? "#FFFFFF" : "#0F172A"} />
+                      <Ionicons name={iconName} size={24} color={isPayment ? '#059669' : '#DC2626'} />
                       <Text style={[styles.ledgerDate, { color: theme.text }]}>{dateStr}</Text>
                     </View>
                     <Text style={[styles.ledgerAmount, { color: theme.text }]}>
@@ -258,7 +260,7 @@ export default function RepLedgerScreen() {
               <TouchableOpacity onPress={() => setIsRefundModalVisible(false)} style={styles.closeBtn}><Ionicons name="close" size={24} color={theme.textMuted} /></TouchableOpacity>
             </View>
             <ScrollView style={styles.returnList} showsVerticalScrollIndicator={false}>
-              {isLoadingInventory ? <ActivityIndicator color={theme.primary} style={{ marginTop: 20 }} /> : repInventory.length === 0 ? <Text style={{ color: theme.textMuted, textAlign: 'center', marginTop: 20, fontStyle: 'italic' }}>You currently have no checked-out items to return.</Text> : repInventory.map(item => {
+              {isLoadingInventory ? <ActivityIndicator color={theme.invertedBg} style={{ marginTop: 20 }} /> : repInventory.length === 0 ? <Text style={{ color: theme.textMuted, textAlign: 'center', marginTop: 20, fontStyle: 'italic' }}>You currently have no checked-out items to return.</Text> : repInventory.map(item => {
                   const currentQty = returnCart[item.id] || 0;
                   const itemName = item.name || item.inventory?.name || 'Unknown Item';
                   const itemPrice = item.sellingPrice || item.inventory?.sellingPrice || 0;
@@ -278,19 +280,19 @@ export default function RepLedgerScreen() {
             {returnTotal > 0 && (
               <View style={{ marginTop: 16 }}><Text style={[styles.label, { color: theme.text }]}>Reason for Return</Text><TextInput style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border, height: 80, marginBottom: 0 }]} placeholder="e.g. Items expired, damaged packaging..." placeholderTextColor={theme.textMuted} multiline value={returnReason} onChangeText={setReturnReason} /></View>
             )}
-            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: returnTotal > 0 ? '#E11D48' : (isDarkMode ? '#2F3336' : '#E2E8F0'), marginTop: 16 }]} onPress={handleReturnStock} disabled={returnTotal === 0 || isReturning}>
+            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: returnTotal > 0 ? '#E11D48' : (isDarkMode ? '#1E293B' : '#E2E8F0'), marginTop: 16 }]} onPress={handleReturnStock} disabled={returnTotal === 0 || isReturning}>
               {isReturning ? <ActivityIndicator color="#FFFFFF" /> : <Text style={[styles.submitBtnText, { color: returnTotal > 0 ? '#FFFFFF' : theme.textMuted }]}>Submit Return (ETB {returnTotal.toLocaleString()})</Text>}
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 }, 
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, marginTop: Platform.OS === 'ios' ? 0 : 20 }, 
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }, 
   backBtn: { padding: 4, marginLeft: -4 }, 
   headerTitle: { fontSize: 18, fontWeight: '800' }, 
   scrollContent: { paddingHorizontal: 20, paddingBottom: 60, paddingTop: 16 }, 
@@ -327,8 +329,6 @@ const styles = StyleSheet.create({
   stepper: { flexDirection: 'row', alignItems: 'center', borderRadius: 10, padding: 4 }, 
   stepBtn: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' }, 
   stepQtyText: { width: 32, textAlign: 'center', fontSize: 15, fontWeight: '700' },
-  
-  // NEW MINIMALIST LEDGER STYLES (Matched exactly to image)
   historySection: { marginTop: 10, paddingBottom: 20 },
   historyHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingHorizontal: 4 },
   historyTitle: { fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
