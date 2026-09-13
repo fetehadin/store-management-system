@@ -3,7 +3,6 @@ import {
   View, 
   Text, 
   StyleSheet, 
-  SafeAreaView, 
   ScrollView, 
   TouchableOpacity, 
   TextInput, 
@@ -12,15 +11,15 @@ import {
   StatusBar,
   ActivityIndicator,
   RefreshControl,
-  Image // <-- ADDED: Need this to render images!
+  Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
 import { apiClient } from '../../api/client';
 
-// <-- ADDED: Secure .env resolver for product images
 const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'http://10.54.178.101:5000';
 
 const resolveImageUrl = (url: string) => {
@@ -33,6 +32,7 @@ const resolveImageUrl = (url: string) => {
 export default function RepStockScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,7 +41,6 @@ export default function RepStockScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // 1. LIVE DATA: Fetch products from warehouse
   const { data: products = [], isLoading, refetch } = useQuery({
     queryKey: ['warehouse-products-rep'],
     queryFn: async () => {
@@ -56,18 +55,18 @@ export default function RepStockScreen() {
     setRefreshing(false);
   }, [refetch]);
 
+  // UPGRADED THEME: Classic Dark Slate Palette
   const theme = {
-    bg: isDarkMode ? '#000000' : '#F8FAFC',
-    text: isDarkMode ? '#E7E9EA' : '#0F172A',
-    textMuted: isDarkMode ? '#71767B' : '#64748B',
-    border: isDarkMode ? '#2F3336' : '#E2E8F0',
-    cardBg: isDarkMode ? '#1E293B' : '#FFFFFF',
+    bg: isDarkMode ? '#020617' : '#F8FAFC',
+    text: isDarkMode ? '#F8FAFC' : '#0F172A',
+    textMuted: isDarkMode ? '#94A3B8' : '#64748B',
+    border: isDarkMode ? '#1E293B' : '#E2E8F0',
+    cardBg: isDarkMode ? '#0F172A' : '#FFFFFF',
     invertedBg: isDarkMode ? '#E7E9EA' : '#177CA5',
     invertedText: isDarkMode ? '#000000' : '#FFFFFF',
-    inputBg: isDarkMode ? '#0F1419' : '#F1F5F9',
+    inputBg: isDarkMode ? '#0F172A' : '#F1F5F9',
   };
 
-  // Dynamically generate categories from live products
   const CATEGORIES = ['All', ...Array.from(new Set(products.map((item: any) => item.category || 'General')))];
 
   const filteredStock = products.filter((item: any) => {
@@ -151,8 +150,8 @@ export default function RepStockScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
+    <View style={[styles.safeArea, { backgroundColor: theme.bg, paddingTop: Math.max(insets.top, 16) }]}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} translucent />
 
       <View style={[styles.header, { borderBottomColor: theme.border, borderBottomWidth: isDarkMode ? StyleSheet.hairlineWidth : 1 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -215,14 +214,13 @@ export default function RepStockScreen() {
             return (
               <View key={item.id} style={[styles.productCard, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0 }, !isDarkMode && styles.lightShadow]}>
                 
-                {/* <-- FIX: Check for ImageUrl, otherwise show Cube --> */}
                 {item.imageUrl ? (
                   <Image 
                     source={{ uri: resolveImageUrl(item.imageUrl) }} 
                     style={styles.productImage} 
                   />
                 ) : (
-                  <View style={[styles.iconPlaceholder, { backgroundColor: theme.inputBg }]}>
+                  <View style={[styles.iconPlaceholder, { backgroundColor: isDarkMode ? '#1E293B' : theme.inputBg }]}>
                     <Ionicons name={'cube-outline'} size={28} color={theme.textMuted} />
                   </View>
                 )}
@@ -235,7 +233,7 @@ export default function RepStockScreen() {
                   </Text>
                 </View>
 
-                <View style={[styles.stepper, { backgroundColor: isDarkMode ? '#0F1419' : '#F8FAFC' }]}>
+                <View style={[styles.stepper, { backgroundColor: isDarkMode ? '#1E293B' : '#F8FAFC' }]}>
                   <TouchableOpacity 
                     style={[styles.stepBtn, { borderColor: theme.border }]} 
                     onPress={() => updateCartDelta(item.id, -1, maxAvailable)}
@@ -273,7 +271,7 @@ export default function RepStockScreen() {
           <Text style={{ color: theme.text, fontSize: 22, fontWeight: '900' }}>ETB {cartTotal.toLocaleString()}</Text>
         </View>
         <TouchableOpacity 
-          style={[styles.checkoutBtn, { backgroundColor: cartTotal > 0 ? theme.invertedBg : (isDarkMode ? '#2F3336' : '#E2E8F0') }, isProcessing && { opacity: 0.7 }]}
+          style={[styles.checkoutBtn, { backgroundColor: cartTotal > 0 ? theme.invertedBg : (isDarkMode ? '#1E293B' : '#E2E8F0') }, isProcessing && { opacity: 0.7 }]}
           disabled={cartTotal === 0 || isProcessing}
           onPress={handleCheckout}
         >
@@ -284,13 +282,13 @@ export default function RepStockScreen() {
           )}
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, marginTop: Platform.OS === 'ios' ? 0 : 20 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   backBtn: { padding: 4, marginLeft: -4 },
   headerTitle: { fontSize: 18, fontWeight: '800' },
   searchWrapper: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginTop: 12, marginBottom: 16, paddingHorizontal: 16, borderWidth: 1, borderRadius: 12 },
@@ -303,7 +301,7 @@ const styles = StyleSheet.create({
   productCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, marginBottom: 12 },
   lightShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3 },
   iconPlaceholder: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  productImage: { width: 48, height: 48, borderRadius: 12, marginRight: 16, backgroundColor: '#E2E8F0', resizeMode: 'cover' }, // <-- ADDED
+  productImage: { width: 48, height: 48, borderRadius: 12, marginRight: 16, backgroundColor: '#E2E8F0', resizeMode: 'cover' },
   productDetails: { flex: 1, paddingRight: 8 },
   productName: { fontSize: 15, fontWeight: '700', marginBottom: 4 },
   productPrice: { fontSize: 14, fontWeight: '800', marginBottom: 4 },
