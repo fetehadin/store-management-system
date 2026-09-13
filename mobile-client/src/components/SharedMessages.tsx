@@ -1,18 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  SafeAreaView, 
-  ScrollView, 
-  TouchableOpacity, 
-  StatusBar,
-  ActivityIndicator,
-  RefreshControl,
-  Alert
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl, Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import { apiClient } from '../api/client';
@@ -20,21 +12,20 @@ import { apiClient } from '../api/client';
 export default function SharedMessages() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   
   const [refreshing, setRefreshing] = useState(false);
-  // Local state to instantly hide dismissed alerts (especially virtual proof items)
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
   const theme = {
-    bg: isDarkMode ? '#000000' : '#F8FAFC',
-    text: isDarkMode ? '#E7E9EA' : '#0F172A',
-    textMuted: isDarkMode ? '#71767B' : '#64748B',
-    border: isDarkMode ? '#2F3336' : '#E2E8F0',
-    cardBg: isDarkMode ? '#1E293B' : '#FFFFFF',
+    bg: isDarkMode ? '#020617' : '#F8FAFC',
+    text: isDarkMode ? '#F8FAFC' : '#0F172A',
+    textMuted: isDarkMode ? '#94A3B8' : '#64748B',
+    border: isDarkMode ? '#1E293B' : '#E2E8F0',
+    cardBg: isDarkMode ? '#0F172A' : '#FFFFFF',
   };
 
-  // LIVE FETCH: Pulls from backend message table & virtual streams
   const { data: messages = [], isLoading, refetch } = useQuery({
     queryKey: ['system-messages'],
     queryFn: async () => {
@@ -43,13 +34,9 @@ export default function SharedMessages() {
     }
   });
 
-  // Server-side dismissal mutation
   const dismissMutation = useMutation({
     mutationFn: async (id: string) => {
-      // Optimistically add to local dismissed state immediately
       setDismissedIds(prev => [...prev, id]);
-      
-      // If it's a real database message, hit the server endpoint
       if (!id.startsWith('proof_')) {
         return apiClient.patch(`/messages/${id}/dismiss`);
       }
@@ -59,7 +46,6 @@ export default function SharedMessages() {
       queryClient.invalidateQueries({ queryKey: ['system-messages'] });
     },
     onError: (err: any, id: string) => {
-      // Rollback local dismiss on error
       setDismissedIds(prev => prev.filter(item => item !== id));
       Alert.alert('Error', err.response?.data?.message || 'Failed to dismiss message.');
     }
@@ -71,12 +57,11 @@ export default function SharedMessages() {
     setRefreshing(false);
   }, [refetch]);
 
-  // Filter out unread AND non-locally-dismissed messages
   const activeMessages = messages.filter((msg: any) => !msg.isRead && !dismissedIds.includes(msg.id));
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
+    <View style={[styles.safeArea, { backgroundColor: theme.bg, paddingTop: Math.max(insets.top, 16) }]}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} translucent />
       
       <View style={[styles.header, { borderBottomColor: theme.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -90,7 +75,7 @@ export default function SharedMessages() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}
       >
         {isLoading ? (
-          <ActivityIndicator size="large" color="#1D61F2" style={{ marginTop: 40 }} />
+          <ActivityIndicator size="large" color="#177CA5" style={{ marginTop: 40 }} />
         ) : activeMessages.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="notifications-off-outline" size={48} color={theme.textMuted} />
@@ -103,7 +88,7 @@ export default function SharedMessages() {
             const isSuccess = msg.type === 'SUCCESS';
             const accentColor = isError ? '#DC2626' : (isSuccess ? '#059669' : '#D97706');
             const bgTint = isDarkMode 
-              ? (isError ? 'rgba(220, 38, 38, 0.1)' : 'rgba(100, 116, 139, 0.1)') 
+              ? (isError ? 'rgba(220, 38, 38, 0.15)' : 'rgba(148, 163, 184, 0.1)') 
               : (isError ? '#FEF2F2' : 'rgba(100, 116, 139, 0.1)');
 
             return (
@@ -144,25 +129,10 @@ export default function SharedMessages() {
           })
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1 },
-  backBtn: { marginRight: 16 },
-  headerTitle: { fontSize: 22, fontWeight: '800' },
-  list: { padding: 20, gap: 16, paddingBottom: 100 },
-  emptyContainer: { alignItems: 'center', justifyContent: 'center', marginTop: 100 },
-  emptyText: { fontSize: 18, fontWeight: '700', marginTop: 16, marginBottom: 4 },
-  emptySubText: { fontSize: 14, textAlign: 'center' },
-  card: { padding: 20, borderRadius: 16 },
-  lightShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
-  title: { fontSize: 16, fontWeight: '700', flex: 1, marginRight: 12 },
-  date: { fontSize: 12, fontWeight: '500', marginTop: 2 },
-  body: { fontSize: 14, lineHeight: 22, marginBottom: 16 },
-  deleteBtn: { alignSelf: 'flex-end', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 },
-  deleteText: { fontWeight: '700', fontSize: 13 }
+  safeArea: { flex: 1 }, header: { flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1 }, backBtn: { marginRight: 16 }, headerTitle: { fontSize: 22, fontWeight: '800' }, list: { padding: 20, gap: 16, paddingBottom: 100 }, emptyContainer: { alignItems: 'center', justifyContent: 'center', marginTop: 100 }, emptyText: { fontSize: 18, fontWeight: '700', marginTop: 16, marginBottom: 4 }, emptySubText: { fontSize: 14, textAlign: 'center' }, card: { padding: 20, borderRadius: 16 }, lightShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3 }, cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }, title: { fontSize: 16, fontWeight: '700', flex: 1, marginRight: 12 }, date: { fontSize: 12, fontWeight: '500', marginTop: 2 }, body: { fontSize: 14, lineHeight: 22, marginBottom: 16 }, deleteBtn: { alignSelf: 'flex-end', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 }, deleteText: { fontWeight: '700', fontSize: 13 }
 });
