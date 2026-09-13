@@ -20,18 +20,19 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // <-- ADDED INSET IMPORT
 import { useAuthStore } from '../store/authStore';
 import { apiClient } from '../api/client';
 
 export default function SharedProfile() {
   const router = useRouter();
+  const insets = useSafeAreaInsets(); // <-- INITIALIZE INSETS
   
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
   const role = useAuthStore((state) => state.role);
   const logout = useAuthStore((state) => state.logout);
   const updateProfilePic = useAuthStore((state) => state.updateProfilePic);
   
-  // Safely check both the root state and the nested user object
   const authUserName = useAuthStore((state: any) => state.userName || state.user?.fullName || 'Fetehadin Negash');
   const rawProfilePic = useAuthStore((state: any) => state.profilePic || state.user?.profilePic);
   
@@ -39,11 +40,9 @@ export default function SharedProfile() {
 
   const BASE_IP = process.env.EXPO_PUBLIC_BASE_IP || 'https://tajstore-backend.onrender.com';
 
-  // FIX 3: Bulletproof URI parser to prevent broken image links or double IPs
   const getAvatarUri = (uri: string | null | undefined) => {
     if (!uri) return null;
     if (uri.startsWith('http') || uri.startsWith('file://') || uri.startsWith('data:')) {
-      // Hotfix: If the backend accidentally saved "localhost", replace it dynamically so the phone can reach it
       return uri.replace('http://localhost:5000', BASE_IP);
     }
     return uri.startsWith('/') ? `${BASE_IP}${uri}` : `${BASE_IP}/${uri}`;
@@ -52,19 +51,14 @@ export default function SharedProfile() {
   const generatedAvatar = getAvatarUri(rawProfilePic);
   const defaultFallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(authUserName)}&background=1D61F2&color=fff`;
 
-  // Profile States
   const [avatarUri, setAvatarUri] = useState<string | null>(generatedAvatar || defaultFallback);
   const [isAvatarChanged, setIsAvatarChanged] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
-
-  // Security States
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-
-  // Biometric State
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
 
   useEffect(() => {
@@ -96,10 +90,7 @@ export default function SharedProfile() {
       });
 
       if (result.success) {
-        Alert.alert(
-          'Biometrics Enabled',
-          'Your device biometric scanner is now linked to quick sign-in.'
-        );
+        Alert.alert('Biometrics Enabled', 'Your device biometric scanner is now linked to quick sign-in.');
         setIsBiometricEnabled(true);
       }
     } else {
@@ -144,24 +135,18 @@ export default function SharedProfile() {
       const type = match ? `image/${match[1]}` : `image/jpeg`;
 
       const formData = new FormData();
-      formData.append('avatar', {
-        uri: avatarUri,
-        name: filename,
-        type,
-      } as any);
+      formData.append('avatar', { uri: avatarUri, name: filename, type } as any);
 
       const response = await apiClient.patch('/auth/profile/avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      // Update the global store so the Home Pages re-render instantly
       const savedImageUrl = response.data.data.profilePic;
       updateProfilePic(savedImageUrl);
       
       setIsAvatarChanged(false);
       Alert.alert('Success', 'Your profile picture is safely stored in the database!');
     } catch (error: any) {
-      console.error("Avatar upload failed", error);
       Alert.alert('Upload Failed', error.response?.data?.message || 'Could not connect to server.');
     } finally {
       setIsSavingProfile(false);
@@ -207,10 +192,15 @@ export default function SharedProfile() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
+    <View style={[styles.safeArea, { backgroundColor: theme.bg }]}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
 
-      <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
+      {/* DYNAMIC TOP INSET APPLIED HERE */}
+      <View style={[
+        styles.header, 
+        isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border },
+        { paddingTop: Math.max(insets.top, 16) }
+      ]}>
         <TouchableOpacity style={styles.menuButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back-outline" size={26} color={theme.text} />
         </TouchableOpacity>
@@ -255,6 +245,8 @@ export default function SharedProfile() {
             </View>
           </View>
 
+          {/* ... Rest of your component remains identical ... */}
+          
           {/* Biometric Configuration Card */}
           <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.border, borderWidth: isDarkMode ? 1 : 0, marginTop: 24 }, !isDarkMode && styles.lightShadow]}>
             <View style={styles.biometricRow}>
@@ -329,24 +321,21 @@ export default function SharedProfile() {
             <Ionicons name="log-out-outline" size={20} color="#DC2626" style={styles.actionIcon} />
             <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
-
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 16 },
   menuButton: { padding: 4, marginLeft: -4 },
   headerTitle: { fontSize: 18, fontWeight: '800' },
   scrollContentDark: { paddingHorizontal: 20, paddingBottom: 60, paddingTop: 12 },
   scrollContentLight: { paddingHorizontal: 20, paddingBottom: 60, paddingTop: 12 },
-  
   lightShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3 },
   card: { padding: 24, borderRadius: 24 },
-
   avatarSection: { alignItems: 'center' },
   avatarWrapper: { position: 'relative', marginBottom: 12 },
   avatarImage: { width: 100, height: 100, borderRadius: 50 },
@@ -356,7 +345,6 @@ const styles = StyleSheet.create({
   profileRole: { fontSize: 14, fontWeight: '600', marginTop: 4 },
   saveProfileBtn: { marginTop: 20, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 100, minWidth: 180, alignItems: 'center' },
   saveProfileBtnText: { fontWeight: '700', fontSize: 15 },
-
   biometricRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 8 },
   inputLabel: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 16 },
@@ -366,7 +354,6 @@ const styles = StyleSheet.create({
   eyeBtn: { padding: 14 },
   secondaryBtn: { marginTop: 24, paddingVertical: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   secondaryBtnText: { fontSize: 15, fontWeight: '700' },
-
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 32, paddingVertical: 16, borderRadius: 16, backgroundColor: 'rgba(220, 38, 38, 0.1)' },
   actionIcon: { marginRight: 12 },
   logoutText: { color: '#DC2626', fontSize: 16, fontWeight: '800' },

@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
-import { Platform, StyleSheet, View, Text, TouchableOpacity, Modal, SafeAreaView, Image } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Modal, SafeAreaView, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AdminLayout() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   
   // State and Dynamic Profile Data
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
@@ -27,6 +29,9 @@ export default function AdminLayout() {
     router.push(route as any);
   };
 
+  // Dynamically calculate height based on the device's bottom safe area (gesture bar)
+  const TAB_BAR_HEIGHT = 65 + Math.max(insets.bottom, 0);
+
   return (
     <>
       <Tabs
@@ -34,7 +39,12 @@ export default function AdminLayout() {
           headerShown: false,
           tabBarStyle: [
             styles.tabBar,
-            { backgroundColor: bgColor, borderTopColor: borderColor, paddingBottom: Platform.OS === 'ios' ? 24 : 12 }
+            { 
+              backgroundColor: bgColor, 
+              borderTopColor: borderColor, 
+              paddingBottom: Math.max(insets.bottom, 12), // Safely pad bottom gesture area
+              height: TAB_BAR_HEIGHT // Dynamically expand height to prevent squishing
+            }
           ],
           tabBarActiveTintColor: activeColor,
           tabBarInactiveTintColor: inactiveColor,
@@ -115,7 +125,7 @@ export default function AdminLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, height: Platform.OS === 'ios' ? 85 : 65, paddingTop: 12, elevation: 0 },
+  tabBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, paddingTop: 12, elevation: 0 },
   tabLabel: { fontSize: 10, fontWeight: '600', marginTop: 4 },
   
   // Drawer Styles

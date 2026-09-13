@@ -2,16 +2,17 @@ import React, { useState } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
-import { Platform, StyleSheet, View, Text, TouchableOpacity, Modal, SafeAreaView, Image } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Modal, SafeAreaView, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function RepLayout() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
-  // Dynamically pull the exact user details saved during login
   const userName = useAuthStore((state) => (state as any).userName || 'Sales Rep');
   const profilePic = useAuthStore((state) => (state as any).profilePic);
   const userRole = useAuthStore((state) => (state as any).role || 'REP');
-  
-  const router = useRouter();
   const logout = useAuthStore((state) => state.logout);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -26,6 +27,8 @@ export default function RepLayout() {
     router.push(route as any);
   };
 
+  const TAB_BAR_HEIGHT = 65 + Math.max(insets.bottom, 0);
+
   return (
     <>
       <Tabs
@@ -33,7 +36,12 @@ export default function RepLayout() {
           headerShown: false,
           tabBarStyle: [
             styles.tabBar,
-            { backgroundColor: bgColor, borderTopColor: borderColor, paddingBottom: Platform.OS === 'ios' ? 24 : 12 }
+            { 
+              backgroundColor: bgColor, 
+              borderTopColor: borderColor, 
+              paddingBottom: Math.max(insets.bottom, 12),
+              height: TAB_BAR_HEIGHT 
+            }
           ],
           tabBarActiveTintColor: activeColor,
           tabBarInactiveTintColor: inactiveColor,
@@ -52,12 +60,10 @@ export default function RepLayout() {
           name="ledger" 
           options={{ title: 'Ledger', tabBarIcon: ({ color, focused }) => (<Ionicons name={focused ? 'wallet' : 'wallet-outline'} size={24} color={color} />) }} 
         />
-        
         <Tabs.Screen 
           name="note" 
           options={{ title: 'My Notes', tabBarIcon: ({ color, focused }) => (<Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={24} color={color} />) }} 
         />
-
         <Tabs.Screen 
           name="message" 
           options={{ title: 'Messages', tabBarIcon: ({ color, focused }) => (<Ionicons name={focused ? 'mail' : 'mail-outline'} size={24} color={color} />) }} 
@@ -78,7 +84,6 @@ export default function RepLayout() {
             <SafeAreaView style={{ flex: 1 }}>
               <View style={styles.drawerContent}>
                 <View style={styles.drawerHeader}>
-                  {/* DYNAMIC AVATAR: Show real picture if they have one, else fallback to icon */}
                   {profilePic ? (
                     <Image source={{ uri: profilePic }} style={styles.avatarImage} />
                   ) : (
@@ -115,7 +120,6 @@ export default function RepLayout() {
         </View>
       </Modal>
 
-      {/* Global Hidden Button for trigger from Headers */}
       <View style={{ display: 'none' }}>
         <TouchableOpacity testID="drawer-trigger" onPress={() => setIsDrawerOpen(true)} />
       </View>
@@ -124,7 +128,7 @@ export default function RepLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, height: Platform.OS === 'ios' ? 85 : 65, paddingTop: 12 },
+  tabBar: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1, paddingTop: 12, elevation: 0 },
   tabLabel: { fontSize: 10, fontWeight: '600', marginTop: 4 },
   drawerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', flexDirection: 'row' },
   sideDrawer: { width: '75%', height: '100%', borderTopRightRadius: 24, borderBottomRightRadius: 24, padding: 24 },
