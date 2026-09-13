@@ -1,21 +1,10 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  StatusBar,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  Modal,
-  ActivityIndicator,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, TextInput, KeyboardAvoidingView, Platform, Alert, Modal, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../api/client';
@@ -23,13 +12,13 @@ import { apiClient } from '../api/client';
 export default function SharedNotes() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
   const isDarkMode = useAuthStore((state) => state.isDarkMode);
 
   const [activeDateKey, setActiveDateKey] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [draftContent, setDraftContent] = useState('');
 
-  // Fetch live notes from PostgreSQL via backend
   const { data: notesLedger = {}, isLoading } = useQuery({
     queryKey: ['user-notes'],
     queryFn: async () => {
@@ -38,7 +27,6 @@ export default function SharedNotes() {
     }
   });
 
-  // Save/Upsert note mutation
   const saveMutation = useMutation({
     mutationFn: async ({ dateKey, content }: { dateKey: string; content: string }) => {
       return apiClient.post('/notes', { dateKey, content });
@@ -100,19 +88,19 @@ export default function SharedNotes() {
   };
 
   const theme = {
-    bg: isDarkMode ? '#000000' : '#F8FAFC',
-    text: isDarkMode ? '#E7E9EA' : '#0F172A',
-    textMuted: isDarkMode ? '#71767B' : '#64748B',
-    border: isDarkMode ? '#2F3336' : '#E2E8F0',
-    cardBg: isDarkMode ? '#1E293B' : '#FFFFFF',
-    inputBg: isDarkMode ? '#0F1419' : '#FAFAFA',
-    invertedBg: isDarkMode ? '#E7E9EA' : '#1D61F2',
-    invertedText: isDarkMode ? '#000000' : '#FFFFFF',
+    bg: isDarkMode ? '#020617' : '#F8FAFC',
+    text: isDarkMode ? '#F8FAFC' : '#0F172A',
+    textMuted: isDarkMode ? '#94A3B8' : '#64748B',
+    border: isDarkMode ? '#1E293B' : '#E2E8F0',
+    cardBg: isDarkMode ? '#0F172A' : '#FFFFFF',
+    inputBg: isDarkMode ? '#0F172A' : '#FAFAFA',
+    invertedBg: isDarkMode ? '#1E293B' : '#1D61F2',
+    invertedText: isDarkMode ? '#FFFFFF' : '#FFFFFF',
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
+    <View style={[styles.safeArea, { backgroundColor: theme.bg, paddingTop: Math.max(insets.top, 16) }]}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.bg} translucent />
 
       <View style={[styles.header, isDarkMode && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.border }]}>
         <View style={styles.headerLeft}>
@@ -121,14 +109,14 @@ export default function SharedNotes() {
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.text }]}>My Notes</Text>
         </View>
-        <TouchableOpacity style={styles.writeBtn} onPress={() => openNote(getTodayKey())}>
-          <Ionicons name="create-outline" size={24} color={theme.invertedBg} />
+        <TouchableOpacity style={[styles.writeBtn, isDarkMode && { backgroundColor: theme.invertedBg }]} onPress={() => openNote(getTodayKey())}>
+          <Ionicons name="create-outline" size={24} color={isDarkMode ? theme.text : theme.invertedBg} />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.listContainer} showsVerticalScrollIndicator={false}>
         {isLoading ? (
-          <ActivityIndicator size="large" color="#1D61F2" style={{ marginTop: 60 }} />
+          <ActivityIndicator size="large" color="#177CA5" style={{ marginTop: 60 }} />
         ) : sortedNotes.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="journal-outline" size={48} color={theme.textMuted} />
@@ -185,30 +173,10 @@ export default function SharedNotes() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16 },
-  headerLeft: { flexDirection: 'row', alignItems: 'center' },
-  menuButton: { padding: 4, marginLeft: -4, marginRight: 12 },
-  headerTitle: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
-  writeBtn: { padding: 8, backgroundColor: 'rgba(29, 97, 242, 0.1)', borderRadius: 12 },
-  listContainer: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 12 },
-  emptyState: { alignItems: 'center', justifyContent: 'center', marginTop: 80 },
-  emptyStateTitle: { fontSize: 20, fontWeight: '800', marginTop: 16, marginBottom: 8 },
-  emptyStateSub: { fontSize: 14 },
-  noteCard: { padding: 20, borderRadius: 16, marginBottom: 16 },
-  lightShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  cardDate: { fontSize: 16, fontWeight: '700' },
-  cardPreview: { fontSize: 14, lineHeight: 22 },
-  editorHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth },
-  closeEditorBtn: { flexDirection: 'row', alignItems: 'center' },
-  closeEditorText: { fontSize: 16, fontWeight: '600', marginLeft: 4 },
-  editorCanvas: { flex: 1, paddingHorizontal: 24, paddingTop: 24 },
-  editorDateTitle: { fontSize: 24, fontWeight: '800', marginBottom: 16 },
-  textArea: { flex: 1, fontSize: 17, lineHeight: 28, fontWeight: '500' },
+  safeArea: { flex: 1 }, header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16 }, headerLeft: { flexDirection: 'row', alignItems: 'center' }, menuButton: { padding: 4, marginLeft: -4, marginRight: 12 }, headerTitle: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 }, writeBtn: { padding: 8, backgroundColor: 'rgba(29, 97, 242, 0.1)', borderRadius: 12 }, listContainer: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 12 }, emptyState: { alignItems: 'center', justifyContent: 'center', marginTop: 80 }, emptyStateTitle: { fontSize: 20, fontWeight: '800', marginTop: 16, marginBottom: 8 }, emptyStateSub: { fontSize: 14 }, noteCard: { padding: 20, borderRadius: 16, marginBottom: 16 }, lightShadow: { shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3 }, cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }, cardDate: { fontSize: 16, fontWeight: '700' }, cardPreview: { fontSize: 14, lineHeight: 22 }, editorHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth }, closeEditorBtn: { flexDirection: 'row', alignItems: 'center' }, closeEditorText: { fontSize: 16, fontWeight: '600', marginLeft: 4 }, editorCanvas: { flex: 1, paddingHorizontal: 24, paddingTop: 24 }, editorDateTitle: { fontSize: 24, fontWeight: '800', marginBottom: 16 }, textArea: { flex: 1, fontSize: 17, lineHeight: 28, fontWeight: '500' },
 });
