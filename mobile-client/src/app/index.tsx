@@ -128,9 +128,9 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         <View style={styles.header}>
           <View style={styles.logoShadowWrapper}>
-            {/* FIXED IMPORT PATH TO POINT TO THE ROOT ASSETS FOLDER */}
+            {/* FIXED ASSET PATH */}
             <Image 
-              source={require('../../assets/images/icon.png')} 
+              source={require('../../assets/icon.png')} 
               style={styles.logoImage} 
             />
           </View>
